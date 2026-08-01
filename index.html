@@ -1,20 +1,571 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nova Editor - Home</title>
     <!-- RemixIcon File Link -->
-     <link rel="stylesheet" href="style.css">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css"
+    />
     <!-- Css Main File Link -->
-     <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-    
+    <link rel="stylesheet" href="./css/variables.css" />
+    <link rel="stylesheet" href="./css/global.css" />
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <!-- Header Section -->
+    <header class="header">
+      <div class="container">
+        <a href="index.html" class="logo">
+          <img src="./assets/images/logo/novaeditor.png" alt="Nova Editor" />
+        </a>
 
+        <nav class="nav-menu">
+          <a href="#features" class="nav-link active">Features</a>
+          <a href="#templates" class="nav-link">Templates</a>
+          <a href="#ai" class="nav-link">AI Assistant</a>
+          <a href="#editor" class="nav-link">Editor</a>
+          <a href="#faq" class="nav-link">FAQ</a>
+          <a href="#contact" class="nav-link">Contact</a>
+        </nav>
 
+        <div class="nav-actions">
+          <a href="./pages/login.html" class="btn-login"> Sign In </a>
+          <a href="./pages/login.html" class="btn-primary">
+            Get Started
+            <i class="ri-arrow-right-line"></i>
+          </a>
+        </div>
 
+        <button class="menu-toggle" aria-label="Toggle Menu">
+          <i class="ri-menu-line menu-icon"></i>
+          <i class="ri-close-line close-icon"></i>
+        </button>
+      </div>
+
+      <div class="mobile-menu">
+        <a href="#features">
+          <i class="ri-layout-grid-line"></i>
+          <span>Features</span>
+        </a>
+
+        <a href="#templates">
+          <i class="ri-layout-4-line"></i>
+          <span>Templates</span>
+        </a>
+
+        <a href="#ai">
+          <i class="ri-robot-2-line"></i>
+          <span>AI Assistant</span>
+        </a>
+
+        <a href="#faq">
+          <i class="ri-question-line"></i>
+          <span>FAQ</span>
+        </a>
+
+        <a href="#contact">
+          <i class="ri-customer-service-2-line"></i>
+          <span>Contact</span>
+        </a>
+
+        <div class="mobile-buttons">
+          <a href="./pages/login.html" class="mobile-login">
+            <i class="ri-login-circle-line"></i>
+            <span>Sign In</span>
+          </a>
+
+          <a href="./pages/login.html" class="mobile-btn">
+            <span>Get Started</span>
+            <i class="ri-arrow-right-line"></i>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero Section -->
+      <section class="hero">
+        <div class="container">
+          <div class="hero-content">
+            <div class="hero-left">
+              <div class="hero-badge">
+                <i class="ri-sparkling-2-line"></i>
+                <span>AI-Powered Code Editor</span>
+              </div>
+
+              <h1 class="hero-title">
+                Build Modern Web Apps
+                <span>Faster Than Ever</span>
+              </h1>
+
+              <p class="hero-description">
+                Nova Editor is a modern browser-based code editor with AI
+                assistance, live preview, templates, and cloud sync to help
+                developers build beautiful web projects faster.
+              </p>
+
+              <div class="hero-actions">
+                <a href="./pages/login.html" class="btn-primary">
+                  Get Started
+                  <i class="ri-arrow-right-line"></i>
+                </a>
+
+                <a href="#editor" class="btn-secondary">
+                  <i class="ri-play-circle-line"></i>
+                  Live Demo
+                </a>
+              </div>
+
+              <div class="hero-features">
+                <div class="feature-item">
+                  <i class="ri-checkbox-circle-fill"></i>
+                  <span>No Installation</span>
+                </div>
+
+                <div class="feature-item">
+                  <i class="ri-checkbox-circle-fill"></i>
+                  <span>Cloud Projects</span>
+                </div>
+
+                <div class="feature-item">
+                  <i class="ri-checkbox-circle-fill"></i>
+                  <span>AI Assistance</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-right">
+              <div class="hero-image">
+                <img
+                  src="./assets/images/hero/hero.png"
+                  alt="Nova Editor Preview"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Trusted Companies -->
+      <section class="companies">
+        <div class="container">
+          <div class="section-heading">
+            <span>Trusted by developers worldwide</span>
+          </div>
+
+          <div class="companies-grid">
+            <div class="company-item">
+              <img src="./assets/images/companies/github.svg" alt="GitHub" />
+            </div>
+
+            <div class="company-item">
+              <img src="./assets/images/companies/google.svg" alt="Google" />
+            </div>
+
+            <div class="company-item">
+              <img
+                src="./assets/images/companies/microsoft.svg"
+                alt="Microsoft"
+              />
+            </div>
+
+            <div class="company-item">
+              <img src="./assets/images/companies/vercel.svg" alt="Vercel" />
+            </div>
+
+            <div class="company-item">
+              <img src="./assets/images/companies/netlify.svg" alt="Netlify" />
+            </div>
+
+            <div class="company-item">
+              <img src="./assets/images/companies/aws.svg" alt="AWS" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section class="features" id="features">
+        <div class="container">
+          <div class="section-title">
+            <span class="section-badge">Powerful Features</span>
+            <h2>Everything You Need to Build Faster</h2>
+            <p>
+              A complete development workspace designed to help you write, test
+              and ship projects effortlessly.
+            </p>
+          </div>
+
+          <div class="features-grid">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="ri-code-box-line"></i>
+              </div>
+
+              <h3>Smart Code Editor</h3>
+              <p>
+                Monaco powered editor with syntax highlighting, autocomplete and
+                fast editing.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="ri-eye-line"></i>
+              </div>
+
+              <h3>Live Preview</h3>
+              <p>Preview HTML, CSS and JavaScript instantly while you code.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="ri-cloud-line"></i>
+              </div>
+
+              <h3>Cloud Sync</h3>
+              <p>Save projects securely and continue from any device.</p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="ri-magic-line"></i>
+              </div>
+
+              <h3>AI Assistant</h3>
+              <p>Generate, explain and improve code with built-in AI.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Templates Section -->
+      <section class="templates" id="templates">
+        <div class="container">
+          <div class="section-title">
+            <span class="section-badge">Starter Templates</span>
+            <h2>Start with Ready-Made Templates</h2>
+            <p>
+              Launch your next project faster with professionally designed
+              templates for web development.
+            </p>
+          </div>
+
+          <div class="templates-grid">
+            <div class="template-card">
+              <div class="template-image">
+                <img
+                  src="./assets/images/templates/template01.png"
+                  alt="Portfolio"
+                />
+              </div>
+
+              <div class="template-content">
+                <h3>Portfolio</h3>
+                <p>Modern personal portfolio with responsive layout.</p>
+
+                <a href="#">
+                  Preview
+                  <i class="ri-arrow-right-line"></i>
+                </a>
+              </div>
+            </div>
+
+            <div class="template-card">
+              <div class="template-image">
+                <img
+                  src="./assets/images/templates/template02.png"
+                  alt="Dashboard"
+                />
+              </div>
+
+              <div class="template-content">
+                <h3>Dashboard</h3>
+                <p>Clean admin dashboard with analytics components.</p>
+
+                <a href="#">
+                  Preview
+                  <i class="ri-arrow-right-line"></i>
+                </a>
+              </div>
+            </div>
+
+            <div class="template-card">
+              <div class="template-image">
+                <img
+                  src="./assets/images/templates/template03.png"
+                  alt="E-Commerce"
+                />
+              </div>
+
+              <div class="template-content">
+                <h3>E-Commerce</h3>
+                <p>Professional online store template with product pages.</p>
+
+                <a href="#">
+                  Preview
+                  <i class="ri-arrow-right-line"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI Assistant Section -->
+      <section class="ai-assistant" id="ai">
+        <div class="container">
+          <div class="ai-content">
+            <div class="ai-image">
+              <img src="./assets/images/AI/ai.png" alt="AI Assistant" />
+            </div>
+
+            <div class="ai-details">
+              <span class="section-badge">AI Assistant</span>
+
+              <h2>Code Smarter with AI Assistance</h2>
+
+              <p>
+                Generate code, fix bugs, explain complex logic and improve your
+                workflow with an intelligent coding assistant built directly
+                into Nova Editor.
+              </p>
+
+              <div class="ai-list">
+                <div class="ai-item">
+                  <i class="ri-check-line"></i>
+                  <span>Generate HTML, CSS & JavaScript</span>
+                </div>
+
+                <div class="ai-item">
+                  <i class="ri-check-line"></i>
+                  <span>Debug & Fix Errors Instantly</span>
+                </div>
+
+                <div class="ai-item">
+                  <i class="ri-check-line"></i>
+                  <span>Explain Complex Code</span>
+                </div>
+
+                <div class="ai-item">
+                  <i class="ri-check-line"></i>
+                  <span>Optimize Performance</span>
+                </div>
+              </div>
+
+              <a href="./pages/login.html" class="btn-primary">
+                Try AI Assistant
+                <i class="ri-arrow-right-line"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Why Nova Editor -->
+      <section class="why-editor" id="editor">
+        <div class="container">
+          <div class="section-title">
+            <span class="section-badge">Why Nova Editor</span>
+            <h2>Everything You Need in One Workspace</h2>
+            <p>
+              A modern development environment designed for speed, simplicity
+              and productivity.
+            </p>
+          </div>
+
+          <div class="editor-grid">
+            <div class="editor-card">
+              <i class="ri-code-box-line"></i>
+              <h3>Powerful Editor</h3>
+              <p>
+                Built on Monaco Editor with syntax highlighting, IntelliSense
+                and blazing-fast performance.
+              </p>
+            </div>
+
+            <div class="editor-card">
+              <i class="ri-eye-line"></i>
+              <h3>Live Preview</h3>
+              <p>
+                Instantly preview your project while writing code with zero
+                delay.
+              </p>
+            </div>
+
+            <div class="editor-card">
+              <i class="ri-folder-open-line"></i>
+              <h3>Project Manager</h3>
+              <p>
+                Organize files, folders and multiple projects from a single
+                workspace.
+              </p>
+            </div>
+
+            <div class="editor-card">
+              <i class="ri-cloud-line"></i>
+              <h3>Cloud Sync</h3>
+              <p>
+                Securely store and access your projects anytime from anywhere.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Editor Preview -->
+      <section class="editor-preview" id="editor">
+        <div class="container">
+          <div class="section-title">
+            <span class="section-badge">Editor Experience</span>
+            <h2>A Workspace Built for Developers</h2>
+            <p>
+              Experience a fast, distraction-free coding environment with
+              intelligent tools designed to boost productivity.
+            </p>
+          </div>
+
+          <div class="editor-preview-image">
+            <img src="./assets/images/editor/editor.png" alt="Nova Editor" />
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ Section -->
+      <section class="faq" id="faq">
+        <div class="container">
+          <div class="section-title">
+            <span class="section-badge">FAQ</span>
+            <h2>Frequently Asked Questions</h2>
+            <p>Everything you need to know about Nova Editor.</p>
+          </div>
+
+          <div class="faq-list">
+            <div class="faq-item">
+              <button class="faq-question">
+                <span>Is Nova Editor free to use?</span>
+                <i class="ri-add-line"></i>
+              </button>
+
+              <div class="faq-answer">
+                <p>
+                  Yes. Nova Editor offers a free version with all essential
+                  coding features. More advanced tools will be introduced in
+                  future updates.
+                </p>
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question">
+                <span>Do I need to install anything?</span>
+                <i class="ri-add-line"></i>
+              </button>
+
+              <div class="faq-answer">
+                <p>
+                  No. Nova Editor works directly in your browser, so you can
+                  start coding instantly without installing software.
+                </p>
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question">
+                <span>Can I save my projects?</span>
+                <i class="ri-add-line"></i>
+              </button>
+
+              <div class="faq-answer">
+                <p>
+                  Yes. Your projects are securely stored in the cloud using
+                  Firebase, allowing access from anywhere.
+                </p>
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <button class="faq-question">
+                <span>Will AI assistance be available?</span>
+                <i class="ri-add-line"></i>
+              </button>
+
+              <div class="faq-answer">
+                <p>
+                  Yes. AI-powered code generation, debugging and explanation
+                  tools will be built directly into Nova Editor.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" id="contact">
+      <div class="container">
+        <div class="footer-top">
+          <div class="footer-info">
+            <a href="index.html" class="footer-logo">
+              <img
+                src="./assets/images/logo/novaeditor.png"
+                alt="Nova Editor"
+              />
+            </a>
+
+            <p>
+              Build modern web applications faster with an AI-powered
+              browser-based code editor designed for developers.
+            </p>
+
+            <div class="footer-social">
+              <a href="#"><i class="ri-github-fill"></i></a>
+              <a href="#"><i class="ri-twitter-x-fill"></i></a>
+              <a href="#"><i class="ri-linkedin-box-fill"></i></a>
+            </div>
+          </div>
+
+          <div class="footer-links">
+            <div class="footer-column">
+              <h4>Product</h4>
+              <a href="#features">Features</a>
+              <a href="#templates">Templates</a>
+              <a href="#ai">AI Assistant</a>
+              <a href="#faq">FAQ</a>
+            </div>
+
+            <div class="footer-column">
+              <h4>Resources</h4>
+              <a href="#">Documentation</a>
+              <a href="#">Roadmap</a>
+              <a href="#">Release Notes</a>
+              <a href="#">Privacy Policy</a>
+            </div>
+
+            <div class="footer-column">
+              <h4>Contact</h4>
+              <a href="mailto:hello@novaeditor.dev">hello@novaeditor.dev</a>
+              <a href="mailto:support@novaeditor.dev">support@novaeditor.dev</a>
+              <a href="#">GitHub</a>
+              <a href="#">LinkedIn</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <p>
+            © <span id="current-year"></span>
+            <span class="footer-brand">Nova Editor</span>. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </footer>
 
     <!-- Script File Link -->
-</body>
+    <script src="./js/script.js"></script>
+  </body>
 </html>
