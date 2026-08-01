@@ -1,0 +1,636 @@
+/* ==========================================
+   Login
+========================================== */
+
+.login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 40px 0;
+  background: var(--bg);
+  overflow-x: hidden; /* stop the glow / floating cards from causing horizontal scroll */
+}
+
+.login-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 520px) minmax(0, 1fr);
+  gap: 80px;
+  align-items: center;
+}
+
+/* ==========================================
+   Login Left
+========================================== */
+
+.login-left {
+  width: 100%;
+  min-width: 0; /* allow text to shrink instead of overflowing the grid track */
+}
+
+.login-logo {
+  display: inline-flex;
+  margin-bottom: 40px;
+}
+
+.login-logo img {
+  width: auto;
+  height: 46px;
+  max-width: 100%;
+}
+
+.login-badge {
+  width: fit-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-bottom: 24px;
+  border-radius: var(--radius-full);
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.login-badge i {
+  font-size: 18px;
+}
+
+.login-title {
+  margin-bottom: 18px;
+  font-size: clamp(28px, 5vw, 56px);
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.login-description {
+  margin-bottom: 40px;
+  color: var(--text-secondary);
+  font-size: clamp(14px, 1.6vw, 17px);
+  line-height: 1.8;
+}
+
+/* ==========================================
+   Login Buttons
+========================================== */
+
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.google-btn,
+.github-btn {
+  width: 100%;
+  height: 60px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.google-btn i,
+.github-btn i {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.google-btn i {
+  color: var(--primary);
+}
+
+.github-btn i {
+  color: #fff;
+}
+
+.github-btn {
+  background: var(--text-primary);
+  color: #fff;
+}
+
+.github-btn i {
+  font-size: 24px;
+}
+
+.google-btn:hover,
+.github-btn:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.github-btn:hover {
+  background: #000;
+}
+
+.google-btn::before,
+.github-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  transform: translateX(-100%);
+  transition: 0.8s;
+  pointer-events: none;
+}
+
+.google-btn:hover::before,
+.github-btn:hover::before {
+  transform: translateX(100%);
+}
+
+/* ==========================================
+   Divider
+========================================== */
+
+.login-divider {
+  position: relative;
+  margin: 42px 0 36px;
+  text-align: center;
+}
+
+.login-divider::before {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  height: 1px;
+  background: var(--border);
+}
+
+.login-divider span {
+  position: relative;
+  padding: 0 18px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* ==========================================
+   Features
+========================================== */
+
+.login-features {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: var(--transition);
+}
+
+.feature-item:hover {
+  transform: translateX(6px);
+}
+
+.feature-item:hover i {
+  background: var(--primary);
+  color: #fff;
+}
+
+.feature-item i {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 22px;
+}
+
+.feature-item h4 {
+  margin-bottom: 6px;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.feature-item p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* ==========================================
+   Policy
+========================================== */
+
+.login-policy {
+  margin-top: 40px;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.login-policy a {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.login-policy a:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================
+   Login Right
+========================================== */
+
+.login-right {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 720px;
+  min-width: 0;
+}
+
+.login-right::before {
+  content: "";
+  position: absolute;
+  width: min(520px, 80vw);
+  height: min(520px, 80vw);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.18), transparent 70%);
+  filter: blur(60px);
+  z-index: 0;
+}
+
+.editor-preview {
+  position: relative;
+  width: 100%;
+  max-width: 860px;
+  overflow: hidden;
+  z-index: 2;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.editor-preview:hover {
+  transform: translateY(-6px);
+}
+
+.editor-preview img {
+  width: 100%;
+  display: block;
+}
+
+/* ==========================================
+   Floating Cards
+========================================== */
+
+.floating-card {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 240px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-md);
+  z-index: 3;
+  transition: var(--transition);
+}
+
+.floating-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+}
+
+.floating-card i {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: var(--primary-light);
+  color: var(--primary);
+  font-size: 24px;
+}
+
+.floating-card h4 {
+  margin-bottom: 4px;
+  color: var(--text-primary);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.floating-card span {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.card-1 {
+  top: 80px;
+  left: -40px;
+}
+
+.card-2 {
+  top: 260px;
+  right: -60px;
+}
+
+.card-3 {
+  bottom: 80px;
+  left: 40px;
+}
+
+.login-logo img {
+  transition: var(--transition);
+}
+
+.login-logo:hover img {
+  transform: scale(1.04);
+}
+
+/* ==========================================
+   Responsive
+========================================== */
+
+/* Large desktops / laptops */
+@media (max-width: 1200px) {
+  .login-container {
+    max-width: 1140px;
+    grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+    gap: 48px;
+  }
+
+  .login-right {
+    min-height: 640px;
+  }
+
+  .editor-preview {
+    max-width: 640px;
+  }
+
+  .floating-card {
+    min-width: 200px;
+    padding: 14px 16px;
+  }
+
+  .card-1 {
+    left: -10px;
+  }
+
+  .card-2 {
+    right: -20px;
+  }
+
+  .card-3 {
+    left: 10px;
+  }
+}
+
+/* Tablets: stack the two columns */
+@media (max-width: 992px) {
+  .login {
+    padding: 60px 0;
+  }
+
+  .login-container {
+    grid-template-columns: 1fr;
+    gap: 60px;
+    max-width: 720px;
+  }
+
+  .login-left {
+    order: 2;
+  }
+
+  .login-right {
+    order: 1;
+    min-height: auto;
+  }
+
+  .login-right::before {
+    width: min(420px, 70vw);
+    height: min(420px, 70vw);
+  }
+
+  .login-logo {
+    justify-content: center;
+    width: 100%;
+    text-align: center;
+  }
+
+  .login-badge {
+    margin-inline: auto;
+  }
+
+  .login-title {
+    text-align: center;
+  }
+
+  .login-description {
+    text-align: center;
+  }
+
+  .login-divider span {
+    background: var(--bg);
+  }
+
+  .login-policy {
+    text-align: center;
+  }
+
+  .editor-preview {
+    max-width: 100%;
+  }
+
+  .card-1,
+  .card-2,
+  .card-3 {
+    position: static;
+    margin: 14px auto 0;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .floating-card {
+    display: none;
+  }
+}
+
+/* Small tablets / large phones */
+@media (max-width: 768px) {
+  .login {
+    padding: 40px 0;
+  }
+
+  .login-container {
+    padding: 0 20px;
+  }
+
+  .login-buttons {
+    gap: 14px;
+  }
+
+  .google-btn,
+  .github-btn {
+    height: 56px;
+    font-size: 15px;
+    padding: 0 18px;
+  }
+
+  .feature-item {
+    gap: 14px;
+  }
+
+  .feature-item i {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .feature-item h4 {
+    font-size: 17px;
+  }
+
+  .feature-item p {
+    font-size: 14px;
+  }
+}
+
+/* Phones */
+@media (max-width: 576px) {
+  .login {
+    padding: 30px 0;
+  }
+
+  .login-container {
+    padding: 0 14px;
+    gap: 40px;
+  }
+
+  .login-logo {
+    margin-bottom: 30px;
+  }
+
+  .login-logo img {
+    height: 40px;
+  }
+
+  .login-badge {
+    margin-bottom: 20px;
+    font-size: 13px;
+    padding: 6px 14px;
+  }
+
+  .login-description {
+    margin-bottom: 30px;
+  }
+
+  .login-buttons {
+    gap: 12px;
+  }
+
+  .google-btn,
+  .github-btn {
+    width: 100%;
+    height: 52px;
+    padding: 0 16px;
+    font-size: 14px;
+    gap: 10px;
+  }
+
+  .google-btn i,
+  .github-btn i {
+    font-size: 20px;
+  }
+
+  .login-divider {
+    margin: 30px 0 26px;
+  }
+
+  .login-features {
+    gap: 18px;
+  }
+
+  .feature-item {
+    gap: 12px;
+  }
+
+  .feature-item i {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  .feature-item h4 {
+    font-size: 16px;
+  }
+
+  .feature-item p {
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+
+  .login-policy {
+    margin-top: 30px;
+    font-size: 13px;
+    text-align: center;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .login-container {
+    padding: 0 12px;
+  }
+
+  .login-badge {
+    font-size: 12px;
+    padding: 5px 12px;
+    gap: 6px;
+  }
+
+  .login-badge i {
+    font-size: 16px;
+  }
+
+  .google-btn,
+  .github-btn {
+    height: 48px;
+    font-size: 13px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .login-title {
+    margin-bottom: 14px;
+  }
+}
