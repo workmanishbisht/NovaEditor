@@ -5,7 +5,11 @@ import {
   checkSession,
 } from "../firebase/auth.js";
 
-import { createUser, userExists } from "../firebase/firestore.js";
+import {
+  createUser,
+  userExists,
+  getUser,
+} from "../firebase/firestore.js";
 
 /* ==========================================
    DOM Elements
@@ -15,7 +19,9 @@ const googleBtn = document.querySelector(".google-btn");
 
 const githubBtn = document.querySelector(".github-btn");
 
-const loginButtons = document.querySelectorAll(".login-buttons button");
+const loginButtons = document.querySelectorAll(
+  ".login-buttons button"
+);
 
 /* ==========================================
    Config
@@ -99,8 +105,6 @@ function showToast(message, type = "info") {
     return;
   }
 
-  console.warn("Toast system not initialized.");
-
   console.log(`[${type.toUpperCase()}] ${message}`);
 }
 
@@ -173,8 +177,14 @@ async function completeLogin(user) {
   const existsResponse = await userExists(user.uid);
 
   if (!existsResponse.success) {
-    throw new Error(existsResponse.error || "Unable to verify user.");
+    throw new Error(
+      existsResponse.error || "Unable to verify user."
+    );
   }
+
+  /* ----------------------------------------
+     First Login
+  ---------------------------------------- */
 
   if (!existsResponse.exists) {
     const createResponse = await createUser(user.uid, {
@@ -184,25 +194,41 @@ async function completeLogin(user) {
       photoURL: user.photoURL || "",
       provider: user.providerData?.[0]?.providerId || "",
       emailVerified: user.emailVerified,
+      setupCompleted: false,
       createdBy: "authentication",
     });
 
     if (!createResponse.success) {
-      throw new Error(createResponse.error || "Unable to create user.");
+      throw new Error(
+        createResponse.error || "Unable to create user."
+      );
     }
 
     showToast("Welcome to Nova Editor!", "success");
+
+    await wait(CONFIG.redirectDelay);
+
+    window.location.href = CONFIG.setupPage;
+
+    return;
   }
+
+  /* ----------------------------------------
+     Existing User
+  ---------------------------------------- */
 
   await redirectUser(user);
 }
+
 
 /* ==========================================
    Google Login
 ========================================== */
 
 async function handleGoogleLogin() {
-  if (!startLoading(googleBtn)) return;
+  if (!startLoading(googleBtn)) {
+    return;
+  }
 
   showToast("Signing in with Google...", "loading");
 
@@ -212,12 +238,20 @@ async function handleGoogleLogin() {
     showToast("Google login successful.", "success");
 
     await completeLogin(user);
+
   } catch (error) {
+
     console.error(error);
 
-    showToast(error.message || "Google authentication failed.", "error");
+    showToast(
+      error.message || "Google authentication failed.",
+      "error"
+    );
+
   } finally {
+
     stopLoading(googleBtn);
+
   }
 }
 
@@ -226,7 +260,9 @@ async function handleGoogleLogin() {
 ========================================== */
 
 async function handleGithubLogin() {
-  if (!startLoading(githubBtn)) return;
+  if (!startLoading(githubBtn)) {
+    return;
+  }
 
   showToast("Signing in with GitHub...", "loading");
 
@@ -236,27 +272,21 @@ async function handleGithubLogin() {
     showToast("GitHub login successful.", "success");
 
     await completeLogin(user);
+
   } catch (error) {
+
     console.error(error);
 
-    showToast(error.message || "GitHub authentication failed.", "error");
+    showToast(
+      error.message || "GitHub authentication failed.",
+      "error"
+    );
+
   } finally {
+
     stopLoading(githubBtn);
+
   }
-}
-
-/* ==========================================
-   First Login Check
-========================================== */
-
-async function checkFirstLogin(user) {
-  const response = await userExists(user.uid);
-
-  if (!response.success) {
-    throw new Error(response.error || "Unable to verify user.");
-  }
-
-  return !response.exists;
 }
 
 /* ==========================================
@@ -264,22 +294,71 @@ async function checkFirstLogin(user) {
 ========================================== */
 
 async function redirectUser(user) {
-  const isFirstLogin = await checkFirstLogin(user);
+
+  const response = await getUser(user.uid);
+
+  if (!response.success) {
+    throw new Error(
+      response.error || "Unable to load user profile."
+    );
+  }
+
+  const userData = response.data;
 
   await wait(CONFIG.redirectDelay);
 
-  if (isFirstLogin) {
-    showToast("Welcome to Nova Editor!", "success");
+  if (!userData) {
 
     window.location.href = CONFIG.setupPage;
 
     return;
+
+  }
+
+  if (!userData.setupCompleted) {
+
+    showToast("Complete your setup first.", "info");
+
+    window.location.href = CONFIG.setupPage;
+
+    return;
+
   }
 
   showToast("Redirecting to dashboard...", "success");
 
   window.location.href = CONFIG.dashboardPage;
 }
+
+/* ==========================================
+   Initialize
+========================================== */
+
+async function initialize() {
+
+  try {
+
+    const user = await checkSession();
+
+    if (!user) {
+      return;
+    }
+
+    await redirectUser(user);
+
+  } catch (error) {
+
+    console.error(error);
+
+    showToast(
+      error.message || "Unable to restore session.",
+      "error"
+    );
+
+  }
+
+}
+
 
 /* ==========================================
    Event Listeners
@@ -298,11 +377,15 @@ if (githubBtn) {
 ========================================== */
 
 function handleKeyboard(event) {
-  if (event.key !== "Enter") return;
+  if (event.key !== "Enter") {
+    return;
+  }
 
   const element = document.activeElement;
 
-  if (!element) return;
+  if (!element) {
+    return;
+  }
 
   if (element.classList.contains("google-btn")) {
     handleGoogleLogin();
@@ -325,36 +408,18 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ==========================================
-   Initialize
-========================================== */
-
-async function initialize() {
-  try {
-    const user = await checkSession();
-
-    if (!user) {
-      return;
-    }
-
-    showToast("Session found. Redirecting...", "info");
-
-    await redirectUser(user);
-  } catch (error) {
-    console.error(error);
-
-    showToast(error.message || "Unable to restore session.", "error");
-  }
-}
-
-initialize();
-
-/* ==========================================
    Cleanup
 ========================================== */
 
 window.addEventListener("beforeunload", () => {
   resetLoading();
 });
+
+/* ==========================================
+   Initialize App
+========================================== */
+
+initialize();
 
 /* ==========================================
    Export
