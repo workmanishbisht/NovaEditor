@@ -1,10 +1,18 @@
-"use strict";
+import {
+  loginWithGoogle,
+  loginWithGithub,
+  logout,
+  checkSession,
+} from "../firebase/auth.js";
+
+import { createUser, userExists } from "../firebase/firestore.js";
 
 /* ==========================================
    DOM Elements
 ========================================== */
 
 const googleBtn = document.querySelector(".google-btn");
+
 const githubBtn = document.querySelector(".github-btn");
 
 const loginButtons = document.querySelectorAll(".login-buttons button");
@@ -13,12 +21,12 @@ const loginButtons = document.querySelectorAll(".login-buttons button");
    Config
 ========================================== */
 
-const CONFIG = {
+const CONFIG = Object.freeze({
   redirectDelay: 800,
   loadingText: "Connecting...",
   dashboardPage: "../pages/dashboard.html",
   setupPage: "../pages/setup.html",
-};
+});
 
 /* ==========================================
    State
@@ -62,8 +70,8 @@ function setButtonLoading(button) {
   }
 
   button.innerHTML = `
-      <i class="ri-loader-4-line ri-spin"></i>
-      <span>${CONFIG.loadingText}</span>
+    <i class="ri-loader-4-line ri-spin"></i>
+    <span>${CONFIG.loadingText}</span>
   `;
 }
 
@@ -92,6 +100,7 @@ function showToast(message, type = "info") {
   }
 
   console.warn("Toast system not initialized.");
+
   console.log(`[${type.toUpperCase()}] ${message}`);
 }
 
@@ -100,7 +109,9 @@ function showToast(message, type = "info") {
 ========================================== */
 
 function startLoading(button) {
-  if (isLoading()) return false;
+  if (isLoading()) {
+    return false;
+  }
 
   setLoading(true);
 
@@ -119,36 +130,71 @@ function stopLoading(button) {
   setLoading(false);
 }
 
+function resetLoading() {
+  loginButtons.forEach((button) => {
+    restoreButton(button);
+  });
+
+  enableButtons();
+
+  setLoading(false);
+}
+
 /* ==========================================
    Authentication
 ========================================== */
 
-async function authenticate(provider) {
-  const allowedProviders = ["google", "github"];
+const AUTH_PROVIDERS = Object.freeze({
+  google: loginWithGoogle,
+  github: loginWithGithub,
+});
 
-  if (!allowedProviders.includes(provider)) {
-    throw new Error("Unsupported provider.");
+async function authenticate(provider) {
+  const authProvider = AUTH_PROVIDERS[provider];
+
+  if (!authProvider) {
+    throw new Error("Unsupported authentication provider.");
   }
 
-  /*
-      Firebase Placeholder
+  const result = await authProvider();
 
-      Google
+  if (!result.success) {
+    throw new Error(result.error || "Authentication failed.");
+  }
 
-      await signInWithPopup(auth, googleProvider);
+  return result.user;
+}
 
-      GitHub
+/* ==========================================
+   Complete Login
+========================================== */
 
-      await signInWithPopup(auth, githubProvider);
+async function completeLogin(user) {
+  const existsResponse = await userExists(user.uid);
 
-  */
+  if (!existsResponse.success) {
+    throw new Error(existsResponse.error || "Unable to verify user.");
+  }
 
-  await wait(1500);
+  if (!existsResponse.exists) {
+    const createResponse = await createUser(user.uid, {
+      uid: user.uid,
+      displayName: user.displayName || "",
+      email: user.email || "",
+      photoURL: user.photoURL || "",
+      provider: user.providerData?.[0]?.providerId || "",
+      emailVerified: user.emailVerified,
+      createdBy: "authentication",
+    });
 
-  return {
-    success: true,
-    provider,
-  };
+    if (!createResponse.success) {
+      throw new Error(createResponse.error || "Unable to create user.");
+    }
+
+    showToast("Welcome to Nova Editor!", "success");
+  }
+
+  await redirectUser(user);
 }
 
 /* ==========================================
@@ -161,23 +207,15 @@ async function handleGoogleLogin() {
   showToast("Signing in with Google...", "loading");
 
   try {
-    const result = await authenticate("google");
+    const user = await authenticate("google");
 
-    if (result.success) {
-      showToast("Google login successful.", "success");
+    showToast("Google login successful.", "success");
 
-      await wait(CONFIG.redirectDelay);
-
-      /*
-          Redirect
-
-          window.location.href = CONFIG.dashboardPage;
-      */
-    }
+    await completeLogin(user);
   } catch (error) {
     console.error(error);
 
-    showToast("Google authentication failed.", "error");
+    showToast(error.message || "Google authentication failed.", "error");
   } finally {
     stopLoading(googleBtn);
   }
@@ -193,26 +231,54 @@ async function handleGithubLogin() {
   showToast("Signing in with GitHub...", "loading");
 
   try {
-    const result = await authenticate("github");
+    const user = await authenticate("github");
 
-    if (result.success) {
-      showToast("GitHub login successful.", "success");
+    showToast("GitHub login successful.", "success");
 
-      await wait(CONFIG.redirectDelay);
-
-      /*
-          Redirect
-
-          window.location.href = CONFIG.dashboardPage;
-      */
-    }
+    await completeLogin(user);
   } catch (error) {
     console.error(error);
 
-    showToast("GitHub authentication failed.", "error");
+    showToast(error.message || "GitHub authentication failed.", "error");
   } finally {
     stopLoading(githubBtn);
   }
+}
+
+/* ==========================================
+   First Login Check
+========================================== */
+
+async function checkFirstLogin(user) {
+  const response = await userExists(user.uid);
+
+  if (!response.success) {
+    throw new Error(response.error || "Unable to verify user.");
+  }
+
+  return !response.exists;
+}
+
+/* ==========================================
+   Redirect Manager
+========================================== */
+
+async function redirectUser(user) {
+  const isFirstLogin = await checkFirstLogin(user);
+
+  await wait(CONFIG.redirectDelay);
+
+  if (isFirstLogin) {
+    showToast("Welcome to Nova Editor!", "success");
+
+    window.location.href = CONFIG.setupPage;
+
+    return;
+  }
+
+  showToast("Redirecting to dashboard...", "success");
+
+  window.location.href = CONFIG.dashboardPage;
 }
 
 /* ==========================================
@@ -228,76 +294,6 @@ if (githubBtn) {
 }
 
 /* ==========================================
-   Session Manager
-========================================== */
-
-async function checkSession() {
-  /*
-    Firebase Placeholder
-
-    const user = auth.currentUser;
-
-    if (user) {
-      redirectUser(user);
-    }
-
-  */
-
-  return null;
-}
-
-/* ==========================================
-   First Login Check
-========================================== */
-
-async function checkFirstLogin(user) {
-  /*
-    Firebase Placeholder
-
-    const doc = await getDoc(...);
-
-    if (!doc.exists()) {
-
-        return true;
-
-    }
-
-    return false;
-
-  */
-
-  return false;
-}
-
-/* ==========================================
-   Redirect Manager
-========================================== */
-
-async function redirectUser(user = null) {
-  const isFirstLogin = await checkFirstLogin(user);
-
-  if (isFirstLogin) {
-    showToast("Welcome to Nova Editor!", "success");
-
-    await wait(CONFIG.redirectDelay);
-
-    /*
-      window.location.href = CONFIG.setupPage;
-    */
-
-    return;
-  }
-
-  showToast("Redirecting to dashboard...", "success");
-
-  await wait(CONFIG.redirectDelay);
-
-  /*
-      window.location.href = CONFIG.dashboardPage;
-  */
-}
-
-/* ==========================================
    Keyboard Accessibility
 ========================================== */
 
@@ -310,6 +306,7 @@ function handleKeyboard(event) {
 
   if (element.classList.contains("google-btn")) {
     handleGoogleLogin();
+    return;
   }
 
   if (element.classList.contains("github-btn")) {
@@ -323,42 +320,50 @@ document.addEventListener("keydown", handleKeyboard);
    Focus Manager
 ========================================== */
 
-window.addEventListener("load", () => {
-  if (googleBtn) {
-    googleBtn.focus();
-  }
+document.addEventListener("DOMContentLoaded", () => {
+  googleBtn?.focus();
 });
 
 /* ==========================================
    Initialize
 ========================================== */
 
-(async function init() {
+async function initialize() {
   try {
-    await checkSession();
+    const user = await checkSession();
+
+    if (!user) {
+      return;
+    }
+
+    showToast("Session found. Redirecting...", "info");
+
+    await redirectUser(user);
   } catch (error) {
-    console.error("Initialization failed:", error);
+    console.error(error);
+
+    showToast(error.message || "Unable to restore session.", "error");
   }
-})();
+}
+
+initialize();
 
 /* ==========================================
    Cleanup
 ========================================== */
 
 window.addEventListener("beforeunload", () => {
-  setLoading(false);
+  resetLoading();
 });
 
 /* ==========================================
-   Export (Future)
+   Export
 ========================================== */
 
-window.NovaAuth = {
+window.NovaAuth = Object.freeze({
   google: handleGoogleLogin,
-
   github: handleGithubLogin,
-
+  logout,
   session: checkSession,
-
   redirect: redirectUser,
-};
+});
