@@ -130,7 +130,7 @@ function renderGreeting() {
 
     const firstName = (STATE.displayName || "there").split(" ")[0];
 
-    DOM.greeting.textContent = `${salutation}, ${firstName}! 👋`;
+    DOM.greeting.textContent = `${salutation}, ${firstName}! `;
 }
 
 /* ==========================================
@@ -423,8 +423,13 @@ function attachProjectCreatedListener() {
 ========================================== */
 
 function init(detail) {
-    STATE.uid = detail.user?.uid || null;
-    STATE.displayName = detail.userData?.displayName || detail.user?.displayName || "";
+    // FIX: layout.js's getState() (and the "layout-ready" event detail,
+    // which is the same object) exposes the signed-in user as
+    // `currentUser`, never `user`. Reading detail.user meant STATE.uid
+    // was always null — even for a fully authenticated session — which
+    // is why projects/greeting never rendered after login.
+    STATE.uid = detail.currentUser?.uid || null;
+    STATE.displayName = detail.userData?.displayName || detail.currentUser?.displayName || "";
 
     renderGreeting();
     attachSearch();

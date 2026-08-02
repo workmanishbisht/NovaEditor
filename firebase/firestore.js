@@ -29,6 +29,7 @@ const COLLECTIONS = Object.freeze({
   USERS: "users",
   WORKSPACES: "workspaces",
   PROJECTS: "projects",
+  NOTIFICATIONS: "notifications",
 });
 
 /* ==========================================
@@ -47,6 +48,21 @@ const PREFERENCE_DOCS = Object.freeze({
   EDITOR: "editor",
   AI: "ai",
 });
+
+/* ==========================================
+   Local device preferences
+   ------------------------------------------
+   layout.js calls getCurrentWorkspaceId()/
+   setCurrentWorkspaceId(id) with NO uid
+   argument, so this is intentionally a
+   per-browser preference (like the theme
+   toggle), not a per-user Firestore field.
+   If you want "current workspace" to be
+   scoped per-account instead, this needs a
+   uid parameter and a write to the user doc.
+========================================== */
+
+const CURRENT_WORKSPACE_STORAGE_KEY = "novaeditor:currentWorkspaceId";
 
 /* ==========================================
    Response
@@ -94,6 +110,10 @@ function editorPreferenceRef(uid) {
 
 function aiPreferenceRef(uid) {
   return doc(db, COLLECTIONS.USERS, uid, SUB_COLLECTIONS.PREFERENCES, PREFERENCE_DOCS.AI);
+}
+
+function notificationsCollection() {
+  return collection(db, COLLECTIONS.NOTIFICATIONS);
 }
 
 /* ==========================================
@@ -154,6 +174,18 @@ export async function getUser(uid) {
     return await getDocument(userRef(uid));
   });
 }
+
+/* ==========================================
+   GET USER DATA — alias expected by layout.js
+   ------------------------------------------
+   layout.js imports "getUserData" (not
+   "getUser"). Same wrapped response shape as
+   every other read in this module — layout.js
+   is responsible for unwrapping .data, same
+   as it does for getUserWorkspaces().
+========================================== */
+
+export const getUserData = getUser;
 
 /* ==========================================
    UPDATE USER
@@ -365,6 +397,40 @@ export async function getUserWorkspaces(uid) {
 }
 
 /* ==========================================
+   CURRENT WORKSPACE ID (per-browser)
+   ------------------------------------------
+   See the note near CURRENT_WORKSPACE_STORAGE_KEY
+   above. Deliberately unwrapped (raw string or
+   null / raw boolean) — layout.js compares the
+   return value of getCurrentWorkspaceId()
+   directly against workspace.id, it does not
+   expect a {success,data,...} envelope here.
+========================================== */
+
+export function getCurrentWorkspaceId() {
+  try {
+    return localStorage.getItem(CURRENT_WORKSPACE_STORAGE_KEY);
+  } catch (error) {
+    console.error("[firestore] getCurrentWorkspaceId failed:", error);
+    return null;
+  }
+}
+
+export function setCurrentWorkspaceId(workspaceId) {
+  try {
+    if (workspaceId) {
+      localStorage.setItem(CURRENT_WORKSPACE_STORAGE_KEY, workspaceId);
+    } else {
+      localStorage.removeItem(CURRENT_WORKSPACE_STORAGE_KEY);
+    }
+    return true;
+  } catch (error) {
+    console.error("[firestore] setCurrentWorkspaceId failed:", error);
+    return false;
+  }
+}
+
+/* ==========================================
    EDITOR PREFERENCES
 ========================================== */
 
@@ -450,17 +516,31 @@ export async function createProject(projectData) {
     const payload = {
       name: projectData.name,
       description: projectData.description || "",
-      language: projectData.language || "javascript",
+      language: projectData.language || "html",
+      framework: projectData.framework || "none",
+      template: projectData.template || "blank",
       workspaceId: projectData.workspaceId,
       ownerUid: projectData.ownerUid,
+      visibility: projectData.visibility || "private",
+      initializeGit: projectData.initializeGit ?? true,
+      createReadme: projectData.createReadme ?? true,
+      createDefaultFiles: projectData.createDefaultFiles ?? true,
+      status: "active",
+      starred: false,
+      archived: false,
+      totalFiles: 0,
+      totalFolders: 0,
+      lastOpenedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
 
     const reference = await addDoc(projectsCollection(), payload);
-
     return createResponse(true, {
-      data: { id: reference.id, ...payload },
+      data: {
+        id: reference.id,
+        ...payload,
+      },
     });
   });
 }
@@ -513,6 +593,31 @@ export async function getUserProjects(uid) {
 
     return createResponse(true, { data: projects });
   });
+}
+
+/* ==========================================
+   NOTIFICATIONS
+   ------------------------------------------
+   layout.js expects a raw number back (it
+   does `typeof count !== "number"`), not the
+   {success,data,...} envelope used elsewhere
+   in this file — so this one intentionally
+   returns a plain integer.
+========================================== */
+
+export async function getUnreadNotificationCount(uid) {
+  try {
+    const q = query(
+      notificationsCollection(),
+      where("recipientUid", "==", uid),
+      where("read", "==", false)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.size;
+  } catch (error) {
+    console.error("[firestore] getUnreadNotificationCount failed:", error);
+    return 0;
+  }
 }
 
 /* ==========================================

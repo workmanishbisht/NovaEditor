@@ -193,6 +193,25 @@ export function onAuthStateChangedListener(callback) {
 }
 
 /* ==========================================
+   Auth Listener — compatibility alias
+   ------------------------------------------
+   layout.js (and other consumers) look for
+   `onAuthStateChange`, not
+   `onAuthStateChangedListener`. Both are kept:
+   this one is a thin wrapper around the same
+   underlying Firebase `onAuthStateChanged`
+   call so nothing about the original listener
+   is duplicated or diverges — it just gives
+   external code the name it expects, and
+   returns the unsubscribe function Firebase
+   hands back.
+========================================== */
+
+export function onAuthStateChange(callback) {
+  return onAuthStateChanged(auth, callback);
+}
+
+/* ==========================================
    Update Profile
 ========================================== */
 

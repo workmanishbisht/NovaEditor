@@ -1,38 +1,39 @@
-"use strict";
-
 /* ==========================================
-   IMPORTS
+   NOVA EDITOR — LAYOUT.JS
 ========================================== */
 
-import {
-    checkSession,
-    logout,
-} from "../firebase/auth.js";
-
-import {
-    getUser,
-    getUserWorkspaces,
-    updateUser,
-    createProject,
-} from "../firebase/firestore.js";
+import { showToast } from "../components/toast.js";
 
 /* ==========================================
    CONFIG
 ========================================== */
 
-const CONFIG = Object.freeze({
-    ROUTES: Object.freeze({
-        LOGIN: "../pages/login.html",
-        SETUP: "../pages/setup.html",
-        DASHBOARD: "../pages/dashboard.html",
-        EDITOR: "../pages/editor.html",
-    }),
-    COMPONENTS: Object.freeze({
-        SIDEBAR: "../components/sidebar.html",
-        HEADER: "../components/header.html",
-    }),
-    THEME_STORAGE_KEY: "novaeditor-theme",
-});
+const MODULE_URL = new URL(".", import.meta.url);
+const PROJECT_ROOT = new URL("../", MODULE_URL);
+
+const CONFIG = {
+    ROUTES: {
+        EDITOR: "editor.html",
+        LOGIN: "login.html",
+    },
+
+    PARTIALS: {
+        SIDEBAR: new URL("components/sidebar.html", PROJECT_ROOT).href,
+        HEADER: new URL("components/header.html", PROJECT_ROOT).href,
+        PROJECT_MODAL: new URL("components/project-modal.html", PROJECT_ROOT).href,
+    },
+
+    DEFAULT_AVATAR: new URL("assets/images/avatar/default.png", PROJECT_ROOT).href,
+
+    MOUNTS: {
+        SIDEBAR: "#sidebarMount",
+        HEADER: "#headerMount",
+        PROJECT_MODAL: "#projectModalMount",
+    },
+
+    THEME_STORAGE_KEY: "novaeditor:theme",
+    AUTH_STATE_TIMEOUT_MS: 4000,
+};
 
 /* ==========================================
    STATE
@@ -43,18 +44,72 @@ const STATE = {
     userData: null,
     workspaces: [],
     currentWorkspace: null,
+    theme: "light",
+    initialized: false,
     ready: false,
 };
 
+const registeredListeners = new Set();
+
 /* ==========================================
-   HELPERS
+   DEPENDENCIES
 ========================================== */
 
-function showToast(message, type = "info") {
-    if (typeof window.showToast === "function") {
-        window.showToast(message, type);
+const deps = {
+    auth: {},
+    firestore: {},
+};
+
+async function loadDependencies() {
+    try {
+        deps.auth = await import("../firebase/auth.js");
+    } catch (error) {
+        console.error("[NovaLayout] Failed to load firebase/auth.js:", error);
+        deps.auth = {};
+    }
+
+    try {
+        deps.firestore = await import("../firebase/firestore.js");
+    } catch (error) {
+        console.error("[NovaLayout] Failed to load firebase/firestore.js:", error);
+        deps.firestore = {};
     }
 }
+
+/* ==========================================
+   SAFE HELPERS
+========================================== */
+
+function notify(message, type = "info") {
+    if (typeof showToast === "function") {
+        showToast(message, type);
+    } else {
+        console.warn(`[NovaLayout] showToast unavailable — ${type}: ${message}`);
+    }
+}
+
+async function safeCall(fn, fnName, ...args) {
+    if (typeof fn !== "function") {
+        console.error(`[NovaLayout] "${fnName}" is not exported by the expected module.`);
+        return undefined;
+    }
+    try {
+        return await fn(...args);
+    } catch (error) {
+        console.error(`[NovaLayout] "${fnName}" threw an error:`, error);
+        return undefined;
+    }
+}
+
+function addDocumentListenerOnce(key, type, handler, options) {
+    if (registeredListeners.has(key)) return;
+    document.addEventListener(type, handler, options);
+    registeredListeners.add(key);
+}
+
+/* ==========================================
+   DOM HELPERS
+========================================== */
 
 function qs(selector, scope = document) {
     return scope.querySelector(selector);
@@ -64,449 +119,885 @@ function qsa(selector, scope = document) {
     return Array.from(scope.querySelectorAll(selector));
 }
 
+function debounce(fn, delay = 300) {
+    let timer = null;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
+
 /* ==========================================
-   COMPONENT LOADING
+   COMPONENT LOADER
 ========================================== */
 
-async function loadComponent(url, mountSelector) {
+async function loadPartial(url, mountSelector) {
     const mount = qs(mountSelector);
-
-    if (!mount) return null;
+    if (!mount) {
+        console.error(`[NovaLayout] Mount point "${mountSelector}" not found in the DOM.`);
+        return null;
+    }
 
     try {
-        const response = await fetch(url);
-
+        const response = await fetch(url, { cache: "no-cache" });
         if (!response.ok) {
-            throw new Error(`Failed to load ${url} (${response.status})`);
+            throw new Error(`HTTP ${response.status} loading ${url}`);
         }
-
-        mount.innerHTML = await response.text();
-
+        const html = await response.text();
+        mount.innerHTML = html;
         return mount;
     } catch (error) {
-        console.error(error);
-        mount.innerHTML = "";
+        console.error(`[NovaLayout] loadPartial failed for ${url}:`, error);
+        notify(`Unable to load a page component (${mountSelector}). Some features may be unavailable.`, "error");
         return null;
     }
 }
 
-async function loadLayoutComponents() {
-    await Promise.all([
-        loadComponent(CONFIG.COMPONENTS.SIDEBAR, "#sidebarMount"),
-        loadComponent(CONFIG.COMPONENTS.HEADER, "#headerMount"),
-    ]);
-}
-
 /* ==========================================
-   ACTIVE NAV HIGHLIGHT
+   SIDEBAR
 ========================================== */
 
-function highlightActiveNav() {
-    const page = document.body.dataset.page;
+async function initSidebar() {
+    try {
+        const mount = await loadPartial(CONFIG.PARTIALS.SIDEBAR, CONFIG.MOUNTS.SIDEBAR);
+        if (!mount) return;
 
+        highlightActiveSidebarItem();
+        attachSidebarInteractions(mount);
+        populateSidebarUser();
+    } catch (error) {
+        console.error("[NovaLayout] initSidebar error:", error);
+    }
+}
+
+function highlightActiveSidebarItem() {
+    const page = document.body.dataset.page;
     if (!page) return;
 
-    qsa(".nav-item[data-nav]").forEach((item) => {
-        item.classList.toggle("active", item.dataset.nav === page);
+    const sidebar = qs(CONFIG.MOUNTS.SIDEBAR);
+    if (!sidebar) return;
+
+    qsa("[data-nav-item]", sidebar).forEach((item) => {
+        const isActive = item.dataset.navItem === page;
+        item.classList.toggle("active", isActive);
+        item.setAttribute("aria-current", isActive ? "page" : "false");
     });
 }
 
-/* ==========================================
-   PROFILE (Sidebar only — single profile area)
-========================================== */
+function attachSidebarInteractions(sidebar) {
+    qsa("[data-nav-item]", sidebar).forEach((item) => {
+        item.classList.add("nav-item-interactive");
+    });
 
-function renderProfile() {
-    const authUser = STATE.currentUser;
-    const dbUser = STATE.userData || {};
-
-    const name = dbUser.displayName || authUser?.displayName || "there";
-    const username = dbUser.username ? `@${dbUser.username}` : "@no-username";
-    const photo = dbUser.photoURL || authUser?.photoURL || "../assets/images/avatar/default.png";
-
-    const sidebarName = qs("#sidebarUserName");
-    const sidebarUsername = qs("#sidebarUserUsername");
-    const sidebarAvatar = qs("#sidebarUserAvatar");
-
-    if (sidebarName) sidebarName.textContent = name;
-    if (sidebarUsername) sidebarUsername.textContent = username;
-
-    if (sidebarAvatar) {
-        sidebarAvatar.src = photo;
-        sidebarAvatar.onerror = () => {
-            sidebarAvatar.src = "../assets/images/avatar/default.png";
-        };
+    const logoutBtn = qs("[data-logout]", sidebar);
+    if (logoutBtn && logoutBtn.dataset.bound !== "true") {
+        logoutBtn.addEventListener("click", handleLogout);
+        logoutBtn.dataset.bound = "true";
     }
 }
 
-/* ==========================================
-   WORKSPACE SWITCHER
-========================================== */
+function populateSidebarUser() {
+    const sidebar = qs(CONFIG.MOUNTS.SIDEBAR);
+    if (!sidebar) return;
 
-async function loadWorkspaces() {
+    const nameEl = qs("[data-user-name]", sidebar);
+    const emailEl = qs("[data-user-email]", sidebar);
+    const avatarEl = qs("[data-user-avatar]", sidebar);
+
     if (!STATE.currentUser) return;
 
-    const response = await getUserWorkspaces(STATE.currentUser.uid);
+    if (nameEl) nameEl.textContent = STATE.userData?.displayName || STATE.currentUser.displayName || "User";
+    if (emailEl) emailEl.textContent = STATE.currentUser.email || "";
 
-    const list = qs("#workspaceSwitcherList");
-    const nameLabel = qs("#workspaceSwitcherName");
-
-    if (!response.success || !response.data || response.data.length === 0) {
-        STATE.workspaces = [];
-
-        if (list) {
-            list.innerHTML = `<p class="menu-empty">No workspaces yet.</p>`;
-        }
-
-        if (nameLabel) nameLabel.textContent = "Workspace";
-
-        return;
+    if (avatarEl) {
+        avatarEl.src = STATE.userData?.photoURL || STATE.currentUser.photoURL || CONFIG.DEFAULT_AVATAR;
     }
-
-    STATE.workspaces = response.data;
-
-    const currentId = STATE.userData?.currentWorkspaceId;
-
-    STATE.currentWorkspace =
-        STATE.workspaces.find((workspace) => workspace.id === currentId) ||
-        STATE.workspaces[0];
-
-    if (nameLabel) {
-        nameLabel.textContent = STATE.currentWorkspace?.workspaceName || "Workspace";
-    }
-
-    if (list) {
-        list.innerHTML = STATE.workspaces
-            .map((workspace) => {
-                const active = workspace.id === STATE.currentWorkspace?.id;
-
-                return `
-          <button
-            type="button"
-            class="workspace-switcher-item${active ? " active" : ""}"
-            data-workspace-id="${workspace.id}"
-          >
-            <i class="ri-stack-line"></i>
-            <span>${workspace.workspaceName}</span>
-          </button>
-        `;
-            })
-            .join("");
-
-        qsa("[data-workspace-id]", list).forEach((button) => {
-            button.addEventListener("click", () => switchWorkspace(button.dataset.workspaceId));
-        });
-    }
-}
-
-async function switchWorkspace(workspaceId) {
-    if (!STATE.currentUser || workspaceId === STATE.currentWorkspace?.id) {
-        closeAllMenus();
-        return;
-    }
-
-    const response = await updateUser(STATE.currentUser.uid, {
-        currentWorkspaceId: workspaceId,
-    });
-
-    if (!response.success) {
-        showToast(response.error || "Unable to switch workspace.", "error");
-        return;
-    }
-
-    STATE.userData = { ...STATE.userData, currentWorkspaceId: workspaceId };
-
-    showToast("Workspace switched.", "success");
-
-    closeAllMenus();
-
-    await loadWorkspaces();
 }
 
 /* ==========================================
-   DROPDOWNS
-   Generic open/close-on-outside-click handling
-   for every trigger/menu pair in the layout.
+   HEADER
 ========================================== */
 
-const DROPDOWNS = [
-    { trigger: "#sidebarUserTrigger", menu: "#sidebarUserMenu" },
-    { trigger: "#notificationBtn", menu: "#notificationMenu" },
-    { trigger: "#workspaceSwitcherTrigger", menu: "#workspaceSwitcherMenu" },
-];
+async function initHeader() {
+    try {
+        const mount = await loadPartial(CONFIG.PARTIALS.HEADER, CONFIG.MOUNTS.HEADER);
+        if (!mount) return;
 
-function closeAllMenus() {
-    DROPDOWNS.forEach(({ trigger, menu }) => {
-        const menuEl = qs(menu);
-        const triggerEl = qs(trigger);
-
-        if (menuEl) menuEl.classList.remove("open");
-        if (triggerEl) triggerEl.setAttribute("aria-expanded", "false");
-    });
+        attachHeaderSearch(mount);
+        attachThemeToggle(mount);
+        attachNotifications(mount);
+        attachWorkspaceSwitcher(mount);
+        await refreshNotificationBadge();
+    } catch (error) {
+        console.error("[NovaLayout] initHeader error:", error);
+    }
 }
 
-function attachDropdowns() {
-    DROPDOWNS.forEach(({ trigger, menu }) => {
-        const triggerEl = qs(trigger);
-        const menuEl = qs(menu);
+function attachHeaderSearch(header) {
+    const searchInput = qs("#globalSearchInput", header);
+    if (!searchInput || searchInput.dataset.novaBound === "true") return;
 
-        if (!triggerEl || !menuEl) return;
+    const runSearch = debounce((value) => {
+        document.dispatchEvent(
+            new CustomEvent("novaeditor:search", { detail: { query: value.trim() } })
+        );
+    }, 250);
 
-        triggerEl.addEventListener("click", (event) => {
+    searchInput.addEventListener("input", (event) => {
+        runSearch(event.target.value);
+    });
+
+    searchInput.dataset.novaBound = "true";
+}
+
+/* ==========================================
+   THEME TOGGLE
+========================================== */
+
+function attachThemeToggle(header) {
+    const toggleBtn = qs("[data-theme-toggle]", header);
+    if (!toggleBtn) return;
+
+    const savedTheme = localStorage.getItem(CONFIG.THEME_STORAGE_KEY) || "light";
+    applyTheme(savedTheme);
+
+    if (toggleBtn.dataset.bound !== "true") {
+        toggleBtn.addEventListener("click", () => {
+            const nextTheme = STATE.theme === "light" ? "dark" : "light";
+            applyTheme(nextTheme);
+            localStorage.setItem(CONFIG.THEME_STORAGE_KEY, nextTheme);
+        });
+        toggleBtn.dataset.bound = "true";
+    }
+}
+
+function applyTheme(theme) {
+    STATE.theme = theme;
+    document.documentElement.setAttribute("data-theme", theme);
+
+    const toggleBtn = qs("[data-theme-toggle]");
+    if (!toggleBtn) return;
+    toggleBtn.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+    toggleBtn.classList.toggle("is-dark", theme === "dark");
+}
+
+/* ==========================================
+   NOTIFICATIONS
+========================================== */
+
+function attachNotifications(header) {
+    const badge = qs("[data-notification-badge]", header);
+    const bell = qs("[data-notification-trigger]", header);
+    const panel = qs("[data-notification-panel]", header);
+
+    if (bell && panel && bell.dataset.bound !== "true") {
+        bell.addEventListener("click", (event) => {
             event.stopPropagation();
+            const isOpen = panel.classList.toggle("open");
+            bell.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        });
+        bell.dataset.bound = "true";
 
-            const isOpen = menuEl.classList.contains("open");
-
-            closeAllMenus();
-
-            if (!isOpen) {
-                menuEl.classList.add("open");
-                triggerEl.setAttribute("aria-expanded", "true");
+        addDocumentListenerOnce("notification-outside-click", "click", (event) => {
+            const currentPanel = qs("[data-notification-panel]");
+            const currentBell = qs("[data-notification-trigger]");
+            if (currentPanel && !currentPanel.contains(event.target) && !currentBell?.contains(event.target)) {
+                currentPanel.classList.remove("open");
+                currentBell?.setAttribute("aria-expanded", "false");
             }
         });
+    }
+
+    if (!badge) return;
+}
+
+async function refreshNotificationBadge() {
+    const badge = qs("[data-notification-badge]");
+    if (!badge || !STATE.currentUser) return;
+
+    const count = await safeCall(
+        deps.firestore.getUnreadNotificationCount,
+        "getUnreadNotificationCount",
+        STATE.currentUser.uid
+    );
+
+    if (typeof count !== "number") {
+        badge.hidden = true;
+        return;
+    }
+
+    if (count > 0) {
+        badge.textContent = count > 99 ? "99+" : String(count);
+        badge.hidden = false;
+    } else {
+        badge.hidden = true;
+    }
+}
+
+/* ==========================================
+   USER DROPDOWN
+========================================== */
+
+function attachUserDropdown(scope = document) {
+    const trigger = qs("[data-user-dropdown-trigger]", scope);
+    const dropdown = qs("[data-user-dropdown]", scope);
+    if (!trigger || !dropdown) return;
+
+    if (trigger.dataset.bound !== "true") {
+        trigger.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const isOpen = dropdown.classList.toggle("open");
+            trigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        });
+        trigger.dataset.bound = "true";
+    }
+
+    addDocumentListenerOnce("user-dropdown-outside-click", "click", (event) => {
+        const currentDropdown = qs("[data-user-dropdown]");
+        const currentTrigger = qs("[data-user-dropdown-trigger]");
+        if (currentDropdown && !currentDropdown.contains(event.target) && !currentTrigger?.contains(event.target)) {
+            currentDropdown.classList.remove("open");
+            currentTrigger?.setAttribute("aria-expanded", "false");
+        }
     });
 
-    document.addEventListener("click", closeAllMenus);
-
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") closeAllMenus();
+    addDocumentListenerOnce("user-dropdown-escape", "keydown", (event) => {
+        if (event.key === "Escape") {
+            const currentDropdown = qs("[data-user-dropdown]");
+            const currentTrigger = qs("[data-user-dropdown-trigger]");
+            if (currentDropdown) {
+                currentDropdown.classList.remove("open");
+                currentTrigger?.setAttribute("aria-expanded", "false");
+            }
+        }
     });
+
+    const logoutButton = qs("[data-logout]", dropdown);
+    if (logoutButton && logoutButton.dataset.bound !== "true") {
+        logoutButton.addEventListener("click", handleLogout);
+        logoutButton.dataset.bound = "true";
+    }
 }
 
 /* ==========================================
    LOGOUT
-   Sidebar is the only profile area, so it's
-   the only place logout can be triggered from.
 ========================================== */
 
-function attachLogout() {
-    const button = qs("#sidebarLogoutBtn");
-
-    if (!button) return;
-
-    button.addEventListener("click", async () => {
-        const response = await logout();
-
-        if (!response.success) {
-            showToast(response.error || "Unable to log out.", "error");
-            return;
-        }
-
-        window.location.href = CONFIG.ROUTES.LOGIN;
-    });
-}
-
-/* ==========================================
-   THEME
-========================================== */
-
-function applyTheme(theme) {
-    document.documentElement.setAttribute("data-theme", theme);
-
-    const icon = qs("#themeToggleIcon");
-
-    if (icon) {
-        icon.className = theme === "dark" ? "ri-moon-line" : "ri-sun-line";
-    }
-}
-
-function initTheme() {
-    const saved = localStorage.getItem(CONFIG.THEME_STORAGE_KEY);
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-    applyTheme(saved || (prefersDark ? "dark" : "light"));
-}
-
-function attachThemeToggle() {
-    const button = qs("#themeToggleBtn");
-
-    if (!button) return;
-
-    button.addEventListener("click", () => {
-        const current = document.documentElement.getAttribute("data-theme") || "light";
-        const next = current === "dark" ? "light" : "dark";
-
-        applyTheme(next);
-        localStorage.setItem(CONFIG.THEME_STORAGE_KEY, next);
-    });
-}
-
-/* ==========================================
-   RESPONSIVE SIDEBAR
-========================================== */
-
-function attachSidebarToggle() {
-    const sidebar = qs("#appSidebar");
-    const overlay = qs("#sidebarOverlay");
-    const openBtn = qs("#sidebarToggleBtn");
-    const closeBtn = qs("#sidebarCloseBtn");
-
-    if (!sidebar) return;
-
-    const open = () => {
-        sidebar.classList.add("open");
-        overlay?.classList.add("open");
-        openBtn?.setAttribute("aria-expanded", "true");
-    };
-
-    const close = () => {
-        sidebar.classList.remove("open");
-        overlay?.classList.remove("open");
-        openBtn?.setAttribute("aria-expanded", "false");
-    };
-
-    openBtn?.addEventListener("click", open);
-    closeBtn?.addEventListener("click", close);
-    overlay?.addEventListener("click", close);
-}
-
-/* ==========================================
-   SEARCH SHORTCUT (Ctrl / Cmd + K)
-========================================== */
-
-function attachSearchShortcut() {
-    const input = qs("#globalSearchInput");
-
-    if (!input) return;
-
-    document.addEventListener("keydown", (event) => {
-        const isShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k";
-
-        if (isShortcut) {
-            event.preventDefault();
-            input.focus();
-        }
-    });
-}
-
-/* ==========================================
-   NEW PROJECT (shared across header + pages)
-   Any element with [data-new-project] triggers
-   this flow, wherever it lives in the page.
-========================================== */
-
-function attachNewProjectHandlers() {
-    qsa("[data-new-project]").forEach((button) => {
-        button.addEventListener("click", handleNewProject);
-    });
-
-    qsa("[data-import-project]").forEach((button) => {
-        button.addEventListener("click", () => {
-            showToast("Importing projects is coming soon.", "info");
-        });
-    });
-}
-
-async function handleNewProject() {
-    if (!STATE.currentUser) return;
-
-    const name = window.prompt("Name your new project:", "Untitled Project");
-
-    if (!name || !name.trim()) return;
-
-    showToast("Creating project...", "loading");
-
-    const response = await createProject({
-        name: name.trim(),
-        ownerUid: STATE.currentUser.uid,
-        workspaceId: STATE.currentWorkspace?.id || STATE.userData?.currentWorkspaceId || "",
-        language: "javascript",
-    });
-
-    if (!response.success) {
-        showToast(response.error || "Unable to create project.", "error");
+async function handleLogout() {
+    if (typeof deps.auth.logout !== "function") {
+        notify("Logout is currently unavailable.", "error");
         return;
     }
 
-    showToast("Project created.", "success");
-
-    document.dispatchEvent(new CustomEvent("novaeditor:project-created", {
-        detail: response.data,
-    }));
+    await safeCall(deps.auth.logout, "logout");
+    window.location.href = CONFIG.ROUTES.LOGIN;
 }
 
 /* ==========================================
-   AUTH BOOTSTRAP
+   SESSION / USER
 ========================================== */
 
-async function bootstrapUser() {
-    const user = await checkSession();
+let authUnsubscribe = null;
 
-    if (!user) {
-        window.location.href = CONFIG.ROUTES.LOGIN;
-        return false;
+function resolveInitialAuthState() {
+    return new Promise((resolve) => {
+        if (typeof deps.auth.onAuthStateChange !== "function") {
+            STATE.currentUser =
+                typeof deps.auth.getCurrentUser === "function" ? deps.auth.getCurrentUser() : null;
+            resolve();
+            return;
+        }
+
+        let settled = false;
+        const settleOnce = (user) => {
+            if (settled) return;
+            settled = true;
+            STATE.currentUser = user;
+            resolve();
+        };
+
+        try {
+            const unsubscribe = deps.auth.onAuthStateChange((user) => {
+                if (!settled) {
+                    settleOnce(user);
+                    return;
+                }
+                STATE.currentUser = user;
+                refresh();
+            });
+            authUnsubscribe = typeof unsubscribe === "function" ? unsubscribe : authUnsubscribe;
+        } catch (error) {
+            console.error("[NovaLayout] onAuthStateChange failed to attach:", error);
+            settleOnce(typeof deps.auth.getCurrentUser === "function" ? deps.auth.getCurrentUser() : null);
+        }
+
+        setTimeout(() => {
+            if (!settled) {
+                console.warn(
+                    "[NovaLayout] onAuthStateChange did not respond within " +
+                    `${CONFIG.AUTH_STATE_TIMEOUT_MS}ms; falling back to getCurrentUser().`
+                );
+                settleOnce(typeof deps.auth.getCurrentUser === "function" ? deps.auth.getCurrentUser() : null);
+            }
+        }, CONFIG.AUTH_STATE_TIMEOUT_MS);
+    });
+}
+
+async function loadUserData() {
+    if (!STATE.currentUser) {
+        STATE.userData = null;
+        return null;
     }
 
-    STATE.currentUser = user;
+    const response = await safeCall(deps.firestore.getUserData, "getUserData", STATE.currentUser.uid);
+    STATE.userData = response && response.success && response.exists ? response.data : null;
+    return STATE.userData;
+}
 
-    const response = await getUser(user.uid);
+/* ==========================================
+   WORKSPACES
+========================================== */
 
-    if (!response.success) {
-        showToast(response.error || "Unable to load your profile.", "error");
-        return false;
+async function loadWorkspaces() {
+    if (!STATE.currentUser) {
+        STATE.workspaces = [];
+        STATE.currentWorkspace = null;
+        return STATE.workspaces;
     }
 
-    STATE.userData = response.data || {};
+    const workspacesResponse = await safeCall(
+        deps.firestore.getUserWorkspaces,
+        "getUserWorkspaces",
+        STATE.currentUser.uid
+    );
+    STATE.workspaces =
+        workspacesResponse && workspacesResponse.success && Array.isArray(workspacesResponse.data)
+            ? workspacesResponse.data
+            : [];
 
-    if (!STATE.userData.setupCompleted) {
-        window.location.href = CONFIG.ROUTES.SETUP;
-        return false;
+    const savedWorkspaceId = await safeCall(deps.firestore.getCurrentWorkspaceId, "getCurrentWorkspaceId");
+
+    STATE.currentWorkspace =
+        STATE.workspaces.find((ws) => ws.id === savedWorkspaceId) || STATE.workspaces[0] || null;
+
+    return STATE.workspaces;
+}
+
+/* ==========================================
+   HEADER WORKSPACE SWITCHER
+========================================== */
+
+function attachWorkspaceSwitcher(header) {
+    const trigger = qs("[data-workspace-switcher-trigger]", header || document);
+    const menu = qs("[data-workspace-switcher-menu]", header || document);
+
+    if (trigger && menu && trigger.dataset.bound !== "true") {
+        trigger.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const isOpen = menu.classList.toggle("open");
+            trigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        });
+        trigger.dataset.bound = "true";
+
+        addDocumentListenerOnce("workspace-switcher-outside-click", "click", (event) => {
+            const currentMenu = qs("[data-workspace-switcher-menu]");
+            const currentTrigger = qs("[data-workspace-switcher-trigger]");
+            if (
+                currentMenu &&
+                !currentMenu.contains(event.target) &&
+                !currentTrigger?.contains(event.target)
+            ) {
+                currentMenu.classList.remove("open");
+                currentTrigger?.setAttribute("aria-expanded", "false");
+            }
+        });
+
+        addDocumentListenerOnce("workspace-switcher-escape", "keydown", (event) => {
+            if (event.key === "Escape") {
+                const currentMenu = qs("[data-workspace-switcher-menu]");
+                const currentTrigger = qs("[data-workspace-switcher-trigger]");
+                if (currentMenu) {
+                    currentMenu.classList.remove("open");
+                    currentTrigger?.setAttribute("aria-expanded", "false");
+                }
+            }
+        });
     }
 
+    populateWorkspaceSwitcherMenu(header);
+}
+
+function populateWorkspaceSwitcherMenu(header) {
+    const scope = header || document;
+    const nameLabel = qs("[data-workspace-switcher-name]", scope);
+    const list = qs("[data-workspace-switcher-list]", scope);
+
+    if (nameLabel) {
+        nameLabel.textContent =
+            STATE.currentWorkspace?.workspaceName || STATE.currentWorkspace?.name || "Workspace";
+    }
+
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    if (!STATE.workspaces || STATE.workspaces.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "menu-empty";
+        empty.textContent = "No workspaces available";
+        list.appendChild(empty);
+        return;
+    }
+
+    STATE.workspaces.forEach((workspace) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "workspace-switcher-item";
+        item.dataset.workspaceId = workspace.id;
+        item.textContent = workspace.workspaceName || workspace.name || "Untitled Workspace";
+        if (STATE.currentWorkspace?.id === workspace.id) {
+            item.classList.add("active");
+        }
+        list.appendChild(item);
+    });
+
+    if (list.dataset.delegateBound !== "true") {
+        list.addEventListener("click", handleWorkspaceSwitcherSelect);
+        list.dataset.delegateBound = "true";
+    }
+}
+
+async function handleWorkspaceSwitcherSelect(event) {
+    const item = event.target.closest("[data-workspace-id]");
+    if (!item) return;
+
+    const selectedId = item.dataset.workspaceId;
+    const selectedWorkspace = STATE.workspaces.find((ws) => ws.id === selectedId) || null;
+    STATE.currentWorkspace = selectedWorkspace;
+
+    await safeCall(deps.firestore.setCurrentWorkspaceId, "setCurrentWorkspaceId", selectedId);
+
+    const menu = qs("[data-workspace-switcher-menu]");
+    const trigger = qs("[data-workspace-switcher-trigger]");
+    if (menu) {
+        menu.classList.remove("open");
+        trigger?.setAttribute("aria-expanded", "false");
+    }
+
+    populateWorkspaceSwitcherMenu(qs(CONFIG.MOUNTS.HEADER));
+
+    document.dispatchEvent(
+        new CustomEvent("novaeditor:workspace-changed", { detail: selectedWorkspace })
+    );
+
+    loadProjectWorkspaceOptions();
+}
+
+/* ==========================================
+   PROJECT MODAL
+========================================== */
+
+async function initProjectModal() {
+    try {
+        const mount = await loadPartial(CONFIG.PARTIALS.PROJECT_MODAL, CONFIG.MOUNTS.PROJECT_MODAL);
+        if (!mount) return;
+
+        attachProjectModalEvents();
+        attachProjectFormEnhancements();
+    } catch (error) {
+        console.error("[NovaLayout] initProjectModal error:", error);
+    }
+}
+
+function getProjectModal() {
+    return qs("#projectModal");
+}
+
+function openProjectModal() {
+    const modal = getProjectModal();
+    if (!modal) {
+        notify("Project modal not found on this page.", "error");
+        return;
+    }
+
+    loadProjectWorkspaceOptions();
+    modal.hidden = false;
+
+    requestAnimationFrame(() => {
+        modal.classList.add("show");
+        modal.classList.remove("hide");
+    });
+
+    document.body.style.overflow = "hidden";
+    qs("#projectName", modal)?.focus();
+}
+
+function closeProjectModal() {
+    const modal = getProjectModal();
+    if (!modal) return;
+
+    modal.classList.remove("show");
+    modal.classList.add("hide");
+
+    setTimeout(() => {
+        modal.hidden = true;
+        modal.classList.remove("hide");
+    }, 200);
+
+    document.body.style.overflow = "";
+}
+
+function attachProjectModalEvents() {
+    const modal = getProjectModal();
+    if (!modal) return;
+
+    qs("#closeProjectModal", modal)?.addEventListener("click", closeProjectModal);
+    qs("#cancelProjectBtn", modal)?.addEventListener("click", closeProjectModal);
+    qs(".project-modal-overlay", modal)?.addEventListener("click", closeProjectModal);
+
+    addDocumentListenerOnce("project-modal-escape", "keydown", (event) => {
+        const currentModal = getProjectModal();
+        if (event.key === "Escape" && currentModal?.classList.contains("show")) {
+            closeProjectModal();
+        }
+    });
+}
+
+/* ==========================================
+   PROJECT WORKSPACES
+========================================== */
+
+function buildWorkspaceOptions(select) {
+    select.innerHTML = "";
+
+    if (!STATE.workspaces || STATE.workspaces.length === 0) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No Workspace Available";
+        select.appendChild(option);
+        return;
+    }
+
+    STATE.workspaces.forEach((workspace) => {
+        const option = document.createElement("option");
+        option.value = workspace.id;
+        option.textContent = workspace.workspaceName || workspace.name || "Untitled Workspace";
+        option.selected = workspace.id === STATE.currentWorkspace?.id;
+        select.appendChild(option);
+    });
+}
+
+function loadProjectWorkspaceOptions() {
+    const modal = getProjectModal();
+    if (!modal) return;
+
+    const select = qs("#projectWorkspace", modal);
+    if (!select) return;
+
+    buildWorkspaceOptions(select);
+}
+
+/* ==========================================
+   PROJECT FORM ENHANCEMENTS
+========================================== */
+
+function attachProjectFormEnhancements() {
+    const modal = getProjectModal();
+    if (!modal) return;
+
+    const form = qs("#projectForm", modal);
+    if (!form) return;
+
+    const language = qs("#projectLanguage", form);
+    const framework = qs("#projectFramework", form);
+    const template = qs("#projectTemplate", form);
+    const projectName = qs("#projectName", form);
+    const description = qs("#projectDescription", form);
+
+    function syncFramework() {
+        if (!language || !framework) return;
+
+        switch (language.value) {
+            case "html":
+                framework.innerHTML = `
+                    <option value="none">None</option>
+                    <option value="bootstrap">Bootstrap</option>
+                    <option value="tailwind">Tailwind CSS</option>
+                `;
+                break;
+
+            case "react":
+                framework.innerHTML = `
+                    <option value="vite">React + Vite</option>
+                    <option value="next">Next.js</option>
+                `;
+                break;
+
+            case "vue":
+                framework.innerHTML = `
+                    <option value="vite">Vue + Vite</option>
+                `;
+                break;
+
+            case "node":
+                framework.innerHTML = `
+                    <option value="express">Express</option>
+                `;
+                break;
+
+            default:
+                framework.innerHTML = `
+                    <option value="none">None</option>
+                `;
+        }
+    }
+
+    if (language && language.dataset.bound !== "true") {
+        language.addEventListener("change", syncFramework);
+        language.dataset.bound = "true";
+    }
+    syncFramework();
+
+    if (projectName && projectName.dataset.bound !== "true") {
+        projectName.addEventListener("input", () => {
+            projectName.value = projectName.value.replace(/\s+/g, " ").trimStart();
+        });
+        projectName.dataset.bound = "true";
+    }
+
+    if (description && description.dataset.bound !== "true") {
+        description.addEventListener("input", () => {
+            if (description.value.length > 200) {
+                description.value = description.value.slice(0, 200);
+            }
+        });
+        description.dataset.bound = "true";
+    }
+
+    if (template && template.dataset.bound !== "true") {
+        template.addEventListener("change", () => {
+            if (template.value === "portfolio" && language?.value === "html") {
+                framework.value = "bootstrap";
+            }
+        });
+        template.dataset.bound = "true";
+    }
+
+    if (form.dataset.submitBound !== "true") {
+        form.addEventListener("submit", handleProjectFormSubmit);
+        form.dataset.submitBound = "true";
+    }
+}
+
+/* ==========================================
+   PROJECT HELPERS
+========================================== */
+
+function getProjectPayload(form) {
+    return {
+        name: qs("#projectName", form)?.value.trim() || "",
+        description: qs("#projectDescription", form)?.value.trim() || "",
+        language: qs("#projectLanguage", form)?.value || "html",
+        framework: qs("#projectFramework", form)?.value || "none",
+        template: qs("#projectTemplate", form)?.value || "blank",
+        workspaceId:
+            qs("#projectWorkspace", form)?.value ||
+            STATE.currentWorkspace?.id ||
+            STATE.userData?.currentWorkspaceId ||
+            "",
+        ownerUid: STATE.currentUser?.uid,
+        visibility: form.querySelector('input[name="visibility"]:checked')?.value || "private",
+        createReadme: qs("#createReadme", form)?.checked ?? true,
+        initializeGit: qs("#initializeGit", form)?.checked ?? true,
+        createDefaultFiles: qs("#createDefaultFiles", form)?.checked ?? true,
+    };
+}
+
+function validateProject(project) {
+    if (!project.name) {
+        notify("Project name is required.", "warning");
+        return false;
+    }
+    if (project.name.length < 3) {
+        notify("Project name must be at least 3 characters.", "warning");
+        return false;
+    }
+    if (project.name.length > 50) {
+        notify("Project name cannot exceed 50 characters.", "warning");
+        return false;
+    }
     return true;
+}
+
+function resetProjectForm() {
+    const modal = getProjectModal();
+    if (!modal) return;
+
+    const form = qs("#projectForm", modal);
+    if (!form) return;
+
+    form.reset();
+    loadProjectWorkspaceOptions();
+}
+
+/* ==========================================
+   PROJECT FORM SUBMIT
+========================================== */
+
+async function handleProjectFormSubmit(event) {
+    event.preventDefault();
+
+    if (!STATE.currentUser) {
+        notify("You must be signed in to create a project.", "error");
+        return;
+    }
+
+    if (typeof deps.firestore.createProject !== "function") {
+        console.error('[NovaLayout] "createProject" is not exported by firestore.js.');
+        notify("Project creation is currently unavailable.", "error");
+        return;
+    }
+
+    const form = event.currentTarget;
+    const payload = getProjectPayload(form);
+
+    if (!validateProject(payload)) return;
+
+    const createButton = qs("#createProjectBtn", form);
+    createButton?.classList.add("loading");
+    createButton?.setAttribute("disabled", "true");
+
+    try {
+        notify("Creating project...", "loading");
+
+        const response = await safeCall(deps.firestore.createProject, "createProject", payload);
+
+        if (!response || !response.success) {
+            notify(response?.error || "Unable to create project.", "error");
+            return;
+        }
+
+        notify("Project created successfully.", "success");
+        closeProjectModal();
+        resetProjectForm();
+
+        document.dispatchEvent(
+            new CustomEvent("novaeditor:project-created", { detail: response.data })
+        );
+
+        window.location.href = `${CONFIG.ROUTES.EDITOR}?project=${encodeURIComponent(response.data.id)}`;
+    } finally {
+        createButton?.classList.remove("loading");
+        createButton?.removeAttribute("disabled");
+    }
+}
+
+/* ==========================================
+   GLOBAL LISTENERS
+========================================== */
+
+function attachGlobalListenersOnce() {
+    addDocumentListenerOnce("global-new-project-delegate", "click", (event) => {
+        const trigger = event.target.closest("[data-new-project]");
+        if (!trigger) return;
+        event.preventDefault();
+        event.stopPropagation();
+        openProjectModal();
+    });
 }
 
 /* ==========================================
    INITIALIZATION
 ========================================== */
 
-async function initLayout() {
+async function init() {
+    if (STATE.initialized) return getState();
+    STATE.initialized = true;
+
+    await loadDependencies();
+
     try {
-        await loadLayoutComponents();
+        await resolveInitialAuthState();
+        await loadUserData();
+    } catch (error) {
+        console.error("[NovaLayout] Resolving auth state failed during init:", error);
+    }
 
-        highlightActiveNav();
-        initTheme();
+    if (!STATE.currentUser) {
+        document.dispatchEvent(new CustomEvent("novaeditor:unauthenticated"));
+    }
 
-        attachDropdowns();
-        attachLogout();
-        attachThemeToggle();
-        attachSidebarToggle();
-        attachSearchShortcut();
-        attachNewProjectHandlers();
+    try {
+        await loadWorkspaces();
+    } catch (error) {
+        console.error("[NovaLayout] loadWorkspaces failed during init:", error);
+    }
 
-        const ok = await bootstrapUser();
+    await Promise.allSettled([initSidebar(), initHeader(), initProjectModal()]);
 
-        if (!ok) return;
+    try {
+        attachUserDropdown(document);
+    } catch (error) {
+        console.error("[NovaLayout] attachUserDropdown failed during init:", error);
+    }
 
-        renderProfile();
+    attachGlobalListenersOnce();
+
+    STATE.ready = true;
+    document.dispatchEvent(new CustomEvent("novaeditor:layout-ready", { detail: getState() }));
+
+    return getState();
+}
+
+async function refresh() {
+    try {
+        await loadUserData();
         await loadWorkspaces();
 
-        STATE.ready = true;
-
-        document.dispatchEvent(new CustomEvent("novaeditor:layout-ready", {
-            detail: {
-                user: STATE.currentUser,
-                userData: STATE.userData,
-                workspace: STATE.currentWorkspace,
-            },
-        }));
-
+        populateSidebarUser();
+        populateWorkspaceSwitcherMenu(qs(CONFIG.MOUNTS.HEADER));
+        await refreshNotificationBadge();
+        loadProjectWorkspaceOptions();
     } catch (error) {
-        console.error(error);
-        showToast("Something went wrong loading the app.", "error");
+        console.error("[NovaLayout] refresh error:", error);
     }
+
+    return getState();
 }
+
+function getState() {
+    return {
+        currentUser: STATE.currentUser,
+        userData: STATE.userData,
+        workspaces: STATE.workspaces,
+        currentWorkspace: STATE.currentWorkspace,
+        theme: STATE.theme,
+    };
+}
+
+function isReady() {
+    return STATE.ready;
+}
+
+/* ==========================================
+   BOOTSTRAP
+========================================== */
+
+document.addEventListener("DOMContentLoaded", () => {
+    init().catch((error) => {
+        console.error("[NovaLayout] Unhandled error during init():", error);
+    });
+});
 
 /* ==========================================
    PUBLIC API
 ========================================== */
 
 window.NovaLayout = {
-    getState: () => STATE,
-    isReady: () => STATE.ready,
+    init,
+    refresh,
+    getState,
+    isReady,
 };
 
-/* ==========================================
-   BOOTSTRAP
-========================================== */
-
-initLayout();
+export { init, refresh, getState, isReady };

@@ -1,0 +1,826 @@
+/* ==========================================
+   PROJECT MODAL
+========================================== */
+
+.project-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s ease;
+}
+
+.project-modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.project-modal[hidden] {
+    display: none;
+}
+
+/* ==========================================
+   OVERLAY
+========================================== */
+
+.project-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* ==========================================
+   CONTAINER
+========================================== */
+
+.project-modal-container {
+    position: relative;
+    width: 100%;
+    max-width: 880px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #fff;
+    border-radius: 24px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow:
+        0 30px 80px rgba(15, 23, 42, 0.18),
+        0 10px 30px rgba(15, 23, 42, 0.08);
+    transform: translateY(25px) scale(0.96);
+    transition: transform 0.35s ease, opacity 0.35s ease;
+    opacity: 0;
+}
+
+.project-modal.show .project-modal-container {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+
+/* ==========================================
+   HEADER
+========================================== */
+
+.project-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    padding: 32px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #fff;
+}
+
+.project-header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.project-header-icon {
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    flex-shrink: 0;
+}
+
+.project-header-icon i {
+    font-size: 34px;
+    color: #fff;
+}
+
+.project-header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.project-badge {
+    width: max-content;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.project-header-content h2 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.project-header-content p {
+    margin: 0;
+    max-width: 520px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 15px;
+}
+
+/* ==========================================
+   CLOSE BUTTON
+========================================== */
+
+.project-close-btn {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    cursor: pointer;
+    transition: 0.25s ease;
+}
+
+.project-close-btn i {
+    font-size: 22px;
+}
+
+.project-close-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: rotate(90deg);
+}
+
+/* ==========================================
+   BODY
+========================================== */
+
+.project-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+    background: #f8fafc;
+}
+
+.project-modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.project-modal-body::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 999px;
+}
+
+/* ==========================================
+   FORM
+========================================== */
+
+#projectForm {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+/* ==========================================
+   SECTION CARD
+========================================== */
+
+.project-card {
+    padding: 26px;
+    border-radius: 20px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.project-section+.project-section {
+    margin-top: 0;
+}
+
+/* ==========================================
+   SECTION HEADER
+========================================== */
+
+.section-heading {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 26px;
+}
+
+.section-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: #eff6ff;
+    color: #2563eb;
+    flex-shrink: 0;
+}
+
+.section-icon i {
+    font-size: 22px;
+}
+
+.section-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.section-title h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.section-title p {
+    margin: 0;
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.6;
+}
+
+/* ==========================================
+   GRID
+========================================== */
+
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+
+/* ==========================================
+   FORM GROUP
+========================================== */
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.optional {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ==========================================
+   INPUTS
+========================================== */
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    border: 1px solid #dbe3ef;
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px 18px;
+    font-size: 15px;
+    color: #0f172a;
+    font-family: inherit;
+    outline: none;
+    transition: 0.25s ease;
+}
+
+.form-group input {
+    height: 56px;
+}
+
+/* ==========================================
+   PLACEHOLDER
+========================================== */
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #94a3b8;
+}
+
+/* ==========================================
+   TEXTAREA
+========================================== */
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 140px;
+    line-height: 1.8;
+}
+
+/* ==========================================
+   SELECT
+========================================== */
+
+.form-group select {
+    appearance: none;
+    cursor: pointer;
+    height: 56px;
+    padding-right: 48px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 8 9 11 12 8'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 18px center;
+    background-size: 18px;
+}
+
+/* ==========================================
+   HOVER
+========================================== */
+
+.form-group input:hover,
+.form-group textarea:hover,
+.form-group select:hover {
+    border-color: #94a3b8;
+}
+
+/* ==========================================
+   FOCUS
+========================================== */
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    border-color: #2563eb;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+}
+
+/* ==========================================
+   DISABLED
+========================================== */
+
+.form-group input:disabled,
+.form-group textarea:disabled,
+.form-group select:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* ==========================================
+   HELPER
+========================================== */
+
+.form-helper {
+    margin-top: 2px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #64748b;
+}
+
+/* ==========================================
+   VALIDATION
+========================================== */
+
+.form-group.error input,
+.form-group.error textarea,
+.form-group.error select {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08);
+}
+
+.form-error {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #ef4444;
+    font-weight: 500;
+}
+
+/* ==========================================
+   CHARACTER COUNTER
+========================================== */
+
+.char-counter {
+    text-align: right;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* ==========================================
+   VISIBILITY
+========================================== */
+
+.visibility-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.visibility-card {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 22px;
+    border: 2px solid #e2e8f0;
+    border-radius: 18px;
+    background: #fff;
+    cursor: pointer;
+    transition: 0.30s ease;
+    overflow: hidden;
+}
+
+.visibility-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(37, 99, 235, 0));
+    opacity: 0;
+    transition: 0.3s ease;
+}
+
+.visibility-card:hover {
+    border-color: #2563eb;
+    transform: translateY(-4px);
+    box-shadow: 0 16px 35px rgba(37, 99, 235, 0.12);
+}
+
+.visibility-card:hover::before {
+    opacity: 1;
+}
+
+.visibility-card.active {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.visibility-card input {
+    display: none;
+}
+
+.visibility-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    background: #dbeafe;
+    color: #2563eb;
+    flex-shrink: 0;
+}
+
+.visibility-icon i {
+    font-size: 24px;
+}
+
+.visibility-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.visibility-content strong {
+    font-size: 16px;
+    color: #0f172a;
+}
+
+.visibility-content small {
+    line-height: 1.7;
+    color: #64748b;
+}
+
+.visibility-card.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* ==========================================
+   CHECKBOX CARDS
+========================================== */
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.checkbox-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px;
+    border: 2px solid #e2e8f0;
+    border-radius: 18px;
+    background: #fff;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.checkbox-card:hover {
+    border-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.checkbox-card input {
+    width: 18px;
+    height: 18px;
+    accent-color: #2563eb;
+}
+
+.checkbox-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: #eff6ff;
+    color: #2563eb;
+    flex-shrink: 0;
+}
+
+.checkbox-icon i {
+    font-size: 22px;
+}
+
+.checkbox-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.checkbox-content strong {
+    font-size: 15px;
+    color: #0f172a;
+}
+
+.checkbox-content small {
+    color: #64748b;
+    line-height: 1.6;
+}
+
+/* ==========================================
+   STARTER FILES
+========================================== */
+
+.starter-files {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.starter-file {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px;
+    border: 2px solid #e2e8f0;
+    border-radius: 18px;
+    background: #fff;
+    transition: 0.3s ease;
+}
+
+.starter-file:hover {
+    transform: translateY(-3px);
+    border-color: #2563eb;
+    box-shadow: 0 12px 30px rgba(37, 99, 235, 0.10);
+}
+
+.starter-file i {
+    font-size: 24px;
+    color: #2563eb;
+}
+
+.starter-file span {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+/* ==========================================
+   FOOTER
+========================================== */
+
+.project-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 24px 32px;
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+/* ==========================================
+   BUTTONS
+========================================== */
+
+.project-modal-footer .btn {
+    height: 54px;
+    min-width: 170px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
+    border: none;
+}
+
+.project-modal-footer .btn i {
+    font-size: 18px;
+}
+
+/* ==========================================
+   CANCEL BUTTON
+========================================== */
+
+.project-modal .btn-outline {
+    background: #fff;
+    border: 2px solid #dbe3ef;
+    color: #334155;
+}
+
+.project-modal .btn-outline:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+    transform: translateY(-2px);
+}
+
+/* ==========================================
+   CREATE BUTTON
+========================================== */
+
+.project-modal .btn-primary {
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 0 14px 28px rgba(37, 99, 235, 0.28);
+}
+
+.project-modal .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 40px rgba(37, 99, 235, 0.35);
+}
+
+.project-modal .btn-primary:active,
+.project-modal .btn-outline:active {
+    transform: translateY(0);
+}
+
+/* ==========================================
+   LOADING
+========================================== */
+
+.project-modal .btn.loading {
+    pointer-events: none;
+    opacity: 0.75;
+}
+
+.project-modal .btn.loading i {
+    animation: modalSpin 0.8s linear infinite;
+}
+
+@keyframes modalSpin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 992px) {
+    .project-modal {
+        padding: 24px;
+    }
+
+    .project-modal-container {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .project-modal {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .project-modal-container {
+        width: 100%;
+        max-width: 100%;
+        max-height: 92vh;
+        border-radius: 24px 24px 0 0;
+    }
+
+    .project-grid,
+    .visibility-grid,
+    .starter-files {
+        grid-template-columns: 1fr;
+    }
+
+    .project-modal-header {
+        padding: 24px;
+    }
+
+    .project-header-left {
+        align-items: flex-start;
+    }
+
+    .project-header-content h2 {
+        font-size: 26px;
+    }
+
+    .project-modal-body {
+        padding: 22px;
+    }
+
+    .project-card {
+        padding: 20px;
+    }
+
+    .project-modal-footer {
+        flex-direction: column-reverse;
+        padding: 22px;
+    }
+
+    .project-modal-footer .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .project-header-icon {
+        width: 60px;
+        height: 60px;
+    }
+
+    .project-header-icon i {
+        font-size: 28px;
+    }
+
+    .project-header-content h2 {
+        font-size: 22px;
+    }
+
+    .project-header-content p {
+        font-size: 14px;
+    }
+
+    .section-title h3 {
+        font-size: 18px;
+    }
+
+    .project-card {
+        padding: 18px;
+    }
+}
+
+/* ==========================================
+   OPEN ANIMATION
+========================================== */
+
+.project-modal.show .project-modal-container {
+    animation: modalPop 0.35s ease;
+}
+
+@keyframes modalPop {
+    0% {
+        opacity: 0;
+        transform: translateY(28px) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

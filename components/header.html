@@ -15,32 +15,32 @@
 
         <div class="workspace-switcher" id="workspaceSwitcher">
             <button type="button" class="workspace-switcher-trigger" id="workspaceSwitcherTrigger" aria-haspopup="true"
-                aria-expanded="false">
+                aria-expanded="false" data-workspace-switcher-trigger>
                 <i class="ri-stack-line"></i>
-                <span id="workspaceSwitcherName">Workspace</span>
+                <span id="workspaceSwitcherName" data-workspace-switcher-name>Workspace</span>
                 <i class="ri-arrow-down-s-line chevron"></i>
             </button>
 
-            <div class="workspace-switcher-menu" id="workspaceSwitcherMenu" role="menu">
+            <div class="workspace-switcher-menu" id="workspaceSwitcherMenu" role="menu" data-workspace-switcher-menu>
                 <p class="menu-label">Your workspaces</p>
-                <div class="workspace-switcher-list" id="workspaceSwitcherList">
+                <div class="workspace-switcher-list" id="workspaceSwitcherList" data-workspace-switcher-list>
                     <p class="menu-empty">Loading workspaces...</p>
                 </div>
             </div>
         </div>
 
-        <button type="button" class="btn-icon" id="themeToggleBtn" aria-label="Toggle theme">
+        <button type="button" class="btn-icon" id="themeToggleBtn" aria-label="Toggle theme" data-theme-toggle>
             <i class="ri-sun-line" id="themeToggleIcon"></i>
         </button>
 
         <div class="notification-wrap" id="notificationWrap">
             <button type="button" class="btn-icon" id="notificationBtn" aria-haspopup="true" aria-expanded="false"
-                aria-label="Notifications">
+                aria-label="Notifications" data-notification-trigger>
                 <i class="ri-notification-3-line"></i>
-                <span class="notification-badge" id="notificationBadge" hidden>0</span>
+                <span class="notification-badge" id="notificationBadge" hidden data-notification-badge>0</span>
             </button>
 
-            <div class="notification-menu" id="notificationMenu" role="menu">
+            <div class="notification-menu" id="notificationMenu" role="menu" data-notification-panel>
                 <p class="menu-label">Notifications</p>
                 <div class="notification-list" id="notificationList">
                     <p class="menu-empty">You're all caught up.</p>
