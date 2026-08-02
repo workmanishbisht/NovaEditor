@@ -26,23 +26,81 @@ googleProvider.setCustomParameters({
   prompt: "select_account",
 });
 
+googleProvider.addScope("profile");
+googleProvider.addScope("email");
+
 const githubProvider = new GithubAuthProvider();
 
 githubProvider.setCustomParameters({
   allow_signup: "true",
 });
 
+githubProvider.addScope("read:user");
+githubProvider.addScope("user:email");
+
+/* ==========================================
+   Friendly Error Messages
+========================================== */
+
+const AUTH_ERROR_MESSAGES = Object.freeze({
+  "auth/popup-closed-by-user":
+    "Sign-in was cancelled before it could complete.",
+  "auth/popup-blocked":
+    "Your browser blocked the sign-in popup. Please allow popups and try again.",
+  "auth/network-request-failed":
+    "Network error. Please check your connection and try again.",
+  "auth/too-many-requests":
+    "Too many attempts. Please wait a moment and try again.",
+  "auth/account-exists-with-different-credential":
+    "An account already exists with this email using a different sign-in method.",
+  "auth/user-disabled":
+    "This account has been disabled. Please contact support.",
+  "auth/invalid-credential":
+    "Invalid credentials. Please try again.",
+  "auth/internal-error":
+    "Something went wrong. Please try again.",
+});
+
+const DEFAULT_AUTH_ERROR_MESSAGE = "Authentication failed.";
+
+/**
+ * Converts a raw Firebase auth error into a friendly, UI-safe message.
+ * Falls back to a generic message for unmapped error codes.
+ */
+function getAuthError(error) {
+  const code = error?.code ?? null;
+
+  const message = code && AUTH_ERROR_MESSAGES[code]
+    ? AUTH_ERROR_MESSAGES[code]
+    : DEFAULT_AUTH_ERROR_MESSAGE;
+
+  return { message, code };
+}
+
 /* ==========================================
    Helpers
 ========================================== */
 
 function createResponse(success, data = {}) {
+  const { user = null, error = null, code = null, ...meta } = data;
+
   return {
     success,
-    user: data.user ?? null,
-    error: data.error ?? null,
-    code: data.code ?? null,
+    user,
+    error,
+    code,
+    ...meta,
   };
+}
+
+function createErrorResponse(error, data = {}) {
+  const { message, code } = getAuthError(error);
+
+  return createResponse(false, {
+    ...data,
+    error: message,
+    code,
+  });
 }
 
 async function signIn(provider) {
@@ -53,10 +111,7 @@ async function signIn(provider) {
       user: result.user,
     });
   } catch (error) {
-    return createResponse(false, {
-      error: error.message,
-      code: error.code,
-    });
+    return createErrorResponse(error);
   }
 }
 
@@ -86,10 +141,7 @@ export async function logout() {
 
     return createResponse(true);
   } catch (error) {
-    return createResponse(false, {
-      error: error.message,
-      code: error.code,
-    });
+    return createErrorResponse(error);
   }
 }
 
@@ -107,10 +159,28 @@ export function getCurrentUser() {
 
 export function checkSession() {
   return new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      unsubscribe();
-      resolve(user ?? null);
-    });
+    let unsubscribe = null;
+
+    const cleanup = () => {
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      }
+    };
+
+    unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        cleanup();
+        resolve(user ?? null);
+      },
+      () => {
+        // Ensure the listener is always released, even if
+        // onAuthStateChanged itself errors out.
+        cleanup();
+        resolve(null);
+      }
+    );
   });
 }
 
@@ -129,17 +199,19 @@ export function onAuthStateChangedListener(callback) {
 export async function updateUserProfile(profile) {
   try {
     if (!auth.currentUser) {
-      throw new Error("No authenticated user found.");
+      return createResponse(false, {
+        error: "No authenticated user found.",
+        code: "auth/no-current-user",
+      });
     }
 
     await updateProfile(auth.currentUser, profile);
 
-    return createResponse(true);
-  } catch (error) {
-    return createResponse(false, {
-      error: error.message,
-      code: error.code,
+    return createResponse(true, {
+      user: auth.currentUser,
     });
+  } catch (error) {
+    return createErrorResponse(error);
   }
 }
 
@@ -150,21 +222,30 @@ export async function updateUserProfile(profile) {
 export async function deleteAccount() {
   try {
     if (!auth.currentUser) {
-      throw new Error("No authenticated user found.");
+      return createResponse(false, {
+        error: "No authenticated user found.",
+        code: "auth/no-current-user",
+      });
     }
 
     /*
-      Requires recent authentication.
+      Firebase requires a recent login before allowing account
+      deletion. Surface this as a friendly, actionable message
+      instead of the raw Firebase error.
     */
 
     await deleteUser(auth.currentUser);
 
     return createResponse(true);
   } catch (error) {
-    return createResponse(false, {
-      error: error.message,
-      code: error.code,
-    });
+    if (error?.code === "auth/requires-recent-login") {
+      return createResponse(false, {
+        error: "Please sign in again before deleting your account.",
+        code: error.code,
+      });
+    }
+
+    return createErrorResponse(error);
   }
 }
 

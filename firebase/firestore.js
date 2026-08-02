@@ -1,7 +1,7 @@
 "use strict";
 
 /* ==========================================
-   Imports
+   Firestore
 ========================================== */
 
 import {
@@ -9,6 +9,13 @@ import {
   setDoc,
   getDoc,
   updateDoc,
+  deleteDoc,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  limit,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -20,49 +27,44 @@ import { db } from "./firebase-config.js";
 
 const COLLECTIONS = Object.freeze({
   USERS: "users",
-  SETTINGS: "settings",
-  PROJECTS: "projects",
   WORKSPACES: "workspaces",
+  PROJECTS: "projects",
 });
 
 /* ==========================================
-   Helpers
+   Sub Collections
 ========================================== */
 
-function userRef(uid) {
-  return doc(db, COLLECTIONS.USERS, uid);
+const SUB_COLLECTIONS = Object.freeze({
+  PREFERENCES: "preferences",
+});
+
+/* ==========================================
+   Preference Documents
+========================================== */
+
+const PREFERENCE_DOCS = Object.freeze({
+  EDITOR: "editor",
+  AI: "ai",
+});
+
+/* ==========================================
+   Response
+========================================== */
+
+function createResponse(success, { data = null, exists = false, error = null, code = null } = {}) {
+  return { success, data, exists, error, code };
 }
 
-function subDocRef(uid, subCollection, docId) {
-  return doc(db, COLLECTIONS.USERS, uid, subCollection, docId);
-}
+/* ==========================================
+   Error Wrapper
+========================================== */
 
-function settingsRef(uid) {
-  return subDocRef(uid, COLLECTIONS.SETTINGS, "preferences");
-}
-
-function projectRef(uid, projectId) {
-  return subDocRef(uid, COLLECTIONS.PROJECTS, projectId);
-}
-
-function workspaceRef(uid, workspaceId) {
-  return subDocRef(uid, COLLECTIONS.WORKSPACES, workspaceId);
-}
-
-function createResponse(success, data = {}) {
-  return {
-    success,
-    data: data.data ?? null,
-    exists: data.exists ?? false,
-    error: data.error ?? null,
-    code: data.code ?? null,
-  };
-}
-
-async function runOperation(operation) {
+async function run(action) {
   try {
-    return await operation();
+    return await action();
   } catch (error) {
+    console.error(error);
     return createResponse(false, {
       error: error.message,
       code: error.code,
@@ -70,7 +72,35 @@ async function runOperation(operation) {
   }
 }
 
-async function setDocument(ref, data, { includeCreatedAt = false } = {}) {
+/* ==========================================
+   References
+========================================== */
+
+function userRef(uid) {
+  return doc(db, COLLECTIONS.USERS, uid);
+}
+
+function workspaceRef(workspaceId) {
+  return doc(db, COLLECTIONS.WORKSPACES, workspaceId);
+}
+
+function projectRef(projectId) {
+  return doc(db, COLLECTIONS.PROJECTS, projectId);
+}
+
+function editorPreferenceRef(uid) {
+  return doc(db, COLLECTIONS.USERS, uid, SUB_COLLECTIONS.PREFERENCES, PREFERENCE_DOCS.EDITOR);
+}
+
+function aiPreferenceRef(uid) {
+  return doc(db, COLLECTIONS.USERS, uid, SUB_COLLECTIONS.PREFERENCES, PREFERENCE_DOCS.AI);
+}
+
+/* ==========================================
+   Helpers
+========================================== */
+
+async function setDocument(reference, data, { merge = true, includeCreatedAt = false } = {}) {
   const payload = {
     ...data,
     updatedAt: serverTimestamp(),
@@ -80,171 +110,411 @@ async function setDocument(ref, data, { includeCreatedAt = false } = {}) {
     payload.createdAt = serverTimestamp();
   }
 
-  await setDoc(ref, payload, { merge: true });
+  await setDoc(reference, payload, { merge });
 }
 
-async function updateDocument(ref, data) {
-  await updateDoc(ref, {
+async function updateDocument(reference, data) {
+  await updateDoc(reference, {
     ...data,
     updatedAt: serverTimestamp(),
   });
 }
 
-async function fetchDocumentResponse(ref) {
-  const snapshot = await getDoc(ref);
+async function getDocument(reference) {
+  const snapshot = await getDoc(reference);
 
   return createResponse(true, {
-    data: snapshot.exists() ? snapshot.data() : null,
     exists: snapshot.exists(),
+    data: snapshot.exists() ? snapshot.data() : null,
   });
 }
 
 /* ==========================================
-   Create User
+   CREATE USER
 ========================================== */
 
 export async function createUser(uid, userData) {
-  return runOperation(async () => {
-    await setDocument(userRef(uid), userData, { includeCreatedAt: true });
+  return run(async () => {
+    await setDocument(
+      userRef(uid),
+      { uid, ...userData },
+      { includeCreatedAt: true }
+    );
+
     return createResponse(true);
   });
 }
 
 /* ==========================================
-   Get User
+   GET USER
 ========================================== */
 
 export async function getUser(uid) {
-  return runOperation(() => fetchDocumentResponse(userRef(uid)));
+  return run(async () => {
+    return await getDocument(userRef(uid));
+  });
 }
 
 /* ==========================================
-   Update User
+   UPDATE USER
 ========================================== */
 
 export async function updateUser(uid, userData) {
-  return runOperation(async () => {
-    await updateDocument(userRef(uid), userData);
+  return run(async () => {
+    await setDocument(userRef(uid), userData, { merge: true });
     return createResponse(true);
   });
 }
 
 /* ==========================================
-   User Exists
+   USER EXISTS
 ========================================== */
 
 export async function userExists(uid) {
-  return runOperation(async () => {
+  return run(async () => {
     const snapshot = await getDoc(userRef(uid));
     return createResponse(true, { exists: snapshot.exists() });
   });
 }
 
 /* ==========================================
-   User Settings
+   DELETE USER
 ========================================== */
 
-export async function saveUserSettings(uid, settings) {
-  return runOperation(async () => {
-    await setDocument(settingsRef(uid), settings);
+export async function deleteUser(uid) {
+  return run(async () => {
+    await deleteDoc(userRef(uid));
     return createResponse(true);
   });
 }
 
 /* ==========================================
-   Get User Settings
+   GET ALL USERS
 ========================================== */
 
-export async function getUserSettings(uid) {
-  return runOperation(() => fetchDocumentResponse(settingsRef(uid)));
-}
+export async function getUsers() {
+  return run(async () => {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.USERS));
+    const users = [];
 
-/* ==========================================
-   Delete User
-========================================== */
-
-export async function deleteUserDocument(uid) {
-  throw new Error("deleteUserDocument() is not implemented yet.");
-}
-
-/* ==========================================
-   Create Project
-========================================== */
-
-export async function createProject(uid, projectId, projectData) {
-  return runOperation(async () => {
-    await setDocument(projectRef(uid, projectId), projectData, {
-      includeCreatedAt: true,
+    snapshot.forEach((doc) => {
+      users.push({ id: doc.id, ...doc.data() });
     });
-    return createResponse(true);
+
+    return createResponse(true, { data: users });
   });
 }
 
 /* ==========================================
-   Get Project
+   USERNAME
 ========================================== */
 
-export async function getProject(uid, projectId) {
-  return runOperation(() => fetchDocumentResponse(projectRef(uid, projectId)));
+function usersCollection() {
+  return collection(db, COLLECTIONS.USERS);
 }
 
 /* ==========================================
-   Update Project
+   CHECK USERNAME
 ========================================== */
 
-export async function updateProject(uid, projectId, projectData) {
-  return runOperation(async () => {
-    await updateDocument(projectRef(uid, projectId), projectData);
-    return createResponse(true);
-  });
-}
+export async function isUsernameAvailable(username) {
+  return run(async () => {
+    const value = String(username).trim().toLowerCase();
 
-/* ==========================================
-   Delete Project
-========================================== */
+    if (!value) {
+      return createResponse(false, { error: "Username is required." });
+    }
 
-export async function deleteProject(uid, projectId) {
-  throw new Error("deleteProject() is not implemented yet.");
-}
+    const q = query(usersCollection(), where("username", "==", value), limit(1));
+    const snapshot = await getDocs(q);
 
-/* ==========================================
-   Create Workspace
-========================================== */
-
-export async function createWorkspace(uid, workspaceId, workspaceData) {
-  return runOperation(async () => {
-    await setDocument(workspaceRef(uid, workspaceId), workspaceData, {
-      includeCreatedAt: true,
+    return createResponse(true, {
+      data: { available: snapshot.empty },
     });
+  });
+}
+
+/* ==========================================
+   GET USER BY USERNAME
+========================================== */
+
+export async function getUserByUsername(username) {
+  return run(async () => {
+    const value = String(username).trim().toLowerCase();
+    const q = query(usersCollection(), where("username", "==", value), limit(1));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return createResponse(true, { exists: false, data: null });
+    }
+
+    const document = snapshot.docs[0];
+
+    return createResponse(true, {
+      exists: true,
+      data: { id: document.id, ...document.data() },
+    });
+  });
+}
+
+/* ==========================================
+   UPDATE USERNAME
+========================================== */
+
+export async function updateUsername(uid, username) {
+  return run(async () => {
+    const check = await isUsernameAvailable(username);
+
+    if (!check.success) {
+      return check;
+    }
+
+    if (!check.data.available) {
+      return createResponse(false, { error: "Username already exists." });
+    }
+
+    await setDocument(
+      userRef(uid),
+      { username: username.trim().toLowerCase() },
+      { merge: true }
+    );
+
     return createResponse(true);
   });
 }
 
 /* ==========================================
-   Get Workspace
+   WORKSPACES COLLECTION
 ========================================== */
 
-export async function getWorkspace(uid, workspaceId) {
-  return runOperation(() =>
-    fetchDocumentResponse(workspaceRef(uid, workspaceId)),
-  );
+function workspacesCollection() {
+  return collection(db, COLLECTIONS.WORKSPACES);
 }
 
 /* ==========================================
-   Update Workspace
+   CREATE WORKSPACE
 ========================================== */
 
-export async function updateWorkspace(uid, workspaceId, workspaceData) {
-  return runOperation(async () => {
-    await updateDocument(workspaceRef(uid, workspaceId), workspaceData);
+export async function createWorkspace(workspaceData) {
+  return run(async () => {
+    const payload = {
+      workspaceName: workspaceData.workspaceName,
+      defaultProject: workspaceData.defaultProject || "",
+      experience: workspaceData.experience || "Beginner",
+      ownerUid: workspaceData.ownerUid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    const reference = await addDoc(workspacesCollection(), payload);
+
+    return createResponse(true, {
+      data: { id: reference.id, ...payload },
+    });
+  });
+}
+
+/* ==========================================
+   GET WORKSPACE
+========================================== */
+
+export async function getWorkspace(workspaceId) {
+  return run(async () => {
+    return await getDocument(workspaceRef(workspaceId));
+  });
+}
+
+/* ==========================================
+   UPDATE WORKSPACE
+========================================== */
+
+export async function updateWorkspace(workspaceId, workspaceData) {
+  return run(async () => {
+    await setDocument(workspaceRef(workspaceId), workspaceData, { merge: true });
     return createResponse(true);
   });
 }
 
 /* ==========================================
-   Delete Workspace
+   DELETE WORKSPACE
 ========================================== */
 
-export async function deleteWorkspace(uid, workspaceId) {
-  throw new Error("deleteWorkspace() is not implemented yet.");
+export async function deleteWorkspace(workspaceId) {
+  return run(async () => {
+    await deleteDoc(workspaceRef(workspaceId));
+    return createResponse(true);
+  });
 }
+
+/* ==========================================
+   GET USER WORKSPACES
+========================================== */
+
+export async function getUserWorkspaces(uid) {
+  return run(async () => {
+    const q = query(workspacesCollection(), where("ownerUid", "==", uid));
+    const snapshot = await getDocs(q);
+    const workspaces = [];
+
+    snapshot.forEach((document) => {
+      workspaces.push({ id: document.id, ...document.data() });
+    });
+
+    return createResponse(true, { data: workspaces });
+  });
+}
+
+/* ==========================================
+   EDITOR PREFERENCES
+========================================== */
+
+export async function saveEditorPreferences(uid, preferences) {
+  return run(async () => {
+    await setDocument(editorPreferenceRef(uid), preferences, { merge: true });
+    return createResponse(true);
+  });
+}
+
+export async function getEditorPreferences(uid) {
+  return run(async () => {
+    return await getDocument(editorPreferenceRef(uid));
+  });
+}
+
+/* ==========================================
+   AI PREFERENCES
+========================================== */
+
+export async function saveAIPreferences(uid, preferences) {
+  return run(async () => {
+    await setDocument(aiPreferenceRef(uid), preferences, { merge: true });
+    return createResponse(true);
+  });
+}
+
+export async function getAIPreferences(uid) {
+  return run(async () => {
+    return await getDocument(aiPreferenceRef(uid));
+  });
+}
+
+/* ==========================================
+   ALL PREFERENCES
+========================================== */
+
+export async function getUserPreferences(uid) {
+  return run(async () => {
+    const [editor, ai] = await Promise.all([
+      getEditorPreferences(uid),
+      getAIPreferences(uid),
+    ]);
+
+    return createResponse(true, {
+      data: {
+        editor: editor.success ? editor.data : null,
+        ai: ai.success ? ai.data : null,
+      },
+    });
+  });
+}
+
+/* ==========================================
+   SAVE ALL PREFERENCES
+========================================== */
+
+export async function saveAllPreferences(uid, { editor = {}, ai = {} }) {
+  return run(async () => {
+    await Promise.all([
+      saveEditorPreferences(uid, editor),
+      saveAIPreferences(uid, ai),
+    ]);
+
+    return createResponse(true);
+  });
+}
+
+/* ==========================================
+   PROJECTS
+========================================== */
+
+function projectsCollection() {
+  return collection(db, COLLECTIONS.PROJECTS);
+}
+
+/* ==========================================
+   CREATE PROJECT
+========================================== */
+
+export async function createProject(projectData) {
+  return run(async () => {
+    const payload = {
+      name: projectData.name,
+      description: projectData.description || "",
+      language: projectData.language || "javascript",
+      workspaceId: projectData.workspaceId,
+      ownerUid: projectData.ownerUid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    const reference = await addDoc(projectsCollection(), payload);
+
+    return createResponse(true, {
+      data: { id: reference.id, ...payload },
+    });
+  });
+}
+
+/* ==========================================
+   GET PROJECT
+========================================== */
+
+export async function getProject(projectId) {
+  return run(async () => {
+    return await getDocument(projectRef(projectId));
+  });
+}
+
+/* ==========================================
+   UPDATE PROJECT
+========================================== */
+
+export async function updateProject(projectId, projectData) {
+  return run(async () => {
+    await setDocument(projectRef(projectId), projectData, { merge: true });
+    return createResponse(true);
+  });
+}
+
+/* ==========================================
+   DELETE PROJECT
+========================================== */
+
+export async function deleteProject(projectId) {
+  return run(async () => {
+    await deleteDoc(projectRef(projectId));
+    return createResponse(true);
+  });
+}
+
+/* ==========================================
+   GET USER PROJECTS
+========================================== */
+
+export async function getUserProjects(uid) {
+  return run(async () => {
+    const q = query(projectsCollection(), where("ownerUid", "==", uid));
+    const snapshot = await getDocs(q);
+    const projects = [];
+
+    snapshot.forEach((document) => {
+      projects.push({ id: document.id, ...document.data() });
+    });
+
+    return createResponse(true, { data: projects });
+  });
+}
+
+/* ==========================================
+   EXPORTS COMPLETE
+========================================== */

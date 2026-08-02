@@ -1,34 +1,494 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../assets/images/favicon/favicon.png">
+    <title>Setup - Nova Editor</title>
+    <!-- RemixIcon File Link -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+    <!-- Css Main File Link -->
+    <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/setup.css" />
+    <link rel="stylesheet" href="../css/toast.css">
 </head>
 
 <body>
-    <h1>hello world!</h1>
-
-    <button id="logoutBtn" class="btn btn-secondary">
-        Logout
-    </button>
 
 
-    <script type="module">
-        import { logout } from "../firebase/auth.js";
+    <div class="setup">
 
-        const logoutBtn = document.getElementById("logoutBtn");
+        <!-- Sidebar -->
+        <aside class="setup-sidebar">
+            <div class="setup-logo">
+                <span class="logo-mark">
+                    <img src="../assets/images/logo/novaeditor.png" alt="Nova Editor Logo">
+                </span>
+            </div>
 
-        logoutBtn?.addEventListener("click", async () => {
-            try {
-                await logout();
-                window.location.href = "./login.html";
-            } catch (error) {
-                console.error(error);
-            }
-        });
-    </script>
+            <span class="setup-badge"><i class="ri-sparkling-2-fill"></i> Setup Progress</span>
+
+            <h1>Let's personalize your experience</h1>
+            <p>Your account is ready. Review your profile and choose a unique username before creating your
+                workspace.</p>
+
+            <div class="setup-progress">
+                <div class="progress-item active" data-progress="1">
+                    <span>1</span>
+                    <div>
+                        <h4>Profile Information</h4>
+                        <p>Add your basic details</p>
+                    </div>
+                </div>
+                <div class="progress-line"></div>
+
+                <div class="progress-item" data-progress="2">
+                    <span>2</span>
+                    <div>
+                        <h4>Workspace Setup</h4>
+                        <p>Configure your workspace</p>
+                    </div>
+                </div>
+                <div class="progress-line"></div>
+
+                <div class="progress-item" data-progress="3">
+                    <span>3</span>
+                    <div>
+                        <h4>Preferences</h4>
+                        <p>Customize your editor</p>
+                    </div>
+                </div>
+                <div class="progress-line"></div>
+
+                <div class="progress-item" data-progress="4">
+                    <span>4</span>
+                    <div>
+                        <h4>Review &amp; Finish</h4>
+                        <p>Confirm and get started</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setup-safety">
+                <i class="ri-shield-check-fill"></i>
+                <div>
+                    <h4>Your data is safe</h4>
+                    <p>We never share your data with anyone. It's encrypted and secure.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Content -->
+        <div class="setup-content">
+            <div class="setup-card">
+
+                <!-- Step Tracker -->
+                <div class="step-tracker">
+                    <div class="step-track-item active" data-track="1">
+                        <span class="step-track-icon"><i class="ri-user-3-line"></i></span>
+                        <p>Profile Information</p>
+                    </div>
+                    <div class="step-track-line"></div>
+
+                    <div class="step-track-item" data-track="2">
+                        <span class="step-track-icon"><i class="ri-macbook-line"></i></span>
+                        <p>Workspace Setup</p>
+                    </div>
+                    <div class="step-track-line"></div>
+
+                    <div class="step-track-item" data-track="3">
+                        <span class="step-track-icon"><i class="ri-equalizer-line"></i></span>
+                        <p>Preferences</p>
+                    </div>
+                    <div class="step-track-line"></div>
+
+                    <div class="step-track-item" data-track="4">
+                        <span class="step-track-icon"><i class="ri-check-line"></i></span>
+                        <p>Review &amp; Finish</p>
+                    </div>
+                </div>
+
+                <!-- =======================================
+                Step 1 - Welcome
+                ======================================= -->
+                <div class="setup-step active" data-step="1">
+                    <div class="setup-header setup-header-row">
+                        <div>
+                            <h2>Let's personalize your experience</h2>
+                            <p>Your account is ready. Review your profile and choose a unique username.</p>
+                        </div>
+
+                        <div class="profile-avatar-block">
+                            <div class="profile-avatar">
+                                <img id="userAvatar" src="/assets/images/avatar/default.png" alt="User Avatar">
+                            </div>
+                            <button type="button" class="change-photo-btn" id="changePhotoBtn">Change Photo</button>
+                        </div>
+                    </div>
+
+                    <span id="userName" class="sr-only">Loading...</span>
+                    <span id="userEmail" class="sr-only">Loading...</span>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="displayName">Full Name</label>
+                            <div class="input-icon">
+                                <i class="ri-user-line"></i>
+                                <input id="displayName" type="text" readonly>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <div class="input-icon">
+                                <i class="ri-mail-line"></i>
+                                <input id="email" type="email" readonly>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="username">Username</label>
+                            <div class="input-icon">
+                                <i class="ri-at-line"></i>
+                                <input id="username" type="text" placeholder="Choose a unique username">
+                            </div>
+                            <span class="username-status" id="usernameStatus"></span>
+                            <small>Choose a unique username. This will identify you across Nova Editor.</small>
+                        </div>
+
+                        <hr class="form-divider">
+
+                        <div class="form-group">
+                            <label for="location">Location</label>
+                            <div class="input-icon input-select">
+                                <i class="ri-map-pin-line"></i>
+                                <select id="location">
+                                    <option value="dehradun" selected>Dehradun, Uttarakhand</option>
+                                    <option value="delhi">Delhi, NCR</option>
+                                    <option value="noida">Noida, Uttar Pradesh</option>
+                                    <option value="gurugram">Gurugram, Haryana</option>
+                                    <option value="chandigarh">Chandigarh</option>
+                                    <option value="jaipur">Jaipur, Rajasthan</option>
+                                    <option value="mumbai">Mumbai, Maharashtra</option>
+                                    <option value="pune">Pune, Maharashtra</option>
+                                    <option value="bengaluru">Bengaluru, Karnataka</option>
+                                    <option value="hyderabad">Hyderabad, Telangana</option>
+                                    <option value="chennai">Chennai, Tamil Nadu</option>
+                                    <option value="kolkata">Kolkata, West Bengal</option>
+                                    <option value="ahmedabad">Ahmedabad, Gujarat</option>
+                                    <option value="lucknow">Lucknow, Uttar Pradesh</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <i class="ri-arrow-down-s-line chevron"></i>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="role">Role</label>
+                            <div class="input-icon input-select">
+                                <i class="ri-briefcase-line"></i>
+                                <select id="role">
+                                    <option value="developer" selected>Developer</option>
+                                    <option value="designer">Designer</option>
+                                    <option value="student">Student</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <i class="ri-arrow-down-s-line chevron"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setup-actions">
+                        <span></span>
+                        <button class="btn btn-primary" id="step1Next">
+                            Continue
+                            <i class="ri-arrow-right-line"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- =======================================
+                Step 2 - Workspace
+                ======================================= -->
+                <div class="setup-step" data-step="2">
+                    <div class="setup-header">
+                        <span class="setup-tag">Workspace</span>
+                        <h2>Create your workspace</h2>
+                        <p>Your workspace is where you'll organize projects, collaborate, and build amazing
+                            applications.</p>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="workspaceName">Workspace Name</label>
+                            <div class="input-icon">
+                                <i class="ri-building-4-line"></i>
+                                <input id="workspaceName" type="text" placeholder="e.g. Nova Studio">
+                            </div>
+                            <small>This will be displayed throughout your workspace.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="defaultProject">Default Project Name</label>
+                            <div class="input-icon">
+                                <i class="ri-folder-3-line"></i>
+                                <input id="defaultProject" type="text" placeholder="My First Project">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="experience">Coding Experience</label>
+                            <div class="input-icon input-select">
+                                <i class="ri-bar-chart-2-line"></i>
+                                <select id="experience">
+                                    <option value="">Select Experience</option>
+                                    <option value="beginner">Beginner</option>
+                                    <option value="intermediate">Intermediate</option>
+                                    <option value="advanced">Advanced</option>
+                                </select>
+                                <i class="ri-arrow-down-s-line chevron"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setup-info">
+                        <div class="info-card">
+                            <i class="ri-folder-open-line"></i>
+                            <div>
+                                <h4>Organized Projects</h4>
+                                <p>Keep all your coding projects in one place.</p>
+                            </div>
+                        </div>
+
+                        <div class="info-card">
+                            <i class="ri-robot-2-line"></i>
+                            <div>
+                                <h4>AI Ready</h4>
+                                <p>Your workspace will be optimized for AI-powered development.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setup-actions">
+                        <button class="btn btn-outline" id="step2Back">
+                            <i class="ri-arrow-left-line"></i>
+                            Back
+                        </button>
+                        <button class="btn btn-primary" id="step2Next">
+                            Continue
+                            <i class="ri-arrow-right-line"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- =======================================
+                Step 3 - Editor Preferences
+                ======================================= -->
+                <div class="setup-step" data-step="3">
+                    <div class="setup-header">
+                        <span class="setup-tag">Editor Preferences</span>
+                        <h2>Customize your coding environment</h2>
+                        <p>Configure Nova Editor the way you like. These settings can always be changed later from
+                            Settings.</p>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="theme">Theme</label>
+                            <div class="input-icon input-select">
+                                <i class="ri-contrast-2-line"></i>
+                                <select id="theme">
+                                    <option value="system" selected>System</option>
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                </select>
+                                <i class="ri-arrow-down-s-line chevron"></i>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="language">Default Language</label>
+                            <div class="input-icon input-select">
+                                <i class="ri-code-s-slash-line"></i>
+                                <select id="language">
+                                    <option value="javascript" selected>JavaScript</option>
+                                    <option value="typescript">TypeScript</option>
+                                    <option value="html">HTML</option>
+                                    <option value="css">CSS</option>
+                                    <option value="python">Python</option>
+                                    <option value="java">Java</option>
+                                    <option value="cpp">C++</option>
+                                </select>
+                                <i class="ri-arrow-down-s-line chevron"></i>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fontSize">Font Size</label>
+                            <div class="input-icon input-select">
+                                <i class="ri-font-size-2"></i>
+                                <select id="fontSize">
+                                    <option value="12">12 px</option>
+                                    <option value="14">14 px</option>
+                                    <option value="16" selected>16 px</option>
+                                    <option value="18">18 px</option>
+                                    <option value="20">20 px</option>
+                                </select>
+                                <i class="ri-arrow-down-s-line chevron"></i>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tabSize">Tab Size</label>
+                            <div class="input-icon input-select">
+                                <i class="ri-space"></i>
+                                <select id="tabSize">
+                                    <option value="2">2 Spaces</option>
+                                    <option value="4" selected>4 Spaces</option>
+                                </select>
+                                <i class="ri-arrow-down-s-line chevron"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="preferences-list">
+                        <label class="preference-item">
+                            <div>
+                                <h4>Word Wrap</h4>
+                                <p>Automatically wrap long lines of code.</p>
+                            </div>
+                            <input type="checkbox" id="wordWrap" checked>
+                        </label>
+
+                        <label class="preference-item">
+                            <div>
+                                <h4>Auto Save</h4>
+                                <p>Automatically save files while editing.</p>
+                            </div>
+                            <input type="checkbox" id="autoSave" checked>
+                        </label>
+
+                        <label class="preference-item">
+                            <div>
+                                <h4>Minimap</h4>
+                                <p>Show code minimap for quick navigation.</p>
+                            </div>
+                            <input type="checkbox" id="minimap" checked>
+                        </label>
+
+                        <label class="preference-item">
+                            <div>
+                                <h4>Line Numbers</h4>
+                                <p>Display line numbers inside the editor.</p>
+                            </div>
+                            <input type="checkbox" id="lineNumbers" checked>
+                        </label>
+                    </div>
+
+                    <div class="setup-actions">
+                        <button class="btn btn-outline" id="step3Back">
+                            <i class="ri-arrow-left-line"></i>
+                            Back
+                        </button>
+                        <button class="btn btn-primary" id="step3Next">
+                            Continue
+                            <i class="ri-arrow-right-line"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- =======================================
+                Step 4 - AI Preferences & Finish
+                ======================================= -->
+                <div class="setup-step" data-step="4">
+                    <div class="setup-header">
+                        <span class="setup-tag">AI Preferences</span>
+                        <h2>You're all set 🚀</h2>
+                        <p>Enable the AI features you want to use. You can change these anytime from Settings.</p>
+                    </div>
+
+                    <div class="preferences-list">
+                        <label class="preference-item">
+                            <div>
+                                <h4>AI Assistant</h4>
+                                <p>Enable your personal AI coding assistant.</p>
+                            </div>
+                            <input type="checkbox" id="aiAssistant" checked>
+                        </label>
+
+                        <label class="preference-item">
+                            <div>
+                                <h4>AI Code Suggestions</h4>
+                                <p>Receive intelligent code completion and suggestions.</p>
+                            </div>
+                            <input type="checkbox" id="aiSuggestions" checked>
+                        </label>
+
+                        <label class="preference-item">
+                            <div>
+                                <h4>Explain Code</h4>
+                                <p>Let AI explain complex code blocks in simple language.</p>
+                            </div>
+                            <input type="checkbox" id="aiExplain" checked>
+                        </label>
+
+                        <label class="preference-item">
+                            <div>
+                                <h4>AI Auto Complete</h4>
+                                <p>Predict and complete your code as you type.</p>
+                            </div>
+                            <input type="checkbox" id="aiAutoComplete" checked>
+                        </label>
+                    </div>
+
+                    <div class="setup-summary">
+                        <h3>Setup Summary</h3>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <span>Name</span>
+                                <strong id="summaryName">-</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Workspace</span>
+                                <strong id="summaryWorkspace">-</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Experience</span>
+                                <strong id="summaryExperience">-</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Theme</span>
+                                <strong id="summaryTheme">System</strong>
+                            </div>
+                            <div class="summary-item">
+                                <span>Language</span>
+                                <strong id="summaryLanguage">JavaScript</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setup-actions">
+                        <button class="btn btn-outline" id="step4Back">
+                            <i class="ri-arrow-left-line"></i>
+                            Back
+                        </button>
+                        <button class="btn btn-primary" id="finishSetup">
+                            <i class="ri-rocket-2-fill"></i>
+                            Finish Setup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- script file -->
+    <script type="module" src="../components/toast.js"></script>
+    <script type="module" src="../js/setup.js"></script>
+
 </body>
 
 </html>
