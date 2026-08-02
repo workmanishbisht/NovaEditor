@@ -1,0 +1,108 @@
+<aside class="sidebar" id="appSidebar">
+
+    <div class="sidebar-top">
+        <a href="#" class="sidebar-logo">
+            <img src="../assets/images/logo/novaeditor.png" alt="Nova Editor">
+        </a>
+        <button type="button" class="sidebar-close" id="sidebarCloseBtn" aria-label="Close sidebar">
+            <i class="ri-close-line"></i>
+        </button>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Primary">
+
+        <a href="dashboard.html" class="nav-item" data-nav="dashboard">
+            <i class="ri-home-5-line"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <a href="projects.html" class="nav-item" data-nav="projects">
+            <i class="ri-folder-3-line"></i>
+            <span>Projects</span>
+        </a>
+
+        <a href="templates.html" class="nav-item" data-nav="templates">
+            <i class="ri-layout-grid-line"></i>
+            <span>Templates</span>
+        </a>
+
+        <a href="snippets.html" class="nav-item" data-nav="snippets">
+            <i class="ri-code-s-slash-line"></i>
+            <span>Snippets</span>
+        </a>
+
+        <a href="explorer.html" class="nav-item" data-nav="explorer">
+            <i class="ri-compass-3-line"></i>
+            <span>Explorer</span>
+        </a>
+
+        <a href="ai-assistant.html" class="nav-item" data-nav="ai-assistant">
+            <i class="ri-sparkling-2-line"></i>
+            <span>AI Assistant</span>
+        </a>
+
+        <div class="sidebar-divider"></div>
+        <p class="sidebar-label">Workspace</p>
+
+        <a href="collaborations.html" class="nav-item" data-nav="collaborations">
+            <i class="ri-team-line"></i>
+            <span>Collaborations</span>
+        </a>
+
+        <a href="members.html" class="nav-item" data-nav="members">
+            <i class="ri-group-line"></i>
+            <span>Members</span>
+        </a>
+
+        <div class="sidebar-divider"></div>
+        <p class="sidebar-label">Settings</p>
+
+        <a href="settings.html" class="nav-item" data-nav="settings">
+            <i class="ri-settings-3-line"></i>
+            <span>Settings</span>
+        </a>
+
+        <a href="shortcuts.html" class="nav-item" data-nav="shortcuts">
+            <i class="ri-keyboard-line"></i>
+            <span>Keyboard Shortcuts</span>
+        </a>
+
+        <a href="help.html" class="nav-item" data-nav="help">
+            <i class="ri-question-line"></i>
+            <span>Help &amp; Support</span>
+        </a>
+
+    </nav>
+
+    <div class="sidebar-user" id="sidebarUser">
+
+        <button type="button" class="sidebar-user-trigger" id="sidebarUserTrigger" aria-haspopup="true"
+            aria-expanded="false">
+            <span class="sidebar-user-avatar">
+                <img id="sidebarUserAvatar" src="../assets/images/avatar/default.png" alt="">
+                <span class="status-dot online" id="sidebarUserStatus"></span>
+            </span>
+            <span class="sidebar-user-info">
+                <strong id="sidebarUserName">Loading...</strong>
+                <small id="sidebarUserUsername">@...</small>
+            </span>
+            <i class="ri-more-2-fill sidebar-user-more"></i>
+        </button>
+
+        <div class="sidebar-user-menu" id="sidebarUserMenu" role="menu">
+            <a href="profile.html" class="sidebar-user-menu-item" role="menuitem">
+                <i class="ri-user-line"></i> Profile
+            </a>
+            <a href="settings.html" class="sidebar-user-menu-item" role="menuitem">
+                <i class="ri-settings-3-line"></i> Settings
+            </a>
+            <button type="button" class="sidebar-user-menu-item danger" id="sidebarLogoutBtn" role="menuitem">
+                <i class="ri-logout-box-r-line"></i> Log out
+            </button>
+        </div>
+
+    </div>
+
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>

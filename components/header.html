@@ -1,0 +1,58 @@
+<header class="app-header" id="appHeader">
+
+    <button type="button" class="sidebar-toggle" id="sidebarToggleBtn" aria-label="Toggle sidebar"
+        aria-expanded="false">
+        <i class="ri-menu-line"></i>
+    </button>
+
+    <div class="header-search">
+        <i class="ri-search-line"></i>
+        <input type="text" id="globalSearchInput" placeholder="Search projects, files, snippets...">
+        <span class="search-kbd" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+    </div>
+
+    <div class="header-actions">
+
+        <div class="workspace-switcher" id="workspaceSwitcher">
+            <button type="button" class="workspace-switcher-trigger" id="workspaceSwitcherTrigger" aria-haspopup="true"
+                aria-expanded="false">
+                <i class="ri-stack-line"></i>
+                <span id="workspaceSwitcherName">Workspace</span>
+                <i class="ri-arrow-down-s-line chevron"></i>
+            </button>
+
+            <div class="workspace-switcher-menu" id="workspaceSwitcherMenu" role="menu">
+                <p class="menu-label">Your workspaces</p>
+                <div class="workspace-switcher-list" id="workspaceSwitcherList">
+                    <p class="menu-empty">Loading workspaces...</p>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="btn-icon" id="themeToggleBtn" aria-label="Toggle theme">
+            <i class="ri-sun-line" id="themeToggleIcon"></i>
+        </button>
+
+        <div class="notification-wrap" id="notificationWrap">
+            <button type="button" class="btn-icon" id="notificationBtn" aria-haspopup="true" aria-expanded="false"
+                aria-label="Notifications">
+                <i class="ri-notification-3-line"></i>
+                <span class="notification-badge" id="notificationBadge" hidden>0</span>
+            </button>
+
+            <div class="notification-menu" id="notificationMenu" role="menu">
+                <p class="menu-label">Notifications</p>
+                <div class="notification-list" id="notificationList">
+                    <p class="menu-empty">You're all caught up.</p>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-new-project" id="headerNewProjectBtn" data-new-project>
+            <i class="ri-add-line"></i>
+            <span>New Project</span>
+        </button>
+
+    </div>
+
+</header>

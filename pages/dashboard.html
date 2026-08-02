@@ -6,18 +6,280 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="../assets/images/favicon/favicon.png">
     <title>Dashboard - Nova Editor</title>
-    <!-- RemixIcon File Link -->
+
+    <!-- RemixIcon -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-    <!-- Css Main File Link -->
+    <!-- Css file link -->
     <link rel="stylesheet" href="../css/variables.css" />
     <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
     <link rel="stylesheet" href="../css/dashboard.css" />
     <link rel="stylesheet" href="../css/toast.css">
 </head>
 
-<body>
+<body data-page="dashboard">
+    <div class="app-shell">
 
-    <h1>welcome dashboard</h1>
+        <!-- Sidebar mounts here -->
+        <div id="sidebarMount"></div>
 
-    </body>
-    </html>
+        <div class="app-main">
+
+            <!-- Header mounts here -->
+            <div id="headerMount"></div>
+
+            <main class="dashboard" id="dashboardContent">
+
+                <!-- =======================================
+                Greeting
+                ======================================= -->
+                <section class="dash-hero">
+                    <div class="dash-hero-text">
+                        <h1 id="dashGreeting">Good morning!</h1>
+                        <p>Let's build something amazing today.</p>
+                    </div>
+                    <div class="dash-hero-actions">
+                        <button type="button" class="btn btn-primary" id="dashNewProjectBtn" data-new-project>
+                            <i class="ri-add-line"></i>
+                            New Project
+                        </button>
+                        <button type="button" class="btn btn-outline" id="dashImportProjectBtn" data-import-project>
+                            <i class="ri-upload-2-line"></i>
+                            Import Project
+                        </button>
+                    </div>
+                </section>
+
+                <!-- =======================================
+                Continue Coding
+                ======================================= -->
+                <section class="dash-continue" id="dashContinueSection" hidden>
+                    <div class="dash-continue-info">
+                        <span class="dash-continue-eyebrow"><i class="ri-play-circle-line"></i> Continue Coding</span>
+                        <p class="dash-continue-meta" id="continueMeta">You left off recently</p>
+                        <h3 id="continueProjectName">-</h3>
+                        <p class="dash-continue-file" id="continueProjectFile">-</p>
+                        <div class="tag-row" id="continueProjectTags"></div>
+                        <a href="editor.html" class="btn btn-dark" id="continueOpenBtn">
+                            Open in Editor
+                            <i class="ri-arrow-right-line"></i>
+                        </a>
+                    </div>
+                    <div class="dash-continue-preview">
+                        <div class="code-editor-mock" aria-hidden="true">
+                            <div class="code-editor-mock-titlebar">
+                                <span class="code-editor-mock-dots">
+                                    <span></span><span></span><span></span>
+                                </span>
+                                <span class="code-editor-mock-filename">index.html</span>
+                            </div>
+                            <div class="code-editor-mock-body">
+                                <div class="code-editor-mock-gutter">
+                                    <span>1</span><span>2</span><span>3</span><span>4</span>
+                                    <span>5</span><span>6</span><span>7</span><span>8</span>
+                                </div>
+                                <div class="code-editor-mock-lines">
+                                    <span><span class="cm-punct">&lt;</span><span class="cm-tag">header</span> <span class="cm-attr">class</span><span class="cm-punct">=</span><span class="cm-string">"app-header"</span><span class="cm-punct">&gt;</span></span>
+                                    <span class="cm-indent"><span class="cm-punct">&lt;</span><span class="cm-tag">div</span> <span class="cm-attr">class</span><span class="cm-punct">=</span><span class="cm-string">"header-search"</span><span class="cm-punct">&gt;</span></span>
+                                    <span class="cm-indent"><span class="cm-comment">&lt;!-- search input --&gt;</span></span>
+                                    <span class="cm-indent"><span class="cm-punct">&lt;/</span><span class="cm-tag">div</span><span class="cm-punct">&gt;</span></span>
+                                    <span><span class="cm-punct">&lt;/</span><span class="cm-tag">header</span><span class="cm-punct">&gt;</span></span>
+                                    <span></span>
+                                    <span><span class="cm-keyword">function</span> <span class="cm-func">initLayout</span><span class="cm-punct">() {</span></span>
+                                    <span class="cm-indent"><span class="cm-keyword">return</span> <span class="cm-string">"ready"</span><span class="cm-punct">;</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- =======================================
+                Quick Actions
+                ======================================= -->
+                <section class="dash-section">
+                    <h2 class="dash-section-title">Quick Actions</h2>
+
+                    <div class="quick-actions-grid">
+
+                        <button type="button" class="quick-action" data-new-project>
+                            <span class="quick-action-icon dark"><i class="ri-add-line"></i></span>
+                            <span>
+                                <strong>New Project</strong>
+                                <small>Start from scratch</small>
+                            </span>
+                        </button>
+
+                        <button type="button" class="quick-action" data-import-project>
+                            <span class="quick-action-icon"><i class="ri-upload-2-line"></i></span>
+                            <span>
+                                <strong>Import Project</strong>
+                                <small>From your device</small>
+                            </span>
+                        </button>
+
+                        <a href="snippets.html" class="quick-action">
+                            <span class="quick-action-icon"><i class="ri-code-s-slash-line"></i></span>
+                            <span>
+                                <strong>Create Snippet</strong>
+                                <small>Save code snippet</small>
+                            </span>
+                        </a>
+
+                        <a href="templates.html" class="quick-action">
+                            <span class="quick-action-icon"><i class="ri-layout-grid-line"></i></span>
+                            <span>
+                                <strong>Explore Templates</strong>
+                                <small>Use pre-built templates</small>
+                            </span>
+                        </a>
+
+                    </div>
+                </section>
+
+                <div class="dash-layout">
+
+                    <!-- =======================================
+                    Main Column
+                    ======================================= -->
+                    <div class="dash-main-col">
+
+                        <section class="dash-section">
+                            <div class="section-head">
+                                <h2 class="dash-section-title">Recent Projects</h2>
+                                <a href="projects.html" class="section-link">
+                                    View all projects
+                                    <i class="ri-arrow-right-line"></i>
+                                </a>
+                            </div>
+
+                            <div class="projects-grid" id="recentProjectsGrid">
+                                <p class="panel-empty">Loading projects...</p>
+                            </div>
+                        </section>
+
+                        <div class="dash-split-grid">
+
+                            <section class="dash-panel">
+                                <div class="section-head">
+                                    <h3>Recent Files</h3>
+                                    <a href="explorer.html" class="section-link">View all</a>
+                                </div>
+                                <div class="simple-list" id="recentFilesList">
+                                    <p class="panel-empty">No recent files yet.</p>
+                                </div>
+                            </section>
+
+                            <section class="dash-panel">
+                                <div class="section-head">
+                                    <h3>Pinned Snippets</h3>
+                                    <a href="snippets.html" class="section-link">View all</a>
+                                </div>
+                                <div class="simple-list" id="pinnedSnippetsList">
+                                    <p class="panel-empty">No pinned snippets yet.</p>
+                                </div>
+                            </section>
+
+                            <section class="dash-panel">
+                                <div class="section-head">
+                                    <h3>Recently Used Templates</h3>
+                                    <a href="templates.html" class="section-link">View all</a>
+                                </div>
+                                <div class="simple-list" id="recentTemplatesList">
+                                    <p class="panel-empty">No templates used yet.</p>
+                                </div>
+                            </section>
+
+                        </div>
+
+                    </div>
+
+                    <!-- =======================================
+                    Side Column
+                    ======================================= -->
+                    <aside class="dash-side-col">
+
+                        <section class="dash-panel">
+                            <div class="section-head">
+                                <h3>Recent Activity</h3>
+                                <a href="projects.html" class="section-link">View all</a>
+                            </div>
+                            <div class="activity-list" id="recentActivityList">
+                                <p class="panel-empty">No activity yet.</p>
+                            </div>
+                        </section>
+
+                        <section class="dash-panel">
+                            <h3>Workspace Overview</h3>
+
+                            <div class="storage-overview">
+                                <div class="storage-ring" id="storageRing" style="--ring-value: 0;">
+                                    <span id="storagePercent">0%</span>
+                                    <small>Used</small>
+                                </div>
+                                <div class="storage-details">
+                                    <strong id="storageUsedText">0 GB / 10 GB</strong>
+                                    <small>Storage used</small>
+                                </div>
+                            </div>
+
+                            <div class="storage-bar">
+                                <div class="storage-bar-fill" id="storageBarFill"></div>
+                            </div>
+
+                            <div class="overview-stats">
+                                <div>
+                                    <span>Projects</span>
+                                    <strong id="overviewProjectsCount">0</strong>
+                                </div>
+                                <div>
+                                    <span>Assets</span>
+                                    <strong id="overviewAssetsCount">—</strong>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="dash-panel">
+                            <h3>Quick Links</h3>
+
+                            <div class="quick-links">
+                                <a href="help.html" class="quick-link">
+                                    <span class="quick-link-icon"><i class="ri-file-text-line"></i></span>
+                                    <span>
+                                        <strong>Documentation</strong>
+                                        <small>Learn how Nova Editor works</small>
+                                    </span>
+                                    <i class="ri-external-link-line"></i>
+                                </a>
+
+                                <a href="help.html" class="quick-link">
+                                    <span class="quick-link-icon"><i class="ri-group-line"></i></span>
+                                    <span>
+                                        <strong>Community</strong>
+                                        <small>Join and ask questions</small>
+                                    </span>
+                                    <i class="ri-external-link-line"></i>
+                                </a>
+
+                                <a href="help.html" class="quick-link">
+                                    <span class="quick-link-icon"><i class="ri-road-map-line"></i></span>
+                                    <span>
+                                        <strong>Roadmap</strong>
+                                        <small>See upcoming features</small>
+                                    </span>
+                                    <i class="ri-external-link-line"></i>
+                                </a>
+                            </div>
+                        </section>
+                    </aside>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- script file -->
+    <script type="module" src="../components/toast.js"></script>
+    <script type="module" src="../js/layout.js"></script>
+    <script type="module" src="../js/dashboard.js"></script>
+
+</body>
+</html>
