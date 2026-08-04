@@ -215,6 +215,82 @@ function populateSidebarUser() {
 }
 
 /* ==========================================
+   MOBILE SIDEBAR TOGGLE
+   ------------------------------------------
+   Bridges two separate partials: the hamburger
+   trigger lives in header.html, the sidebar
+   panel/overlay/close button live in
+   sidebar.html. initSidebar() and initHeader()
+   run concurrently (Promise.allSettled in
+   init()), so this can only be wired up AFTER
+   both have finished loading — it must not
+   live inside either init*() function on its
+   own, or the other partial's elements may not
+   exist in the DOM yet. That's the actual root
+   cause of the hamburger doing nothing: no
+   listener was ever attached to it, anywhere.
+========================================== */
+
+function attachMobileSidebarToggle() {
+    const toggleBtn = qs("[data-sidebar-toggle]") || qs("#sidebarToggleBtn") || qs(".sidebar-toggle");
+    const sidebar = qs("#appSidebar") || qs(".sidebar");
+    const overlay = qs("#sidebarOverlay") || qs(".sidebar-overlay");
+    const closeBtn = qs("#sidebarCloseBtn") || qs(".sidebar-close");
+
+    if (!toggleBtn || !sidebar || !overlay) {
+        console.error(
+            "[NovaLayout] Mobile sidebar toggle not attached — missing element(s):",
+            { toggleBtn: !!toggleBtn, sidebar: !!sidebar, overlay: !!overlay }
+        );
+        return;
+    }
+
+    function openMobileSidebar() {
+        sidebar.classList.add("open");
+        overlay.classList.add("open");
+        document.body.style.overflow = "hidden";
+        toggleBtn.setAttribute("aria-expanded", "true");
+    }
+
+    function closeMobileSidebar() {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("open");
+        document.body.style.overflow = "";
+        toggleBtn.setAttribute("aria-expanded", "false");
+    }
+
+    if (toggleBtn.dataset.bound !== "true") {
+        toggleBtn.addEventListener("click", (event) => {
+            event.stopPropagation();
+            if (sidebar.classList.contains("open")) {
+                closeMobileSidebar();
+            } else {
+                openMobileSidebar();
+            }
+        });
+        toggleBtn.dataset.bound = "true";
+    }
+
+    if (closeBtn && closeBtn.dataset.bound !== "true") {
+        closeBtn.addEventListener("click", closeMobileSidebar);
+        closeBtn.dataset.bound = "true";
+    }
+
+    if (overlay.dataset.bound !== "true") {
+        overlay.addEventListener("click", closeMobileSidebar);
+        overlay.dataset.bound = "true";
+    }
+
+    addDocumentListenerOnce("mobile-sidebar-escape", "keydown", (event) => {
+        if (event.key !== "Escape") return;
+        const currentSidebar = qs("#appSidebar") || qs(".sidebar");
+        if (currentSidebar?.classList.contains("open")) {
+            closeMobileSidebar();
+        }
+    });
+}
+
+/* ==========================================
    HEADER
 ========================================== */
 
@@ -939,6 +1015,12 @@ async function init() {
         attachUserDropdown(document);
     } catch (error) {
         console.error("[NovaLayout] attachUserDropdown failed during init:", error);
+    }
+
+    try {
+        attachMobileSidebarToggle();
+    } catch (error) {
+        console.error("[NovaLayout] attachMobileSidebarToggle failed during init:", error);
     }
 
     attachGlobalListenersOnce();
