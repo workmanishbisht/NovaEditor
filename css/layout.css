@@ -703,18 +703,3 @@
         font-size: 17px;
     }
 }
-/* ==========================================
-   Dark Theme
-========================================== */
-[data-theme="dark"] .sidebar,
-[data-theme="dark"] .app-header,
-[data-theme="dark"] .sidebar-user-menu,
-[data-theme="dark"] .notification-menu,
-[data-theme="dark"] .workspace-switcher-menu,
-[data-theme="dark"] .header-user-menu {
-    background: var(--surface);
-    border-color: var(--border);
-}
-[data-theme="dark"] .header-search {
-    background: var(--surface-secondary);
-}
