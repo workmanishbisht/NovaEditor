@@ -294,6 +294,9 @@
     letter-spacing: 0.01em;
 }
 
+/* Intentional brand-identity colors (HTML/CSS/JS badges) —
+   left hardcoded on purpose; they represent file types, not
+   theme surfaces, and should read the same in light or dark. */
 .tag-html {
     background: #fee2e2;
     color: #dc2626;
@@ -318,7 +321,10 @@
     margin-top: 6px;
 }
 
-/* ---- Realistic code-editor preview mock ---- */
+/* ---- Realistic code-editor preview mock ----
+   Intentionally NOT themed: this mimics a real code editor
+   (like the VS Code "Dark+" look) as a static visual prop,
+   independent of the app's own light/dark mode. */
 
 .dash-continue-preview {
     display: flex;
@@ -1153,30 +1159,4 @@
         font-size: 11.5px;
     }
 
-}
-
-/* ==========================================
-   Dark Theme
-========================================== */
-
-[data-theme="dark"] .dash-continue,
-[data-theme="dark"] .quick-action,
-[data-theme="dark"] .project-card,
-[data-theme="dark"] .dash-panel {
-    background: var(--surface);
-    border-color: var(--border);
-}
-
-[data-theme="dark"] .dash-empty-state {
-    background: var(--surface);
-}
-
-[data-theme="dark"] .storage-ring {
-    background:
-        radial-gradient(closest-side, var(--surface) 72%, transparent 73% 100%),
-        conic-gradient(var(--white-color) calc(var(--ring-value) * 1%), var(--surface-secondary) 0);
-}
-
-[data-theme="dark"] .storage-bar-fill {
-    background: var(--white-color);
 }
