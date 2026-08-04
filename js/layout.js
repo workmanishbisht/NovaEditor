@@ -33,6 +33,12 @@ const CONFIG = {
 
     THEME_STORAGE_KEY: "novaeditor:theme",
     AUTH_STATE_TIMEOUT_MS: 4000,
+
+    // How long the project modal's CSS hide transition takes. Used to
+    // delay setting `hidden = true` until the fade-out finishes — see
+    // closeProjectModal()/openProjectModal() for how this is now
+    // tracked/cancelled to avoid the "reopen while closing" bug.
+    PROJECT_MODAL_CLOSE_ANIMATION_MS: 200,
 };
 
 /* ==========================================
@@ -164,6 +170,10 @@ async function initSidebar() {
 
         highlightActiveSidebarItem();
         attachSidebarInteractions(mount);
+        // STATE.currentUser may not have resolved yet at this point —
+        // that's fine. populateSidebarUser() no-ops and leaves the
+        // "Loading..." placeholder from sidebar.html in place; init()
+        // calls it again once user data actually arrives.
         populateSidebarUser();
     } catch (error) {
         console.error("[NovaLayout] initSidebar error:", error);
@@ -220,15 +230,10 @@ function populateSidebarUser() {
    Bridges two separate partials: the hamburger
    trigger lives in header.html, the sidebar
    panel/overlay/close button live in
-   sidebar.html. initSidebar() and initHeader()
-   run concurrently (Promise.allSettled in
-   init()), so this can only be wired up AFTER
-   both have finished loading — it must not
-   live inside either init*() function on its
-   own, or the other partial's elements may not
-   exist in the DOM yet. That's the actual root
-   cause of the hamburger doing nothing: no
-   listener was ever attached to it, anywhere.
+   sidebar.html. Both must exist in the DOM
+   before this runs — init() calls this right
+   after the sidebar/header/project-modal
+   partials have all settled, not before.
 ========================================== */
 
 function attachMobileSidebarToggle() {
@@ -303,6 +308,8 @@ async function initHeader() {
         attachThemeToggle(mount);
         attachNotifications(mount);
         attachWorkspaceSwitcher(mount);
+        // STATE.currentUser may still be null here — refreshNotificationBadge()
+        // no-ops until it's set; init() re-runs it once data has loaded.
         await refreshNotificationBadge();
     } catch (error) {
         console.error("[NovaLayout] initHeader error:", error);
@@ -689,11 +696,25 @@ function getProjectModal() {
     return qs("#projectModal");
 }
 
+// Tracks the pending "finish hiding after the fade-out" timer so a fast
+// close→reopen can never race it. Previously, reopening the modal
+// within PROJECT_MODAL_CLOSE_ANIMATION_MS of closing it left the old
+// close timer alive; it would fire afterwards and set the just-reopened
+// modal's `hidden = true`, silently hiding it. openProjectModal() now
+// cancels this timer, and closeProjectModal() always clears any
+// previous one before starting a new one.
+let projectModalCloseTimer = null;
+
 function openProjectModal() {
     const modal = getProjectModal();
     if (!modal) {
         notify("Project modal not found on this page.", "error");
         return;
+    }
+
+    if (projectModalCloseTimer) {
+        clearTimeout(projectModalCloseTimer);
+        projectModalCloseTimer = null;
     }
 
     loadProjectWorkspaceOptions();
@@ -715,10 +736,15 @@ function closeProjectModal() {
     modal.classList.remove("show");
     modal.classList.add("hide");
 
-    setTimeout(() => {
+    if (projectModalCloseTimer) {
+        clearTimeout(projectModalCloseTimer);
+    }
+
+    projectModalCloseTimer = setTimeout(() => {
         modal.hidden = true;
         modal.classList.remove("hide");
-    }, 200);
+        projectModalCloseTimer = null;
+    }, CONFIG.PROJECT_MODAL_CLOSE_ANIMATION_MS);
 
     document.body.style.overflow = "";
 }
@@ -727,9 +753,24 @@ function attachProjectModalEvents() {
     const modal = getProjectModal();
     if (!modal) return;
 
-    qs("#closeProjectModal", modal)?.addEventListener("click", closeProjectModal);
-    qs("#cancelProjectBtn", modal)?.addEventListener("click", closeProjectModal);
-    qs(".project-modal-overlay", modal)?.addEventListener("click", closeProjectModal);
+    const closeBtn = qs("#closeProjectModal", modal);
+    const cancelBtn = qs("#cancelProjectBtn", modal);
+    const overlay = qs(".project-modal-overlay", modal);
+
+    if (closeBtn && closeBtn.dataset.bound !== "true") {
+        closeBtn.addEventListener("click", closeProjectModal);
+        closeBtn.dataset.bound = "true";
+    }
+
+    if (cancelBtn && cancelBtn.dataset.bound !== "true") {
+        cancelBtn.addEventListener("click", closeProjectModal);
+        cancelBtn.dataset.bound = "true";
+    }
+
+    if (overlay && overlay.dataset.bound !== "true") {
+        overlay.addEventListener("click", closeProjectModal);
+        overlay.dataset.bound = "true";
+    }
 
     addDocumentListenerOnce("project-modal-escape", "keydown", (event) => {
         const currentModal = getProjectModal();
@@ -984,32 +1025,71 @@ function attachGlobalListenersOnce() {
 
 /* ==========================================
    INITIALIZATION
+   ------------------------------------------
+   The visual shell (sidebar/header/project
+   modal partials) has no real dependency on
+   Firebase — loadPartial() is just fetch +
+   innerHTML. Previously the shell only started
+   loading AFTER loadDependencies() (dynamic
+   import) → resolveInitialAuthState() (waits
+   on Firebase, up to AUTH_STATE_TIMEOUT_MS) →
+   loadUserData() → loadWorkspaces() had all
+   finished, in sequence. That's why the
+   sidebar/header appeared late: real UI
+   rendering was stuck behind several
+   sequential network round trips it never
+   needed to wait for.
+
+   Now the shell (uiPromise) and the auth/data
+   pipeline (dataPromise) run concurrently.
+   Cross-partial wiring (user dropdown, mobile
+   sidebar toggle) attaches as soon as the
+   shell DOM exists, so the UI is fully
+   interactive before user/workspace data has
+   even arrived. Once dataPromise resolves, a
+   short hydration pass fills in the
+   name/avatar/workspace list/notification
+   count — pure DOM writes, no network, so it's
+   effectively instant. "novaeditor:layout-ready"
+   still fires only once everything (shell +
+   data) is ready, preserving the existing
+   contract dashboard.js/editor.js rely on.
 ========================================== */
 
 async function init() {
     if (STATE.initialized) return getState();
     STATE.initialized = true;
 
-    await loadDependencies();
+    const depsPromise = loadDependencies();
+    const uiPromise = Promise.allSettled([initSidebar(), initHeader(), initProjectModal()]);
 
-    try {
-        await resolveInitialAuthState();
-        await loadUserData();
-    } catch (error) {
-        console.error("[NovaLayout] Resolving auth state failed during init:", error);
-    }
+    const dataPromise = (async () => {
+        await depsPromise;
 
-    if (!STATE.currentUser) {
-        document.dispatchEvent(new CustomEvent("novaeditor:unauthenticated"));
-    }
+        try {
+            await resolveInitialAuthState();
+        } catch (error) {
+            console.error("[NovaLayout] Resolving auth state failed during init:", error);
+        }
 
-    try {
-        await loadWorkspaces();
-    } catch (error) {
-        console.error("[NovaLayout] loadWorkspaces failed during init:", error);
-    }
+        if (!STATE.currentUser) {
+            document.dispatchEvent(new CustomEvent("novaeditor:unauthenticated"));
+        }
 
-    await Promise.allSettled([initSidebar(), initHeader(), initProjectModal()]);
+        // loadUserData() and loadWorkspaces() both only depend on
+        // STATE.currentUser (already resolved above), not on each
+        // other's result — running them concurrently instead of
+        // sequentially halves this stage's network wait.
+        try {
+            await Promise.all([loadUserData(), loadWorkspaces()]);
+        } catch (error) {
+            console.error("[NovaLayout] Loading user/workspace data failed during init:", error);
+        }
+    })();
+
+    // Cross-partial wiring only needs the shell DOM, not user/workspace
+    // data — attach it as soon as the shell is in place.
+    await uiPromise;
 
     try {
         attachUserDropdown(document);
@@ -1025,6 +1105,15 @@ async function init() {
 
     attachGlobalListenersOnce();
 
+    // Hydrate the already-visible, already-interactive shell with real
+    // data once it's arrived.
+    await dataPromise;
+
+    populateSidebarUser();
+    populateWorkspaceSwitcherMenu(qs(CONFIG.MOUNTS.HEADER));
+    await refreshNotificationBadge();
+    loadProjectWorkspaceOptions();
+
     STATE.ready = true;
     document.dispatchEvent(new CustomEvent("novaeditor:layout-ready", { detail: getState() }));
 
@@ -1033,8 +1122,9 @@ async function init() {
 
 async function refresh() {
     try {
-        await loadUserData();
-        await loadWorkspaces();
+        // Independent Firestore reads — no need to wait on one before
+        // starting the other.
+        await Promise.all([loadUserData(), loadWorkspaces()]);
 
         populateSidebarUser();
         populateWorkspaceSwitcherMenu(qs(CONFIG.MOUNTS.HEADER));
