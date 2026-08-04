@@ -7,334 +7,141 @@
 
     <div class="project-modal-container" role="dialog" aria-modal="true" aria-labelledby="projectModalTitle">
 
-        <!-- ==========================================
-             Header
-        ========================================== -->
+        <!-- Header -->
         <div class="project-modal-header">
-
-            <div class="project-header-left">
-
-                <div class="project-header-icon">
-                    <i class="ri-folder-add-fill"></i>
-                </div>
-
-                <div class="project-header-content">
-                    <span class="project-badge">Nova Editor</span>
-                    <h2 id="projectModalTitle">Create New Project</h2>
-                    <p>
-                        Create a new workspace-ready project with
-                        language, framework and starter files.
-                    </p>
-                </div>
-
+            <div class="project-header-text">
+                <span class="project-badge">Nova Editor</span>
+                <h2 id="projectModalTitle">Create Project</h2>
+                <p>Set up a new workspace-ready project.</p>
             </div>
-
             <button type="button" id="closeProjectModal" class="project-close-btn" aria-label="Close">
                 <i class="ri-close-line"></i>
             </button>
-
         </div>
 
-        <!-- ==========================================
-             Body
-        ========================================== -->
+        <!-- Body -->
         <div class="project-modal-body">
-
             <form id="projectForm" autocomplete="off">
 
-                <!-- ==========================================
-                     Project Information
-                ========================================== -->
-                <section class="project-section project-card">
+                <div class="form-group">
+                    <label for="projectName">
+                        Project name
+                        <span class="required">*</span>
+                    </label>
+                    <input type="text" id="projectName" name="projectName" maxlength="50"
+                        placeholder="My Awesome Project" required>
+                </div>
 
-                    <div class="section-heading">
+                <div class="form-group">
+                    <label for="projectDescription">
+                        Description
+                        <span class="optional">Optional</span>
+                    </label>
+                    <textarea id="projectDescription" name="projectDescription" rows="3" maxlength="200"
+                        placeholder="What is this project about?"></textarea>
+                </div>
 
-                        <div class="section-icon">
-                            <i class="ri-information-line"></i>
-                        </div>
-
-                        <div class="section-title">
-                            <h3>Project Information</h3>
-                            <p>
-                                Give your project a name and
-                                description before creating it.
-                            </p>
-                        </div>
-
-                    </div>
-
+                <div class="project-grid">
                     <div class="form-group">
-                        <label for="projectName">
-                            Project Name
+                        <label for="projectLanguage">
+                            Language
                             <span class="required">*</span>
                         </label>
-                        <input type="text" id="projectName" name="projectName" maxlength="50"
-                            placeholder="My Awesome Project" required>
-                        <small class="form-helper">
-                            This name will appear in your dashboard.
-                        </small>
+                        <select id="projectLanguage" name="projectLanguage" required>
+                            <option value="html">HTML · CSS · JS</option>
+                            <option value="react">React</option>
+                            <option value="vue">Vue</option>
+                            <option value="node">Node.js</option>
+                            <option value="python">Python</option>
+                            <option value="java">Java</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="projectDescription">
-                            Description
-                            <span class="optional">(Optional)</span>
-                        </label>
-                        <textarea id="projectDescription" name="projectDescription" rows="5" maxlength="200"
-                            placeholder="Describe your project..."></textarea>
-                        <small class="form-helper">
-                            Help teammates understand the purpose
-                            of this project.
-                        </small>
+                        <label for="projectFramework">Framework</label>
+                        <select id="projectFramework" name="projectFramework">
+                            <option value="none">None</option>
+                            <option value="bootstrap">Bootstrap</option>
+                            <option value="tailwind">Tailwind CSS</option>
+                            <option value="vite">Vite</option>
+                            <option value="next">Next.js</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="project-grid">
+                    <div class="form-group">
+                        <label for="projectTemplate">Template</label>
+                        <select id="projectTemplate" name="projectTemplate">
+                            <option value="blank">Blank project</option>
+                            <option value="landing">Landing page</option>
+                            <option value="portfolio">Portfolio</option>
+                            <option value="dashboard">Admin dashboard</option>
+                            <option value="blog">Blog website</option>
+                            <option value="ecommerce">E-commerce</option>
+                        </select>
                     </div>
 
-                </section>
-
-                <!-- ==========================================
-                     Project Configuration
-                ========================================== -->
-                <section class="project-section project-card">
-
-                    <div class="section-heading">
-
-                        <div class="section-icon">
-                            <i class="ri-settings-3-line"></i>
-                        </div>
-
-                        <div class="section-title">
-                            <h3>Project Configuration</h3>
-                            <p>
-                                Select the language, framework and
-                                project template.
-                            </p>
-                        </div>
-
+                    <div class="form-group">
+                        <label for="projectWorkspace">Workspace</label>
+                        <select id="projectWorkspace" name="projectWorkspace"></select>
                     </div>
+                </div>
 
-                    <div class="project-grid">
-
-                        <div class="form-group">
-                            <label for="projectLanguage">
-                                Language
-                                <span class="required">*</span>
-                            </label>
-                            <select id="projectLanguage" name="projectLanguage" required>
-                                <option value="html">HTML • CSS • JavaScript</option>
-                                <option value="react">React</option>
-                                <option value="vue">Vue</option>
-                                <option value="node">Node.js</option>
-                                <option value="python">Python</option>
-                                <option value="java">Java</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="projectFramework">Framework</label>
-                            <select id="projectFramework" name="projectFramework">
-                                <option value="none">None</option>
-                                <option value="bootstrap">Bootstrap</option>
-                                <option value="tailwind">Tailwind CSS</option>
-                                <option value="vite">Vite</option>
-                                <option value="next">Next.js</option>
-                            </select>
-                        </div>
-
-                    </div>
-
-                    <div class="project-grid">
-
-                        <div class="form-group">
-                            <label for="projectTemplate">Template</label>
-                            <select id="projectTemplate" name="projectTemplate">
-                                <option value="blank">Blank Project</option>
-                                <option value="landing">Landing Page</option>
-                                <option value="portfolio">Portfolio</option>
-                                <option value="dashboard">Admin Dashboard</option>
-                                <option value="blog">Blog Website</option>
-                                <option value="ecommerce">E-Commerce</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="projectWorkspace">Workspace</label>
-                            <select id="projectWorkspace" name="projectWorkspace"></select>
-                            <small class="form-helper">
-                                Choose where this project will be stored.
-                            </small>
-                        </div>
-
-                    </div>
-
-                </section>
-
-                <!-- ==========================================
-                     Visibility
-                ========================================== -->
-                <section class="project-section project-card">
-
-                    <div class="section-heading">
-
-                        <div class="section-icon">
-                            <i class="ri-lock-line"></i>
-                        </div>
-
-                        <div class="section-title">
-                            <h3>Visibility</h3>
-                            <p>Control who can access this project.</p>
-                        </div>
-
-                    </div>
-
-                    <div class="visibility-grid">
-
-                        <label class="visibility-card active">
+                <div class="form-group">
+                    <label>Visibility</label>
+                    <div class="visibility-toggle">
+                        <label class="visibility-option active">
                             <input type="radio" name="visibility" value="private" checked>
-                            <div class="visibility-icon">
-                                <i class="ri-lock-line"></i>
-                            </div>
-                            <div class="visibility-content">
-                                <strong>Private</strong>
-                                <small>
-                                    Only members of your workspace
-                                    can access this project.
-                                </small>
-                            </div>
+                            <span>Private</span>
                         </label>
-
-                        <label class="visibility-card disabled">
+                        <label class="visibility-option disabled">
                             <input type="radio" name="visibility" value="public" disabled>
-                            <div class="visibility-icon">
-                                <i class="ri-global-line"></i>
-                            </div>
-                            <div class="visibility-content">
-                                <strong>Public</strong>
-                                <small>Coming soon</small>
-                            </div>
+                            <span>Public</span>
+                            <small>Soon</small>
                         </label>
-
                     </div>
+                </div>
 
-                </section>
-
-                <!-- ==========================================
-                     Project Options
-                ========================================== -->
-                <section class="project-section project-card">
-
-                    <div class="section-heading">
-
-                        <div class="section-icon">
-                            <i class="ri-checkbox-circle-line"></i>
-                        </div>
-
-                        <div class="section-title">
-                            <h3>Project Options</h3>
-                            <p>Configure the default project setup.</p>
-                        </div>
-
-                    </div>
-
-                    <div class="checkbox-group">
-
-                        <label class="checkbox-card">
+                <div class="form-group">
+                    <label>Project options</label>
+                    <div class="option-list">
+                        <label class="option-row">
                             <input type="checkbox" id="createReadme" checked>
-                            <span class="checkbox-icon">
-                                <i class="ri-file-text-line"></i>
-                            </span>
-                            <span class="checkbox-content">
+                            <span class="option-text">
                                 <strong>Create README.md</strong>
-                                <small>Generate a README file automatically.</small>
+                                <small>Generate a README file automatically</small>
                             </span>
                         </label>
-
-                        <label class="checkbox-card">
+                        <label class="option-row">
                             <input type="checkbox" id="initializeGit" checked>
-                            <span class="checkbox-icon">
-                                <i class="ri-git-branch-line"></i>
-                            </span>
-                            <span class="checkbox-content">
+                            <span class="option-text">
                                 <strong>Initialize Git</strong>
-                                <small>Start with a Git repository.</small>
+                                <small>Start with a Git repository</small>
                             </span>
                         </label>
-
-                        <label class="checkbox-card">
+                        <label class="option-row">
                             <input type="checkbox" id="createDefaultFiles" checked>
-                            <span class="checkbox-icon">
-                                <i class="ri-file-code-line"></i>
-                            </span>
-                            <span class="checkbox-content">
-                                <strong>Create Starter Files</strong>
-                                <small>Generate default project files.</small>
+                            <span class="option-text">
+                                <strong>Create starter files</strong>
+                                <small>index.html, style.css, script.js</small>
                             </span>
                         </label>
-
                     </div>
-
-                </section>
-
-                <!-- ==========================================
-                     Starter Files
-                ========================================== -->
-                <section class="project-section project-card">
-
-                    <div class="section-heading">
-
-                        <div class="section-icon">
-                            <i class="ri-folder-open-line"></i>
-                        </div>
-
-                        <div class="section-title">
-                            <h3>Starter Files</h3>
-                            <p>Files that will be created automatically.</p>
-                        </div>
-
-                    </div>
-
-                    <div class="starter-files">
-
-                        <div class="starter-file">
-                            <i class="ri-html5-fill"></i>
-                            <span>index.html</span>
-                        </div>
-
-                        <div class="starter-file">
-                            <i class="ri-css3-fill"></i>
-                            <span>style.css</span>
-                        </div>
-
-                        <div class="starter-file">
-                            <i class="ri-javascript-fill"></i>
-                            <span>script.js</span>
-                        </div>
-
-                        <div class="starter-file">
-                            <i class="ri-file-text-fill"></i>
-                            <span>README.md</span>
-                        </div>
-
-                    </div>
-
-                </section>
+                </div>
 
             </form>
-
         </div>
 
-        <!-- ==========================================
-             Footer
-        ========================================== -->
+        <!-- Footer -->
         <div class="project-modal-footer">
-
             <button type="button" id="cancelProjectBtn" class="btn btn-outline">
                 Cancel
             </button>
-
             <button type="submit" form="projectForm" id="createProjectBtn" class="btn btn-primary">
-                <i class="ri-folder-add-fill"></i>
-                <span>Create Project</span>
+                <span>Create project</span>
             </button>
-
         </div>
+
     </div>
 </div>
