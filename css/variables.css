@@ -6,11 +6,15 @@
     --primary: #2563eb;
     --primary-hover: #1d4ed8;
     --white-color: #ffffff;
-    /* Semantic status colors */
+
+    /* Semantic status colors (kept stable across themes
+       for recognizability; only their "light" backgrounds
+       are themed below via --primary-light etc.) */
     --success: #16a34a;
     --warning: #f59e0b;
     --danger: #ef4444;
     --info: #0ea5e9;
+
     /* Radius */
     --radius-xs: 4px;
     --radius-sm: 6px;
@@ -19,6 +23,7 @@
     --radius-xl: 20px;
     --radius-2xl: 24px;
     --radius-full: 999px;
+
     /* Typography */
     --font-family: "Poppins", sans-serif;
     --code-font: "Fira Code", Consolas, "Courier New", monospace;
@@ -36,6 +41,7 @@
     --font-medium: 500;
     --font-semibold: 600;
     --font-bold: 700;
+
     /* Spacing */
     --space-1: 4px;
     --space-2: 8px;
@@ -48,6 +54,7 @@
     --space-12: 48px;
     --space-16: 64px;
     --space-20: 80px;
+
     /* Containers / layout */
     --container-sm: 640px;
     --container-md: 768px;
@@ -56,10 +63,12 @@
     --container-2xl: 1440px;
     --header-height: 72px;
     --sidebar-width: 280px;
+
     /* Motion */
     --transition-fast: 0.2s ease;
     --transition: 0.3s ease;
     --transition-slow: 0.5s ease;
+
     /* Z-index scale */
     --z-dropdown: 1000;
     --z-sticky: 1010;
@@ -68,6 +77,7 @@
     --z-toast: 1040;
     --z-tooltip: 1050;
 }
+
 /* ==========================================
    Light Theme (default)
 ========================================== */
@@ -75,18 +85,30 @@ html[data-theme="light"] {
     --bg: #f8fafc;
     --surface: #ffffff;
     --surface-secondary: #f1f5f9;
+
     --text-primary: #0f172a;
     --text-secondary: #475569;
     --text-muted: #94a3b8;
+
     --border: #e2e8f0;
     --border-hover: #cbd5e1;
+
     --primary-light: #dbeafe;
+
     --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
     --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
     --shadow-md: 0 10px 30px rgba(15, 23, 42, 0.08);
     --shadow-lg: 0 20px 40px rgba(15, 23, 42, 0.12);
     --shadow-xl: 0 30px 60px rgba(15, 23, 42, 0.16);
+
+    /* GitHub brand button — dedicated tokens so this vendor
+       button never has to borrow --text-primary/--surface.
+       Mirrors GitHub's own light-mode button (dark pill). */
+    --github-bg: #24292f;
+    --github-hover: #1b1f23;
+    --github-text: #ffffff;
 }
+
 /* ==========================================
    Dark Theme
 ========================================== */
@@ -94,15 +116,26 @@ html[data-theme="dark"] {
     --bg: #0b1120;
     --surface: #111827;
     --surface-secondary: #1a2333;
+
     --text-primary: #f1f5f9;
     --text-secondary: #cbd5e1;
     --text-muted: #7c8aa5;
+
     --border: #263042;
     --border-hover: #34405a;
+
     --primary-light: rgba(37, 99, 235, 0.18);
+
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
     --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
     --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.55);
     --shadow-xl: 0 30px 60px rgba(0, 0, 0, 0.65);
+
+    /* GitHub brand button — inverted to a light pill in dark
+       mode (same pattern GitHub itself uses) so it still reads
+       clearly against a dark --surface instead of vanishing. */
+    --github-bg: #f6f8fa;
+    --github-hover: #e5e7eb;
+    --github-text: #24292f;
 }
