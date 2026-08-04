@@ -701,6 +701,9 @@
         top: 0;
         left: 0;
         width: 280px;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
         transform: translateX(-100%);
         transition: transform 0.25s ease;
         box-shadow: var(--shadow-xl);
@@ -708,6 +711,40 @@
 
     .sidebar.open {
         transform: translateX(0);
+    }
+
+    /*
+       ROOT CAUSE FIX — mobile sidebar bottom profile clipped:
+
+       Flex items default to `min-height: auto`, meaning a flex child's
+       minimum height is its *content's* height, even with `flex: 1` and
+       `overflow-y: auto` set. That means .sidebar-nav was never actually
+       shrinking to fit the space left after .sidebar-top/.sidebar-user —
+       it was growing to fit ALL its nav items instead, pushing the
+       flex column's total content taller than the sidebar's 100vh box.
+       Only .sidebar-nav had its own scrollbar, not .sidebar itself, so
+       that excess didn't scroll — it just extended past the bottom edge,
+       taking .sidebar-user off-screen with it.
+
+       `min-height: 0` on the scrolling item is the standard fix: it lets
+       .sidebar-nav actually shrink to the remaining space and hand
+       overflow to its own scrollbar, instead of forcing the whole
+       column to overflow. `flex-shrink: 0` on the top/bottom sections
+       pins them to their natural size so only the nav list ever
+       compresses/scrolls — the same pattern VS Code/GitHub's own
+       sidebars use.
+    */
+    .sidebar-top {
+        flex-shrink: 0;
+    }
+
+    .sidebar-nav {
+        min-height: 0;
+        flex-shrink: 1;
+    }
+
+    .sidebar-user {
+        flex-shrink: 0;
     }
 
     .sidebar-close {
