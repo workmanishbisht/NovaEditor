@@ -615,29 +615,18 @@
 .project-card {
     display: flex;
     flex-direction: column;
-
     overflow: hidden;
-
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.project-card:hover {
-    border-color: var(--border-hover);
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-lg);
-}
 
 .project-card-thumb {
     display: flex;
     align-items: center;
     justify-content: center;
-
     height: 110px;
-
     background: linear-gradient(135deg, #1e293b, #0f172a);
-
     color: #64748b;
-
     font-size: 26px;
 }
 

@@ -1,5 +1,4 @@
 /* === Header === */
-
 .header {
   position: sticky;
   top: 0;
@@ -105,44 +104,118 @@
 }
 
 .menu-toggle {
-  width: 48px;
-  height: 48px;
+  position: relative;
+  width: 44px;
+  height: 44px;
   display: none;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
+  border: none;
+  background: transparent;
   border-radius: var(--radius-md);
-  background: var(--surface);
-  color: var(--text-primary);
   cursor: pointer;
-  transition: var(--transition);
+  overflow: visible;
+  z-index: calc(var(--z-fixed, 1000) + 2);
+  transition: background 0.2s ease;
 }
 
 .menu-toggle:hover {
-  background: var(--primary);
-  color: #fff;
+  background: var(--primary-light, rgba(37, 99, 235, 0.08));
 }
 
-.menu-toggle i {
+.menu-toggle .menu-icon,
+.menu-toggle .close-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 24px;
+  line-height: 1;
+  color: #111827;
+  opacity: 1;
+  visibility: visible;
+  transform: rotate(0deg) scale(1);
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+  cursor: pointer;
+  pointer-events: none;
 }
 
-.close-icon {
-  display: none;
+.menu-toggle .close-icon {
+  opacity: 0;
+  visibility: hidden;
+  transform: rotate(-90deg) scale(0.6);
+}
+
+.menu-toggle.is-active .menu-icon {
+  opacity: 0;
+  visibility: hidden;
+  transform: rotate(90deg) scale(0.6);
+}
+
+.menu-toggle.is-active .close-icon {
+  opacity: 1;
+  visibility: visible;
+  transform: rotate(0deg) scale(1);
+}
+
+@media (prefers-color-scheme: dark) {
+
+  .menu-toggle .menu-icon,
+  .menu-toggle .close-icon {
+    color: #f8fafc;
+  }
+}
+
+[data-theme="dark"] .menu-toggle .menu-icon,
+[data-theme="dark"] .menu-toggle .close-icon {
+  color: #f8fafc;
+}
+
+[data-theme="light"] .menu-toggle .menu-icon,
+[data-theme="light"] .menu-toggle .close-icon {
+  color: #111827;
 }
 
 .mobile-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
-  padding: 28px;
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: auto;
+  width: min(85vw, 360px);
+  height: 100vh;
+  height: 100dvh;
+  background: var(--surface, #ffffff);
+  border-top: none;
+  border-left: 1px solid var(--border);
+  box-shadow: -12px 0 40px rgba(15, 23, 42, 0.18);
+  padding: 96px 28px 28px;
   display: none;
   flex-direction: column;
   gap: 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  transform: translateX(100%);
+  z-index: calc(var(--z-fixed, 1000) - 1);
+}
+
+.mobile-menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: calc(var(--z-fixed, 1000) - 2);
+}
+
+.mobile-menu-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+body.js-menu-open {
+  overflow: hidden;
 }
 
 .mobile-link {
@@ -192,7 +265,6 @@
 }
 
 /* === Hero section === */
-
 .hero {
   padding: 90px 0 100px;
   overflow: hidden;
@@ -323,7 +395,6 @@
 }
 
 /* === Trusted Companies === */
-
 .companies {
   padding: 80px 0;
 }
@@ -379,7 +450,6 @@
 }
 
 /* ==== Features Section === */
-
 .features {
   padding: 100px 0;
   background: var(--surface-secondary);
@@ -476,7 +546,6 @@
 }
 
 /* === template section === */
-
 .templates {
   padding: 100px 0;
 }
@@ -569,7 +638,6 @@
 }
 
 /* ==== AI Assistant ==== */
-
 .ai-assistant {
   padding: 100px 0;
 }
@@ -645,7 +713,6 @@
 }
 
 /* ==== Why Nova Editor ==== */
-
 .why-editor {
   padding: 100px 0;
   background: var(--surface-secondary);
@@ -709,7 +776,6 @@
 }
 
 /* ==== Editor Preview ==== */
-
 .editor-preview {
   padding: 100px 0;
 }
@@ -728,7 +794,6 @@
 }
 
 /* === Faq Section === */
-
 .faq {
   padding: 100px 0;
   background: var(--surface-secondary);
@@ -778,7 +843,6 @@
 }
 
 /* === Footer Section === */
-
 .footer {
   padding: 80px 0 30px;
   background: var(--surface);
@@ -891,7 +955,6 @@
 }
 
 /* ==== Responsive Section ==== */
-
 @media (max-width: 1200px) {
   .container {
     max-width: 1140px;
@@ -1113,8 +1176,21 @@
     padding-inline: 24px;
   }
 
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: var(--z-fixed, 1000);
+  }
+
   .header .container {
     height: 74px;
+  }
+
+  html,
+  body {
+    padding-top: 74px;
   }
 
   .nav-menu {
@@ -1130,7 +1206,7 @@
   }
 
   .mobile-menu {
-    width: 100%;
+    width: min(85vw, 360px);
   }
 
   .hero {
@@ -1326,20 +1402,6 @@
     min-width: 140px;
   }
 
-  .menu-toggle {
-    border: none;
-    background: transparent;
-  }
-
-  .menu-toggle:hover {
-    background: transparent;
-    color: var(--primary);
-  }
-
-  .menu-toggle:hover i {
-    color: var(--primary);
-  }
-
   .hero-image img {
     border-radius: 6px;
   }
@@ -1362,12 +1424,17 @@
     height: 70px;
   }
 
+  html,
+  body {
+    padding-top: 70px;
+  }
+
   .logo img {
     height: 38px;
   }
 
   .mobile-menu {
-    padding: 24px;
+    padding: 96px 24px 24px;
   }
 
   .mobile-buttons {
@@ -1540,7 +1607,6 @@
   }
 
   /* --- Additional fixes: overflow safety, 14px mobile gutters, alignment polish --- */
-
   html,
   body {
     overflow-x: hidden;
@@ -1617,6 +1683,7 @@
     overflow-x: hidden;
     width: 100%;
     max-width: 100%;
+    padding-top: 66px;
   }
 
   .header .container {
@@ -1637,7 +1704,7 @@
   }
 
   .mobile-menu {
-    padding: 20px;
+    padding: 84px 20px 20px;
     font-weight: 500;
   }
 
@@ -1953,7 +2020,7 @@
   }
 
   .mobile-menu {
-    padding: 18px;
+    padding: 80px 18px 18px;
   }
 
   .hero {
@@ -2083,6 +2150,7 @@
     overflow-x: hidden;
     width: 100%;
     max-width: 100%;
+    padding-top: 58px;
   }
 
   .header .container {

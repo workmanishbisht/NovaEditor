@@ -111,7 +111,7 @@
 }
 
 .nav-item.active {
-    background: linear-gradient(180deg, var(--primary), var(--primary-hover));
+    background: var(--primary);
     color: var(--white-color);
     font-weight: 600;
     transform: none;
