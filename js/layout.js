@@ -1,50 +1,41 @@
 /* ==========================================
    NOVA EDITOR — LAYOUT.JS
 ========================================== */
-
 import { showToast } from "../components/toast.js";
 
 /* ==========================================
    CONFIG
 ========================================== */
-
 const MODULE_URL = new URL(".", import.meta.url);
 const PROJECT_ROOT = new URL("../", MODULE_URL);
-
 const CONFIG = {
     ROUTES: {
         EDITOR: "editor.html",
         LOGIN: "login.html",
     },
-
     PARTIALS: {
         SIDEBAR: new URL("components/sidebar.html", PROJECT_ROOT).href,
         HEADER: new URL("components/header.html", PROJECT_ROOT).href,
         PROJECT_MODAL: new URL("components/project-modal.html", PROJECT_ROOT).href,
     },
-
     DEFAULT_AVATAR: new URL("assets/images/avatar/default.png", PROJECT_ROOT).href,
-
+    LOGOS: {
+        light: new URL("assets/images/logo/novaeditor-light.png", PROJECT_ROOT).href,
+        dark: new URL("assets/images/logo/novaeditor-dark.png", PROJECT_ROOT).href,
+    },
     MOUNTS: {
         SIDEBAR: "#sidebarMount",
         HEADER: "#headerMount",
         PROJECT_MODAL: "#projectModalMount",
     },
-
     THEME_STORAGE_KEY: "novaeditor:theme",
     AUTH_STATE_TIMEOUT_MS: 4000,
-
-    // How long the project modal's CSS hide transition takes. Used to
-    // delay setting `hidden = true` until the fade-out finishes — see
-    // closeProjectModal()/openProjectModal() for how this is now
-    // tracked/cancelled to avoid the "reopen while closing" bug.
     PROJECT_MODAL_CLOSE_ANIMATION_MS: 200,
 };
 
 /* ==========================================
    STATE
 ========================================== */
-
 const STATE = {
     currentUser: null,
     userData: null,
@@ -54,18 +45,15 @@ const STATE = {
     initialized: false,
     ready: false,
 };
-
 const registeredListeners = new Set();
 
 /* ==========================================
    DEPENDENCIES
 ========================================== */
-
 const deps = {
     auth: {},
     firestore: {},
 };
-
 async function loadDependencies() {
     try {
         deps.auth = await import("../firebase/auth.js");
@@ -73,7 +61,6 @@ async function loadDependencies() {
         console.error("[NovaLayout] Failed to load firebase/auth.js:", error);
         deps.auth = {};
     }
-
     try {
         deps.firestore = await import("../firebase/firestore.js");
     } catch (error) {
@@ -85,7 +72,6 @@ async function loadDependencies() {
 /* ==========================================
    SAFE HELPERS
 ========================================== */
-
 function notify(message, type = "info") {
     if (typeof showToast === "function") {
         showToast(message, type);
@@ -93,7 +79,6 @@ function notify(message, type = "info") {
         console.warn(`[NovaLayout] showToast unavailable — ${type}: ${message}`);
     }
 }
-
 async function safeCall(fn, fnName, ...args) {
     if (typeof fn !== "function") {
         console.error(`[NovaLayout] "${fnName}" is not exported by the expected module.`);
@@ -106,7 +91,6 @@ async function safeCall(fn, fnName, ...args) {
         return undefined;
     }
 }
-
 function addDocumentListenerOnce(key, type, handler, options) {
     if (registeredListeners.has(key)) return;
     document.addEventListener(type, handler, options);
@@ -116,15 +100,12 @@ function addDocumentListenerOnce(key, type, handler, options) {
 /* ==========================================
    DOM HELPERS
 ========================================== */
-
 function qs(selector, scope = document) {
     return scope.querySelector(selector);
 }
-
 function qsa(selector, scope = document) {
     return Array.from(scope.querySelectorAll(selector));
 }
-
 function debounce(fn, delay = 300) {
     let timer = null;
     return (...args) => {
@@ -136,14 +117,12 @@ function debounce(fn, delay = 300) {
 /* ==========================================
    COMPONENT LOADER
 ========================================== */
-
 async function loadPartial(url, mountSelector) {
     const mount = qs(mountSelector);
     if (!mount) {
         console.error(`[NovaLayout] Mount point "${mountSelector}" not found in the DOM.`);
         return null;
     }
-
     try {
         const response = await fetch(url, { cache: "no-cache" });
         if (!response.ok) {
@@ -162,86 +141,73 @@ async function loadPartial(url, mountSelector) {
 /* ==========================================
    SIDEBAR
 ========================================== */
-
 async function initSidebar() {
     try {
         const mount = await loadPartial(CONFIG.PARTIALS.SIDEBAR, CONFIG.MOUNTS.SIDEBAR);
         if (!mount) return;
-
         highlightActiveSidebarItem();
         attachSidebarInteractions(mount);
-        // STATE.currentUser may not have resolved yet at this point —
-        // that's fine. populateSidebarUser() no-ops and leaves the
-        // "Loading..." placeholder from sidebar.html in place; init()
-        // calls it again once user data actually arrives.
         populateSidebarUser();
+        updateLogoForTheme();
     } catch (error) {
         console.error("[NovaLayout] initSidebar error:", error);
     }
 }
-
 function highlightActiveSidebarItem() {
     const page = document.body.dataset.page;
     if (!page) return;
-
     const sidebar = qs(CONFIG.MOUNTS.SIDEBAR);
     if (!sidebar) return;
-
     qsa("[data-nav-item]", sidebar).forEach((item) => {
         const isActive = item.dataset.navItem === page;
         item.classList.toggle("active", isActive);
         item.setAttribute("aria-current", isActive ? "page" : "false");
     });
 }
-
 function attachSidebarInteractions(sidebar) {
     qsa("[data-nav-item]", sidebar).forEach((item) => {
         item.classList.add("nav-item-interactive");
     });
-
     const logoutBtn = qs("[data-logout]", sidebar);
     if (logoutBtn && logoutBtn.dataset.bound !== "true") {
         logoutBtn.addEventListener("click", handleLogout);
         logoutBtn.dataset.bound = "true";
     }
 }
-
 function populateSidebarUser() {
     const sidebar = qs(CONFIG.MOUNTS.SIDEBAR);
     if (!sidebar) return;
-
     const nameEl = qs("[data-user-name]", sidebar);
     const emailEl = qs("[data-user-email]", sidebar);
     const avatarEl = qs("[data-user-avatar]", sidebar);
-
     if (!STATE.currentUser) return;
-
     if (nameEl) nameEl.textContent = STATE.userData?.displayName || STATE.currentUser.displayName || "User";
     if (emailEl) emailEl.textContent = STATE.currentUser.email || "";
-
     if (avatarEl) {
         avatarEl.src = STATE.userData?.photoURL || STATE.currentUser.photoURL || CONFIG.DEFAULT_AVATAR;
     }
 }
 
 /* ==========================================
-   MOBILE SIDEBAR TOGGLE
-   ------------------------------------------
-   Bridges two separate partials: the hamburger
-   trigger lives in header.html, the sidebar
-   panel/overlay/close button live in
-   sidebar.html. Both must exist in the DOM
-   before this runs — init() calls this right
-   after the sidebar/header/project-modal
-   partials have all settled, not before.
+   THEME-AWARE LOGO
 ========================================== */
+function updateLogoForTheme(theme = STATE.theme) {
+    const logoImg = qs(".sidebar-logo img");
+    if (!logoImg) return;
+    const nextSrc = theme === "dark" ? CONFIG.LOGOS.dark : CONFIG.LOGOS.light;
+    if (logoImg.getAttribute("src") !== nextSrc) {
+        logoImg.src = nextSrc;
+    }
+}
 
+/* ==========================================
+   MOBILE SIDEBAR TOGGLE
+========================================== */
 function attachMobileSidebarToggle() {
     const toggleBtn = qs("[data-sidebar-toggle]") || qs("#sidebarToggleBtn") || qs(".sidebar-toggle");
     const sidebar = qs("#appSidebar") || qs(".sidebar");
     const overlay = qs("#sidebarOverlay") || qs(".sidebar-overlay");
     const closeBtn = qs("#sidebarCloseBtn") || qs(".sidebar-close");
-
     if (!toggleBtn || !sidebar || !overlay) {
         console.error(
             "[NovaLayout] Mobile sidebar toggle not attached — missing element(s):",
@@ -249,21 +215,18 @@ function attachMobileSidebarToggle() {
         );
         return;
     }
-
     function openMobileSidebar() {
         sidebar.classList.add("open");
         overlay.classList.add("open");
         document.body.style.overflow = "hidden";
         toggleBtn.setAttribute("aria-expanded", "true");
     }
-
     function closeMobileSidebar() {
         sidebar.classList.remove("open");
         overlay.classList.remove("open");
         document.body.style.overflow = "";
         toggleBtn.setAttribute("aria-expanded", "false");
     }
-
     if (toggleBtn.dataset.bound !== "true") {
         toggleBtn.addEventListener("click", (event) => {
             event.stopPropagation();
@@ -275,17 +238,14 @@ function attachMobileSidebarToggle() {
         });
         toggleBtn.dataset.bound = "true";
     }
-
     if (closeBtn && closeBtn.dataset.bound !== "true") {
         closeBtn.addEventListener("click", closeMobileSidebar);
         closeBtn.dataset.bound = "true";
     }
-
     if (overlay.dataset.bound !== "true") {
         overlay.addEventListener("click", closeMobileSidebar);
         overlay.dataset.bound = "true";
     }
-
     addDocumentListenerOnce("mobile-sidebar-escape", "keydown", (event) => {
         if (event.key !== "Escape") return;
         const currentSidebar = qs("#appSidebar") || qs(".sidebar");
@@ -298,52 +258,41 @@ function attachMobileSidebarToggle() {
 /* ==========================================
    HEADER
 ========================================== */
-
 async function initHeader() {
     try {
         const mount = await loadPartial(CONFIG.PARTIALS.HEADER, CONFIG.MOUNTS.HEADER);
         if (!mount) return;
-
         attachHeaderSearch(mount);
         attachThemeToggle(mount);
         attachNotifications(mount);
         attachWorkspaceSwitcher(mount);
-        // STATE.currentUser may still be null here — refreshNotificationBadge()
-        // no-ops until it's set; init() re-runs it once data has loaded.
         await refreshNotificationBadge();
     } catch (error) {
         console.error("[NovaLayout] initHeader error:", error);
     }
 }
-
 function attachHeaderSearch(header) {
     const searchInput = qs("#globalSearchInput", header);
     if (!searchInput || searchInput.dataset.novaBound === "true") return;
-
     const runSearch = debounce((value) => {
         document.dispatchEvent(
             new CustomEvent("novaeditor:search", { detail: { query: value.trim() } })
         );
     }, 250);
-
     searchInput.addEventListener("input", (event) => {
         runSearch(event.target.value);
     });
-
     searchInput.dataset.novaBound = "true";
 }
 
 /* ==========================================
    THEME TOGGLE
 ========================================== */
-
 function attachThemeToggle(header) {
     const toggleBtn = qs("[data-theme-toggle]", header);
     if (!toggleBtn) return;
-
     const savedTheme = localStorage.getItem(CONFIG.THEME_STORAGE_KEY) || "light";
     applyTheme(savedTheme);
-
     if (toggleBtn.dataset.bound !== "true") {
         toggleBtn.addEventListener("click", () => {
             const nextTheme = STATE.theme === "light" ? "dark" : "light";
@@ -353,11 +302,10 @@ function attachThemeToggle(header) {
         toggleBtn.dataset.bound = "true";
     }
 }
-
 function applyTheme(theme) {
     STATE.theme = theme;
     document.documentElement.setAttribute("data-theme", theme);
-
+    updateLogoForTheme(theme);
     const toggleBtn = qs("[data-theme-toggle]");
     if (!toggleBtn) return;
     toggleBtn.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
@@ -367,12 +315,10 @@ function applyTheme(theme) {
 /* ==========================================
    NOTIFICATIONS
 ========================================== */
-
 function attachNotifications(header) {
     const badge = qs("[data-notification-badge]", header);
     const bell = qs("[data-notification-trigger]", header);
     const panel = qs("[data-notification-panel]", header);
-
     if (bell && panel && bell.dataset.bound !== "true") {
         bell.addEventListener("click", (event) => {
             event.stopPropagation();
@@ -380,7 +326,6 @@ function attachNotifications(header) {
             bell.setAttribute("aria-expanded", isOpen ? "true" : "false");
         });
         bell.dataset.bound = "true";
-
         addDocumentListenerOnce("notification-outside-click", "click", (event) => {
             const currentPanel = qs("[data-notification-panel]");
             const currentBell = qs("[data-notification-trigger]");
@@ -390,25 +335,20 @@ function attachNotifications(header) {
             }
         });
     }
-
     if (!badge) return;
 }
-
 async function refreshNotificationBadge() {
     const badge = qs("[data-notification-badge]");
     if (!badge || !STATE.currentUser) return;
-
     const count = await safeCall(
         deps.firestore.getUnreadNotificationCount,
         "getUnreadNotificationCount",
         STATE.currentUser.uid
     );
-
     if (typeof count !== "number") {
         badge.hidden = true;
         return;
     }
-
     if (count > 0) {
         badge.textContent = count > 99 ? "99+" : String(count);
         badge.hidden = false;
@@ -420,12 +360,10 @@ async function refreshNotificationBadge() {
 /* ==========================================
    USER DROPDOWN
 ========================================== */
-
 function attachUserDropdown(scope = document) {
     const trigger = qs("[data-user-dropdown-trigger]", scope);
     const dropdown = qs("[data-user-dropdown]", scope);
     if (!trigger || !dropdown) return;
-
     if (trigger.dataset.bound !== "true") {
         trigger.addEventListener("click", (event) => {
             event.stopPropagation();
@@ -434,7 +372,6 @@ function attachUserDropdown(scope = document) {
         });
         trigger.dataset.bound = "true";
     }
-
     addDocumentListenerOnce("user-dropdown-outside-click", "click", (event) => {
         const currentDropdown = qs("[data-user-dropdown]");
         const currentTrigger = qs("[data-user-dropdown-trigger]");
@@ -443,7 +380,6 @@ function attachUserDropdown(scope = document) {
             currentTrigger?.setAttribute("aria-expanded", "false");
         }
     });
-
     addDocumentListenerOnce("user-dropdown-escape", "keydown", (event) => {
         if (event.key === "Escape") {
             const currentDropdown = qs("[data-user-dropdown]");
@@ -454,7 +390,6 @@ function attachUserDropdown(scope = document) {
             }
         }
     });
-
     const logoutButton = qs("[data-logout]", dropdown);
     if (logoutButton && logoutButton.dataset.bound !== "true") {
         logoutButton.addEventListener("click", handleLogout);
@@ -465,13 +400,11 @@ function attachUserDropdown(scope = document) {
 /* ==========================================
    LOGOUT
 ========================================== */
-
 async function handleLogout() {
     if (typeof deps.auth.logout !== "function") {
         notify("Logout is currently unavailable.", "error");
         return;
     }
-
     await safeCall(deps.auth.logout, "logout");
     window.location.href = CONFIG.ROUTES.LOGIN;
 }
@@ -479,9 +412,7 @@ async function handleLogout() {
 /* ==========================================
    SESSION / USER
 ========================================== */
-
 let authUnsubscribe = null;
-
 function resolveInitialAuthState() {
     return new Promise((resolve) => {
         if (typeof deps.auth.onAuthStateChange !== "function") {
@@ -490,7 +421,6 @@ function resolveInitialAuthState() {
             resolve();
             return;
         }
-
         let settled = false;
         const settleOnce = (user) => {
             if (settled) return;
@@ -498,7 +428,6 @@ function resolveInitialAuthState() {
             STATE.currentUser = user;
             resolve();
         };
-
         try {
             const unsubscribe = deps.auth.onAuthStateChange((user) => {
                 if (!settled) {
@@ -513,7 +442,6 @@ function resolveInitialAuthState() {
             console.error("[NovaLayout] onAuthStateChange failed to attach:", error);
             settleOnce(typeof deps.auth.getCurrentUser === "function" ? deps.auth.getCurrentUser() : null);
         }
-
         setTimeout(() => {
             if (!settled) {
                 console.warn(
@@ -525,13 +453,11 @@ function resolveInitialAuthState() {
         }, CONFIG.AUTH_STATE_TIMEOUT_MS);
     });
 }
-
 async function loadUserData() {
     if (!STATE.currentUser) {
         STATE.userData = null;
         return null;
     }
-
     const response = await safeCall(deps.firestore.getUserData, "getUserData", STATE.currentUser.uid);
     STATE.userData = response && response.success && response.exists ? response.data : null;
     return STATE.userData;
@@ -540,14 +466,12 @@ async function loadUserData() {
 /* ==========================================
    WORKSPACES
 ========================================== */
-
 async function loadWorkspaces() {
     if (!STATE.currentUser) {
         STATE.workspaces = [];
         STATE.currentWorkspace = null;
         return STATE.workspaces;
     }
-
     const workspacesResponse = await safeCall(
         deps.firestore.getUserWorkspaces,
         "getUserWorkspaces",
@@ -557,23 +481,18 @@ async function loadWorkspaces() {
         workspacesResponse && workspacesResponse.success && Array.isArray(workspacesResponse.data)
             ? workspacesResponse.data
             : [];
-
     const savedWorkspaceId = await safeCall(deps.firestore.getCurrentWorkspaceId, "getCurrentWorkspaceId");
-
     STATE.currentWorkspace =
         STATE.workspaces.find((ws) => ws.id === savedWorkspaceId) || STATE.workspaces[0] || null;
-
     return STATE.workspaces;
 }
 
 /* ==========================================
    HEADER WORKSPACE SWITCHER
 ========================================== */
-
 function attachWorkspaceSwitcher(header) {
     const trigger = qs("[data-workspace-switcher-trigger]", header || document);
     const menu = qs("[data-workspace-switcher-menu]", header || document);
-
     if (trigger && menu && trigger.dataset.bound !== "true") {
         trigger.addEventListener("click", (event) => {
             event.stopPropagation();
@@ -581,7 +500,6 @@ function attachWorkspaceSwitcher(header) {
             trigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
         });
         trigger.dataset.bound = "true";
-
         addDocumentListenerOnce("workspace-switcher-outside-click", "click", (event) => {
             const currentMenu = qs("[data-workspace-switcher-menu]");
             const currentTrigger = qs("[data-workspace-switcher-trigger]");
@@ -594,7 +512,6 @@ function attachWorkspaceSwitcher(header) {
                 currentTrigger?.setAttribute("aria-expanded", "false");
             }
         });
-
         addDocumentListenerOnce("workspace-switcher-escape", "keydown", (event) => {
             if (event.key === "Escape") {
                 const currentMenu = qs("[data-workspace-switcher-menu]");
@@ -606,24 +523,18 @@ function attachWorkspaceSwitcher(header) {
             }
         });
     }
-
     populateWorkspaceSwitcherMenu(header);
 }
-
 function populateWorkspaceSwitcherMenu(header) {
     const scope = header || document;
     const nameLabel = qs("[data-workspace-switcher-name]", scope);
     const list = qs("[data-workspace-switcher-list]", scope);
-
     if (nameLabel) {
         nameLabel.textContent =
             STATE.currentWorkspace?.workspaceName || STATE.currentWorkspace?.name || "Workspace";
     }
-
     if (!list) return;
-
     list.innerHTML = "";
-
     if (!STATE.workspaces || STATE.workspaces.length === 0) {
         const empty = document.createElement("p");
         empty.className = "menu-empty";
@@ -631,7 +542,6 @@ function populateWorkspaceSwitcherMenu(header) {
         list.appendChild(empty);
         return;
     }
-
     STATE.workspaces.forEach((workspace) => {
         const item = document.createElement("button");
         item.type = "button";
@@ -643,135 +553,100 @@ function populateWorkspaceSwitcherMenu(header) {
         }
         list.appendChild(item);
     });
-
     if (list.dataset.delegateBound !== "true") {
         list.addEventListener("click", handleWorkspaceSwitcherSelect);
         list.dataset.delegateBound = "true";
     }
 }
-
 async function handleWorkspaceSwitcherSelect(event) {
     const item = event.target.closest("[data-workspace-id]");
     if (!item) return;
-
     const selectedId = item.dataset.workspaceId;
     const selectedWorkspace = STATE.workspaces.find((ws) => ws.id === selectedId) || null;
     STATE.currentWorkspace = selectedWorkspace;
-
     await safeCall(deps.firestore.setCurrentWorkspaceId, "setCurrentWorkspaceId", selectedId);
-
     const menu = qs("[data-workspace-switcher-menu]");
     const trigger = qs("[data-workspace-switcher-trigger]");
     if (menu) {
         menu.classList.remove("open");
         trigger?.setAttribute("aria-expanded", "false");
     }
-
     populateWorkspaceSwitcherMenu(qs(CONFIG.MOUNTS.HEADER));
-
     document.dispatchEvent(
         new CustomEvent("novaeditor:workspace-changed", { detail: selectedWorkspace })
     );
-
     loadProjectWorkspaceOptions();
 }
 
 /* ==========================================
    PROJECT MODAL
 ========================================== */
-
 async function initProjectModal() {
     try {
         const mount = await loadPartial(CONFIG.PARTIALS.PROJECT_MODAL, CONFIG.MOUNTS.PROJECT_MODAL);
         if (!mount) return;
-
         attachProjectModalEvents();
         attachProjectFormEnhancements();
     } catch (error) {
         console.error("[NovaLayout] initProjectModal error:", error);
     }
 }
-
 function getProjectModal() {
     return qs("#projectModal");
 }
-
-// Tracks the pending "finish hiding after the fade-out" timer so a fast
-// close→reopen can never race it. Previously, reopening the modal
-// within PROJECT_MODAL_CLOSE_ANIMATION_MS of closing it left the old
-// close timer alive; it would fire afterwards and set the just-reopened
-// modal's `hidden = true`, silently hiding it. openProjectModal() now
-// cancels this timer, and closeProjectModal() always clears any
-// previous one before starting a new one.
 let projectModalCloseTimer = null;
-
 function openProjectModal() {
     const modal = getProjectModal();
     if (!modal) {
         notify("Project modal not found on this page.", "error");
         return;
     }
-
     if (projectModalCloseTimer) {
         clearTimeout(projectModalCloseTimer);
         projectModalCloseTimer = null;
     }
-
     loadProjectWorkspaceOptions();
     modal.hidden = false;
-
     requestAnimationFrame(() => {
         modal.classList.add("show");
         modal.classList.remove("hide");
     });
-
     document.body.style.overflow = "hidden";
     qs("#projectName", modal)?.focus();
 }
-
 function closeProjectModal() {
     const modal = getProjectModal();
     if (!modal) return;
-
     modal.classList.remove("show");
     modal.classList.add("hide");
-
     if (projectModalCloseTimer) {
         clearTimeout(projectModalCloseTimer);
     }
-
     projectModalCloseTimer = setTimeout(() => {
         modal.hidden = true;
         modal.classList.remove("hide");
         projectModalCloseTimer = null;
     }, CONFIG.PROJECT_MODAL_CLOSE_ANIMATION_MS);
-
     document.body.style.overflow = "";
 }
-
 function attachProjectModalEvents() {
     const modal = getProjectModal();
     if (!modal) return;
-
     const closeBtn = qs("#closeProjectModal", modal);
-    const cancelBtn = qs("#cancelProjectBtn", modal);
-    const overlay = qs(".project-modal-overlay", modal);
-
     if (closeBtn && closeBtn.dataset.bound !== "true") {
         closeBtn.addEventListener("click", closeProjectModal);
         closeBtn.dataset.bound = "true";
     }
-
+    const cancelBtn = qs("#cancelProjectBtn", modal);
     if (cancelBtn && cancelBtn.dataset.bound !== "true") {
         cancelBtn.addEventListener("click", closeProjectModal);
         cancelBtn.dataset.bound = "true";
     }
-
+    const overlay = qs(".project-modal-overlay", modal);
     if (overlay && overlay.dataset.bound !== "true") {
         overlay.addEventListener("click", closeProjectModal);
         overlay.dataset.bound = "true";
     }
-
     addDocumentListenerOnce("project-modal-escape", "keydown", (event) => {
         const currentModal = getProjectModal();
         if (event.key === "Escape" && currentModal?.classList.contains("show")) {
@@ -783,10 +658,8 @@ function attachProjectModalEvents() {
 /* ==========================================
    PROJECT WORKSPACES
 ========================================== */
-
 function buildWorkspaceOptions(select) {
     select.innerHTML = "";
-
     if (!STATE.workspaces || STATE.workspaces.length === 0) {
         const option = document.createElement("option");
         option.value = "";
@@ -794,7 +667,6 @@ function buildWorkspaceOptions(select) {
         select.appendChild(option);
         return;
     }
-
     STATE.workspaces.forEach((workspace) => {
         const option = document.createElement("option");
         option.value = workspace.id;
@@ -803,37 +675,29 @@ function buildWorkspaceOptions(select) {
         select.appendChild(option);
     });
 }
-
 function loadProjectWorkspaceOptions() {
     const modal = getProjectModal();
     if (!modal) return;
-
     const select = qs("#projectWorkspace", modal);
     if (!select) return;
-
     buildWorkspaceOptions(select);
 }
 
 /* ==========================================
    PROJECT FORM ENHANCEMENTS
 ========================================== */
-
 function attachProjectFormEnhancements() {
     const modal = getProjectModal();
     if (!modal) return;
-
     const form = qs("#projectForm", modal);
     if (!form) return;
-
     const language = qs("#projectLanguage", form);
     const framework = qs("#projectFramework", form);
     const template = qs("#projectTemplate", form);
     const projectName = qs("#projectName", form);
     const description = qs("#projectDescription", form);
-
     function syncFramework() {
         if (!language || !framework) return;
-
         switch (language.value) {
             case "html":
                 framework.innerHTML = `
@@ -842,46 +706,39 @@ function attachProjectFormEnhancements() {
                     <option value="tailwind">Tailwind CSS</option>
                 `;
                 break;
-
             case "react":
                 framework.innerHTML = `
                     <option value="vite">React + Vite</option>
                     <option value="next">Next.js</option>
                 `;
                 break;
-
             case "vue":
                 framework.innerHTML = `
                     <option value="vite">Vue + Vite</option>
                 `;
                 break;
-
             case "node":
                 framework.innerHTML = `
                     <option value="express">Express</option>
                 `;
                 break;
-
             default:
                 framework.innerHTML = `
                     <option value="none">None</option>
                 `;
         }
     }
-
     if (language && language.dataset.bound !== "true") {
         language.addEventListener("change", syncFramework);
         language.dataset.bound = "true";
     }
     syncFramework();
-
     if (projectName && projectName.dataset.bound !== "true") {
         projectName.addEventListener("input", () => {
             projectName.value = projectName.value.replace(/\s+/g, " ").trimStart();
         });
         projectName.dataset.bound = "true";
     }
-
     if (description && description.dataset.bound !== "true") {
         description.addEventListener("input", () => {
             if (description.value.length > 200) {
@@ -890,7 +747,6 @@ function attachProjectFormEnhancements() {
         });
         description.dataset.bound = "true";
     }
-
     if (template && template.dataset.bound !== "true") {
         template.addEventListener("change", () => {
             if (template.value === "portfolio" && language?.value === "html") {
@@ -899,7 +755,6 @@ function attachProjectFormEnhancements() {
         });
         template.dataset.bound = "true";
     }
-
     if (form.dataset.submitBound !== "true") {
         form.addEventListener("submit", handleProjectFormSubmit);
         form.dataset.submitBound = "true";
@@ -909,7 +764,6 @@ function attachProjectFormEnhancements() {
 /* ==========================================
    PROJECT HELPERS
 ========================================== */
-
 function getProjectPayload(form) {
     return {
         name: qs("#projectName", form)?.value.trim() || "",
@@ -929,7 +783,6 @@ function getProjectPayload(form) {
         createDefaultFiles: qs("#createDefaultFiles", form)?.checked ?? true,
     };
 }
-
 function validateProject(project) {
     if (!project.name) {
         notify("Project name is required.", "warning");
@@ -945,14 +798,11 @@ function validateProject(project) {
     }
     return true;
 }
-
 function resetProjectForm() {
     const modal = getProjectModal();
     if (!modal) return;
-
     const form = qs("#projectForm", modal);
     if (!form) return;
-
     form.reset();
     loadProjectWorkspaceOptions();
 }
@@ -960,48 +810,36 @@ function resetProjectForm() {
 /* ==========================================
    PROJECT FORM SUBMIT
 ========================================== */
-
 async function handleProjectFormSubmit(event) {
     event.preventDefault();
-
     if (!STATE.currentUser) {
         notify("You must be signed in to create a project.", "error");
         return;
     }
-
     if (typeof deps.firestore.createProject !== "function") {
         console.error('[NovaLayout] "createProject" is not exported by firestore.js.');
         notify("Project creation is currently unavailable.", "error");
         return;
     }
-
     const form = event.currentTarget;
     const payload = getProjectPayload(form);
-
     if (!validateProject(payload)) return;
-
     const createButton = qs("#createProjectBtn", form);
     createButton?.classList.add("loading");
     createButton?.setAttribute("disabled", "true");
-
     try {
         notify("Creating project...", "loading");
-
         const response = await safeCall(deps.firestore.createProject, "createProject", payload);
-
         if (!response || !response.success) {
             notify(response?.error || "Unable to create project.", "error");
             return;
         }
-
         notify("Project created successfully.", "success");
         closeProjectModal();
         resetProjectForm();
-
         document.dispatchEvent(
             new CustomEvent("novaeditor:project-created", { detail: response.data })
         );
-
         window.location.href = `${CONFIG.ROUTES.EDITOR}?project=${encodeURIComponent(response.data.id)}`;
     } finally {
         createButton?.classList.remove("loading");
@@ -1012,7 +850,6 @@ async function handleProjectFormSubmit(event) {
 /* ==========================================
    GLOBAL LISTENERS
 ========================================== */
-
 function attachGlobalListenersOnce() {
     addDocumentListenerOnce("global-new-project-delegate", "click", (event) => {
         const trigger = event.target.closest("[data-new-project]");
@@ -1025,107 +862,52 @@ function attachGlobalListenersOnce() {
 
 /* ==========================================
    INITIALIZATION
-   ------------------------------------------
-   The visual shell (sidebar/header/project
-   modal partials) has no real dependency on
-   Firebase — loadPartial() is just fetch +
-   innerHTML. Previously the shell only started
-   loading AFTER loadDependencies() (dynamic
-   import) → resolveInitialAuthState() (waits
-   on Firebase, up to AUTH_STATE_TIMEOUT_MS) →
-   loadUserData() → loadWorkspaces() had all
-   finished, in sequence. That's why the
-   sidebar/header appeared late: real UI
-   rendering was stuck behind several
-   sequential network round trips it never
-   needed to wait for.
-
-   Now the shell (uiPromise) and the auth/data
-   pipeline (dataPromise) run concurrently.
-   Cross-partial wiring (user dropdown, mobile
-   sidebar toggle) attaches as soon as the
-   shell DOM exists, so the UI is fully
-   interactive before user/workspace data has
-   even arrived. Once dataPromise resolves, a
-   short hydration pass fills in the
-   name/avatar/workspace list/notification
-   count — pure DOM writes, no network, so it's
-   effectively instant. "novaeditor:layout-ready"
-   still fires only once everything (shell +
-   data) is ready, preserving the existing
-   contract dashboard.js/editor.js rely on.
 ========================================== */
-
 async function init() {
     if (STATE.initialized) return getState();
     STATE.initialized = true;
-
     const depsPromise = loadDependencies();
     const uiPromise = Promise.allSettled([initSidebar(), initHeader(), initProjectModal()]);
-
     const dataPromise = (async () => {
         await depsPromise;
-
         try {
             await resolveInitialAuthState();
         } catch (error) {
             console.error("[NovaLayout] Resolving auth state failed during init:", error);
         }
-
         if (!STATE.currentUser) {
             document.dispatchEvent(new CustomEvent("novaeditor:unauthenticated"));
         }
-
-        // loadUserData() and loadWorkspaces() both only depend on
-        // STATE.currentUser (already resolved above), not on each
-        // other's result — running them concurrently instead of
-        // sequentially halves this stage's network wait.
         try {
             await Promise.all([loadUserData(), loadWorkspaces()]);
         } catch (error) {
             console.error("[NovaLayout] Loading user/workspace data failed during init:", error);
         }
     })();
-
-    // Cross-partial wiring only needs the shell DOM, not user/workspace
-    // data — attach it as soon as the shell is in place.
     await uiPromise;
-
     try {
         attachUserDropdown(document);
     } catch (error) {
         console.error("[NovaLayout] attachUserDropdown failed during init:", error);
     }
-
     try {
         attachMobileSidebarToggle();
     } catch (error) {
         console.error("[NovaLayout] attachMobileSidebarToggle failed during init:", error);
     }
-
     attachGlobalListenersOnce();
-
-    // Hydrate the already-visible, already-interactive shell with real
-    // data once it's arrived.
     await dataPromise;
-
     populateSidebarUser();
     populateWorkspaceSwitcherMenu(qs(CONFIG.MOUNTS.HEADER));
     await refreshNotificationBadge();
     loadProjectWorkspaceOptions();
-
     STATE.ready = true;
     document.dispatchEvent(new CustomEvent("novaeditor:layout-ready", { detail: getState() }));
-
     return getState();
 }
-
 async function refresh() {
     try {
-        // Independent Firestore reads — no need to wait on one before
-        // starting the other.
         await Promise.all([loadUserData(), loadWorkspaces()]);
-
         populateSidebarUser();
         populateWorkspaceSwitcherMenu(qs(CONFIG.MOUNTS.HEADER));
         await refreshNotificationBadge();
@@ -1133,10 +915,8 @@ async function refresh() {
     } catch (error) {
         console.error("[NovaLayout] refresh error:", error);
     }
-
     return getState();
 }
-
 function getState() {
     return {
         currentUser: STATE.currentUser,
@@ -1146,7 +926,6 @@ function getState() {
         theme: STATE.theme,
     };
 }
-
 function isReady() {
     return STATE.ready;
 }
@@ -1154,7 +933,6 @@ function isReady() {
 /* ==========================================
    BOOTSTRAP
 ========================================== */
-
 document.addEventListener("DOMContentLoaded", () => {
     init().catch((error) => {
         console.error("[NovaLayout] Unhandled error during init():", error);
@@ -1164,12 +942,10 @@ document.addEventListener("DOMContentLoaded", () => {
 /* ==========================================
    PUBLIC API
 ========================================== */
-
 window.NovaLayout = {
     init,
     refresh,
     getState,
     isReady,
 };
-
 export { init, refresh, getState, isReady };

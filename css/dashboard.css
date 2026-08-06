@@ -172,22 +172,25 @@
     gap: 8px;
     padding: 12px 20px;
     background: var(--text-primary);
-    color: var(--white-color);
+    color: var(--surface);
+    border: 1px solid transparent;
     border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-xs);
     font-size: 13.5px;
     font-weight: 600;
+    letter-spacing: 0.005em;
     transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
 }
 
 .btn-dark:hover {
-    opacity: 0.9;
+    opacity: 0.92;
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
 
 .btn-dark:active {
     transform: translateY(0);
-    box-shadow: none;
+    box-shadow: var(--shadow-xs);
 }
 
 /* ==========================================
@@ -199,9 +202,9 @@
 .quick-action,
 .project-card {
     border-radius: var(--radius-xl);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-subtle);
     background: var(--surface);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-xs);
 }
 
 /* ==========================================
@@ -217,40 +220,55 @@
 
     overflow: hidden;
 
-    transition: box-shadow 0.2s ease;
+    transition: box-shadow 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
 }
 
 .dash-continue:hover {
-    box-shadow: var(--shadow-md);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
 }
 
 .dash-continue-info {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 7px;
 
-    padding: 28px;
+    padding: 30px 28px;
 
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--border-subtle);
 }
 
 .dash-continue-eyebrow {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
 
-    padding: 5px 12px;
+    padding: 5px 12px 5px 10px;
 
-    margin-bottom: 6px;
+    margin-bottom: 8px;
 
     border-radius: var(--radius-full);
+    border: 1px solid transparent;
 
     background: var(--primary-light);
     color: var(--primary);
 
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.dash-continue-eyebrow::before {
+    content: "";
+    flex-shrink: 0;
+
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+
+    background: var(--primary);
 }
 
 .dash-continue-meta {
@@ -259,11 +277,14 @@
 }
 
 .dash-continue-info h3 {
+    margin-top: 2px;
+
     color: var(--text-primary);
 
-    font-size: 20px;
+    font-size: 21px;
     font-weight: 700;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
 }
 
 .dash-continue-file {
@@ -485,6 +506,10 @@
     border-color: var(--primary);
 }
 
+.quick-action:active {
+    transform: translateY(-1px);
+}
+
 .quick-action-icon {
     display: flex;
     align-items: center;
@@ -497,28 +522,33 @@
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
 
-    background: var(--surface-secondary);
+    background: linear-gradient(180deg, var(--surface-secondary), var(--surface));
     color: var(--text-primary);
+    box-shadow: var(--shadow-xs);
 
     font-size: 19px;
 
-    transition: var(--transition);
+    transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
+
+
 
 .quick-action-icon.dark {
     background: var(--text-primary);
     border-color: var(--text-primary);
-    color: var(--white-color);
+    color: var(--surface);
 }
 
 .quick-action:hover .quick-action-icon {
     border-color: var(--primary);
     color: var(--primary);
+    box-shadow: var(--shadow-sm);
+    transform: scale(1.04);
 }
 
 .quick-action:hover .quick-action-icon.dark {
     border-color: var(--text-primary);
-    color: var(--white-color);
+    color: var(--surface);
 }
 
 .quick-action strong {
@@ -527,11 +557,13 @@
     color: var(--text-primary);
     font-size: 14px;
     font-weight: 600;
+    letter-spacing: -0.005em;
 }
 
 .quick-action small {
     color: var(--text-muted);
     font-size: 12.5px;
+    line-height: 1.4;
 }
 
 /* ==========================================
@@ -562,10 +594,11 @@
 
 .dash-panel {
     padding: 22px;
-    transition: box-shadow 0.2s ease;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .dash-panel:hover {
+    border-color: var(--border-hover);
     box-shadow: var(--shadow-md);
 }
 
@@ -585,10 +618,11 @@
 
     overflow: hidden;
 
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .project-card:hover {
+    border-color: var(--border-hover);
     transform: translateY(-3px);
     box-shadow: var(--shadow-lg);
 }

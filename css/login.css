@@ -1,14 +1,13 @@
 /* ==========================================
    Login
 ========================================== */
-
 .login {
   min-height: 100vh;
   display: flex;
   align-items: center;
   padding: 40px 0;
   background: var(--bg);
-  overflow-x: hidden; /* stop the glow / floating cards from causing horizontal scroll */
+  overflow-x: hidden;
 }
 
 .login-container {
@@ -25,10 +24,9 @@
 /* ==========================================
    Login Left
 ========================================== */
-
 .login-left {
   width: 100%;
-  min-width: 0; /* allow text to shrink instead of overflowing the grid track */
+  min-width: 0;
 }
 
 .login-logo {
@@ -79,92 +77,106 @@
 /* ==========================================
    Login Buttons
 ========================================== */
-
 .login-buttons {
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
 
-.google-btn,
-.github-btn {
-  width: 100%;
-  height: 60px;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  color: var(--text-primary);
+/* ==========================================
+   Login Buttons — Google
+========================================== */
+.login-buttons .google-btn {
+  width: 100% !important;
+  height: 60px !important;
+  padding: 0 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  border: 1px solid #dadada !important;
+  outline: none;
+  border-radius: var(--radius-lg) !important;
+  background: var(--surface) !important;
+  color: var(--text-primary) !important;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 
-.google-btn i,
-.github-btn i {
+.login-buttons .google-btn i {
   font-size: 22px;
   flex-shrink: 0;
-}
-
-.google-btn i {
   color: var(--primary);
 }
 
-.github-btn i {
-  color: #fff;
-}
-
-.github-btn {
-  background: var(--text-primary);
-  color: #fff;
-}
-
-.github-btn i {
-  font-size: 24px;
-}
-
-.google-btn:hover,
-.github-btn:hover {
-  border-color: var(--primary);
+.login-buttons .google-btn:hover {
   box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
-.github-btn:hover {
-  background: #000;
+.login-buttons .google-btn:focus {
+  outline: none;
 }
 
-.google-btn::before,
-.github-btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    120deg,
-    transparent,
-    rgba(255, 255, 255, 0.35),
-    transparent
-  );
-  transform: translateX(-100%);
-  transition: 0.8s;
-  pointer-events: none;
+.login-buttons .google-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--focus-ring), var(--shadow-md);
 }
 
-.google-btn:hover::before,
-.github-btn:hover::before {
-  transform: translateX(100%);
+/* ==========================================
+   Login Buttons — GitHub
+========================================== */
+.login-buttons .github-btn {
+  width: 100% !important;
+  height: 60px !important;
+  padding: 0 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  border: 1px solid #dadada !important;
+  outline: none;
+  border-radius: var(--radius-lg) !important;
+  background: var(--github-bg) !important;
+  color: var(--github-text) !important;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-buttons .github-btn i {
+  font-size: 22px;
+  flex-shrink: 0;
+  color: var(--github-text) !important;
+}
+
+.login-buttons .github-btn:hover {
+  background: var(--github-hover) !important;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.login-buttons .github-btn:focus {
+  outline: none;
+}
+
+.login-buttons .github-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--focus-ring), var(--shadow-md);
 }
 
 /* ==========================================
    Divider
 ========================================== */
-
 .login-divider {
   position: relative;
   margin: 42px 0 36px;
@@ -191,7 +203,6 @@
 /* ==========================================
    Features
 ========================================== */
-
 .login-features {
   display: flex;
   flex-direction: column;
@@ -243,7 +254,6 @@
 /* ==========================================
    Policy
 ========================================== */
-
 .login-policy {
   margin-top: 40px;
   color: var(--text-muted);
@@ -263,7 +273,6 @@
 /* ==========================================
    Login Right
 ========================================== */
-
 .login-right {
   position: relative;
   display: flex;
@@ -306,7 +315,6 @@
 /* ==========================================
    Floating Cards
 ========================================== */
-
 .floating-card {
   position: absolute;
   display: flex;
@@ -314,7 +322,7 @@
   gap: 14px;
   min-width: 240px;
   padding: 18px 20px;
-  border: 1px solid var(--border);
+  border: 1px solid #dadada;
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(18px);
@@ -380,8 +388,6 @@
 /* ==========================================
    Responsive
 ========================================== */
-
-/* Large desktops / laptops */
 @media (max-width: 1200px) {
   .login-container {
     max-width: 1140px;
@@ -415,7 +421,6 @@
   }
 }
 
-/* Tablets: stack the two columns */
 @media (max-width: 992px) {
   .login {
     padding: 60px 0;
@@ -485,7 +490,6 @@
   }
 }
 
-/* Small tablets / large phones */
 @media (max-width: 768px) {
   .login {
     padding: 40px 0;
@@ -499,11 +503,11 @@
     gap: 14px;
   }
 
-  .google-btn,
-  .github-btn {
-    height: 56px;
+  .login-buttons .google-btn,
+  .login-buttons .github-btn {
+    height: 56px !important;
     font-size: 15px;
-    padding: 0 18px;
+    padding: 0 18px !important;
   }
 
   .feature-item {
@@ -525,7 +529,6 @@
   }
 }
 
-/* Phones */
 @media (max-width: 576px) {
   .login {
     padding: 30px 0;
@@ -558,17 +561,17 @@
     gap: 12px;
   }
 
-  .google-btn,
-  .github-btn {
-    width: 100%;
-    height: 52px;
-    padding: 0 16px;
+  .login-buttons .google-btn,
+  .login-buttons .github-btn {
+    width: 100% !important;
+    height: 52px !important;
+    padding: 0 16px !important;
     font-size: 14px;
-    gap: 10px;
+    gap: 10px !important;
   }
 
-  .google-btn i,
-  .github-btn i {
+  .login-buttons .google-btn i,
+  .login-buttons .github-btn i {
     font-size: 20px;
   }
 
@@ -606,7 +609,6 @@
   }
 }
 
-/* Very small phones */
 @media (max-width: 380px) {
   .login-container {
     padding: 0 12px;
@@ -622,12 +624,12 @@
     font-size: 16px;
   }
 
-  .google-btn,
-  .github-btn {
-    height: 48px;
+  .login-buttons .google-btn,
+  .login-buttons .github-btn {
+    height: 48px !important;
     font-size: 13px;
-    padding: 0 12px;
-    gap: 8px;
+    padding: 0 12px !important;
+    gap: 8px !important;
   }
 
   .login-title {
