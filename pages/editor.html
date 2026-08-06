@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../assets/images/favicon/favicon.png">
+    <title>Editor — Nova Editor</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+    <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/editor.css" />
+</head>
+
+<body>
+
+    <main class="editor-page" id="editorPage" data-page="editor">
+
+        <!-- ============================================================
+       EDITOR WORKSPACE
+       ============================================================ -->
+        <div class="editor-workspace" id="editorWorkspace">
+
+            <!-- ==========================================================
+         LEFT: EXPLORER PANEL
+         ========================================================== -->
+            <aside class="explorer-panel" id="explorerPanel" aria-label="File Explorer">
+                <div class="explorer-header">
+                    <div class="explorer-title-row">
+                        <h2 class="explorer-title">Explorer</h2>
+                        <div class="explorer-actions">
+                            <button type="button" class="explorer-btn" id="explorerNewFileBtn" title="New File"
+                                aria-label="New File">
+                                <i class="ri-file-add-line"></i>
+                            </button>
+                            <button type="button" class="explorer-btn" id="explorerNewFolderBtn" title="New Folder"
+                                aria-label="New Folder">
+                                <i class="ri-folder-add-line"></i>
+                            </button>
+                            <button type="button" class="explorer-btn" id="explorerRefreshBtn" title="Refresh"
+                                aria-label="Refresh">
+                                <i class="ri-refresh-line"></i>
+                            </button>
+                            <button type="button" class="explorer-btn" id="explorerCollapseBtn" title="Collapse All"
+                                aria-label="Collapse All">
+                                <i class="ri-collapse-vertical"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="explorer-search">
+                        <i class="ri-search-line"></i>
+                        <input type="text" id="explorerSearchInput" placeholder="Search files..."
+                            aria-label="Search files" autocomplete="off">
+                        <button type="button" class="explorer-search-clear" id="explorerSearchClear" hidden
+                            aria-label="Clear search">
+                            <i class="ri-close-line"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="explorer-tabs" role="tablist" aria-label="Explorer views">
+                    <button type="button" class="explorer-tab active" role="tab" aria-selected="true"
+                        data-explorer-tab="files" id="tabFiles">
+                        <i class="ri-folder-3-line"></i>
+                        <span>Files</span>
+                    </button>
+                    <button type="button" class="explorer-tab" role="tab" aria-selected="false"
+                        data-explorer-tab="search" id="tabSearch">
+                        <i class="ri-search-line"></i>
+                        <span>Search</span>
+                    </button>
+                    <button type="button" class="explorer-tab" role="tab" aria-selected="false"
+                        data-explorer-tab="favorites" id="tabFavorites">
+                        <i class="ri-star-line"></i>
+                        <span>Favorites</span>
+                    </button>
+                    <button type="button" class="explorer-tab" role="tab" aria-selected="false"
+                        data-explorer-tab="recent" id="tabRecent">
+                        <i class="ri-history-line"></i>
+                        <span>Recent</span>
+                    </button>
+                </div>
+
+                <div class="explorer-body">
+                    <!-- Files Tree -->
+                    <div class="explorer-view active" id="explorerViewFiles" role="tabpanel" aria-labelledby="tabFiles">
+                        <div class="explorer-tree" id="explorerTree" role="tree" aria-label="Project files">
+                            <div class="tree-item tree-folder open" role="treeitem" aria-expanded="true" data-path="src"
+                                data-type="folder">
+                                <div class="tree-row">
+                                    <button type="button" class="tree-chevron" aria-label="Toggle folder">
+                                        <i class="ri-arrow-right-s-line"></i>
+                                    </button>
+                                    <i class="ri-folder-open-fill tree-icon folder"></i>
+                                    <span class="tree-label">src</span>
+                                </div>
+                                <div class="tree-children" role="group">
+                                    <div class="tree-item tree-folder open" role="treeitem" aria-expanded="true"
+                                        data-path="src/components" data-type="folder">
+                                        <div class="tree-row">
+                                            <button type="button" class="tree-chevron" aria-label="Toggle folder">
+                                                <i class="ri-arrow-right-s-line"></i>
+                                            </button>
+                                            <i class="ri-folder-open-fill tree-icon folder"></i>
+                                            <span class="tree-label">components</span>
+                                        </div>
+                                        <div class="tree-children" role="group">
+                                            <div class="tree-item tree-file active" role="treeitem"
+                                                data-path="src/components/App.jsx" data-type="file" data-lang="jsx">
+                                                <div class="tree-row">
+                                                    <span class="tree-indent"></span>
+                                                    <i class="ri-reactjs-line tree-icon jsx"></i>
+                                                    <span class="tree-label">App.jsx</span>
+                                                    <span class="tree-badge modified" title="Modified">M</span>
+                                                </div>
+                                            </div>
+                                            <div class="tree-item tree-file" role="treeitem"
+                                                data-path="src/components/Navbar.jsx" data-type="file" data-lang="jsx">
+                                                <div class="tree-row">
+                                                    <span class="tree-indent"></span>
+                                                    <i class="ri-reactjs-line tree-icon jsx"></i>
+                                                    <span class="tree-label">Navbar.jsx</span>
+                                                </div>
+                                            </div>
+                                            <div class="tree-item tree-file" role="treeitem"
+                                                data-path="src/components/Footer.jsx" data-type="file" data-lang="jsx">
+                                                <div class="tree-row">
+                                                    <span class="tree-indent"></span>
+                                                    <i class="ri-reactjs-line tree-icon jsx"></i>
+                                                    <span class="tree-label">Footer.jsx</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tree-item tree-file" role="treeitem" data-path="src/styles.css"
+                                        data-type="file" data-lang="css">
+                                        <div class="tree-row">
+                                            <span class="tree-indent"></span>
+                                            <i class="ri-css3-fill tree-icon css"></i>
+                                            <span class="tree-label">styles.css</span>
+                                            <span class="tree-badge modified" title="Modified">M</span>
+                                        </div>
+                                    </div>
+                                    <div class="tree-item tree-file" role="treeitem" data-path="src/utils.js"
+                                        data-type="file" data-lang="js">
+                                        <div class="tree-row">
+                                            <span class="tree-indent"></span>
+                                            <i class="ri-javascript-fill tree-icon js"></i>
+                                            <span class="tree-label">utils.js</span>
+                                        </div>
+                                    </div>
+                                    <div class="tree-item tree-file" role="treeitem" data-path="src/App.js"
+                                        data-type="file" data-lang="js">
+                                        <div class="tree-row">
+                                            <span class="tree-indent"></span>
+                                            <i class="ri-javascript-fill tree-icon js"></i>
+                                            <span class="tree-label">App.js</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tree-item tree-folder" role="treeitem" aria-expanded="false" data-path="public"
+                                data-type="folder">
+                                <div class="tree-row">
+                                    <button type="button" class="tree-chevron" aria-label="Toggle folder">
+                                        <i class="ri-arrow-right-s-line"></i>
+                                    </button>
+                                    <i class="ri-folder-fill tree-icon folder"></i>
+                                    <span class="tree-label">public</span>
+                                </div>
+                                <div class="tree-children" role="group" hidden></div>
+                            </div>
+
+                            <div class="tree-item tree-file" role="treeitem" data-path="package.json" data-type="file"
+                                data-lang="json">
+                                <div class="tree-row">
+                                    <span class="tree-indent"></span>
+                                    <i class="ri-file-code-line tree-icon json"></i>
+                                    <span class="tree-label">package.json</span>
+                                </div>
+                            </div>
+                            <div class="tree-item tree-file" role="treeitem" data-path="vite.config.js" data-type="file"
+                                data-lang="js">
+                                <div class="tree-row">
+                                    <span class="tree-indent"></span>
+                                    <i class="ri-javascript-fill tree-icon js"></i>
+                                    <span class="tree-label">vite.config.js</span>
+                                </div>
+                            </div>
+                            <div class="tree-item tree-file" role="treeitem" data-path="README.md" data-type="file"
+                                data-lang="md">
+                                <div class="tree-row">
+                                    <span class="tree-indent"></span>
+                                    <i class="ri-markdown-fill tree-icon md"></i>
+                                    <span class="tree-label">README.md</span>
+                                </div>
+                            </div>
+                            <div class="tree-item tree-file" role="treeitem" data-path=".gitignore" data-type="file"
+                                data-lang="text">
+                                <div class="tree-row">
+                                    <span class="tree-indent"></span>
+                                    <i class="ri-file-forbid-line tree-icon text"></i>
+                                    <span class="tree-label">.gitignore</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search View -->
+                    <div class="explorer-view" id="explorerViewSearch" role="tabpanel" aria-labelledby="tabSearch"
+                        hidden>
+                        <div class="explorer-search-panel">
+                            <div class="search-field">
+                                <i class="ri-search-line"></i>
+                                <input type="text" id="globalFileSearch" placeholder="Search in files..."
+                                    aria-label="Search in files">
+                            </div>
+                            <div class="search-field">
+                                <i class="ri-replace-line"></i>
+                                <input type="text" id="globalFileReplace" placeholder="Replace..." aria-label="Replace">
+                            </div>
+                            <div class="search-options">
+                                <label class="search-option">
+                                    <input type="checkbox" id="searchCaseSensitive">
+                                    <span>Match Case</span>
+                                </label>
+                                <label class="search-option">
+                                    <input type="checkbox" id="searchWholeWord">
+                                    <span>Whole Word</span>
+                                </label>
+                                <label class="search-option">
+                                    <input type="checkbox" id="searchRegex">
+                                    <span>Regex</span>
+                                </label>
+                            </div>
+                            <div class="search-results" id="searchResults">
+                                <p class="search-empty">Enter a search term to find matches across your project.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Favorites View -->
+                    <div class="explorer-view" id="explorerViewFavorites" role="tabpanel" aria-labelledby="tabFavorites"
+                        hidden>
+                        <div class="explorer-empty-state">
+                            <i class="ri-star-line"></i>
+                            <p>No favorites yet</p>
+                            <span>Star files to pin them here for quick access.</span>
+                        </div>
+                    </div>
+
+                    <!-- Recent View -->
+                    <div class="explorer-view" id="explorerViewRecent" role="tabpanel" aria-labelledby="tabRecent"
+                        hidden>
+                        <ul class="recent-list" id="recentList">
+                            <li class="recent-item" data-path="src/components/App.jsx">
+                                <i class="ri-reactjs-line"></i>
+                                <div class="recent-meta">
+                                    <span class="recent-name">App.jsx</span>
+                                    <span class="recent-path">src/components</span>
+                                </div>
+                                <span class="recent-time">Just now</span>
+                            </li>
+                            <li class="recent-item" data-path="src/styles.css">
+                                <i class="ri-css3-fill"></i>
+                                <div class="recent-meta">
+                                    <span class="recent-name">styles.css</span>
+                                    <span class="recent-path">src</span>
+                                </div>
+                                <span class="recent-time">2m ago</span>
+                            </li>
+                            <li class="recent-item" data-path="package.json">
+                                <i class="ri-file-code-line"></i>
+                                <div class="recent-meta">
+                                    <span class="recent-name">package.json</span>
+                                    <span class="recent-path">/</span>
+                                </div>
+                                <span class="recent-time">15m ago</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="explorer-footer">
+                    <button type="button" class="explorer-footer-btn" id="explorerOpenFolderBtn" title="Open Folder">
+                        <i class="ri-folder-open-line"></i>
+                        <span>Open Folder</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Resizer: Explorer ↔ Center -->
+            <div class="panel-resizer vertical" id="explorerResizer" data-resizer="explorer" role="separator"
+                aria-orientation="vertical" aria-label="Resize explorer" tabindex="0"></div>
+
+            <!-- ==========================================================
+         CENTER + RIGHT + BOTTOM
+         ========================================================== -->
+            <div class="editor-main-area" id="editorMainArea">
+
+                <div class="editor-top-row" id="editorTopRow">
+
+                    <!-- ======================== CENTER ======================== -->
+                    <div class="editor-center" id="editorCenter">
+
+                        <!-- Toolbar -->
+                        <div class="editor-toolbar" id="editorToolbar">
+                            <div class="toolbar-left">
+                                <nav class="editor-breadcrumb" id="editorBreadcrumb" aria-label="Breadcrumb">
+                                    <ol class="breadcrumb-list">
+                                        <li class="breadcrumb-item">
+                                            <a href="#" class="breadcrumb-link"
+                                                data-path="my-portfolio">my-portfolio</a>
+                                        </li>
+                                        <li class="breadcrumb-sep" aria-hidden="true"><i
+                                                class="ri-arrow-right-s-line"></i></li>
+                                        <li class="breadcrumb-item">
+                                            <a href="#" class="breadcrumb-link" data-path="src">src</a>
+                                        </li>
+                                        <li class="breadcrumb-sep" aria-hidden="true"><i
+                                                class="ri-arrow-right-s-line"></i></li>
+                                        <li class="breadcrumb-item">
+                                            <a href="#" class="breadcrumb-link"
+                                                data-path="src/components">components</a>
+                                        </li>
+                                        <li class="breadcrumb-sep" aria-hidden="true"><i
+                                                class="ri-arrow-right-s-line"></i></li>
+                                        <li class="breadcrumb-item current">
+                                            <span class="breadcrumb-current">App.jsx</span>
+                                        </li>
+                                    </ol>
+                                </nav>
+                            </div>
+
+                            <div class="toolbar-center">
+                                <div class="save-status" id="saveStatus" data-status="saved">
+                                    <i class="ri-check-line status-icon"></i>
+                                    <span class="status-text">Saved</span>
+                                </div>
+                            </div>
+
+                            <div class="toolbar-right">
+                                <div class="toolbar-group">
+                                    <button type="button" class="toolbar-btn" id="btnFind" title="Find (Ctrl+F)"
+                                        aria-label="Find">
+                                        <i class="ri-search-line"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" id="btnReplace" title="Replace (Ctrl+H)"
+                                        aria-label="Replace">
+                                        <i class="ri-replace-line"></i>
+                                    </button>
+                                </div>
+
+                                <div class="toolbar-divider"></div>
+
+                                <div class="toolbar-group">
+                                    <button type="button" class="toolbar-btn primary" id="btnRun"
+                                        title="Run (Ctrl+Enter)" aria-label="Run">
+                                        <i class="ri-play-fill"></i>
+                                        <span>Run</span>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" id="btnPreview" title="Preview"
+                                        aria-label="Toggle Preview">
+                                        <i class="ri-eye-line"></i>
+                                        <span>Preview</span>
+                                    </button>
+                                </div>
+
+                                <div class="toolbar-divider"></div>
+
+                                <div class="toolbar-group">
+                                    <button type="button" class="toolbar-btn" id="btnShare" title="Share"
+                                        aria-label="Share">
+                                        <i class="ri-share-line"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn ai" id="btnAI" title="AI Assistant"
+                                        aria-label="Toggle AI Panel">
+                                        <i class="ri-sparkling-2-line"></i>
+                                        <span>AI</span>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" id="btnEditorSettings"
+                                        title="Editor Settings" aria-label="Settings">
+                                        <i class="ri-settings-3-line"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabs Bar -->
+                        <div class="editor-tabs-bar" id="editorTabsBar">
+                            <div class="tabs-scroll" id="tabsScroll">
+                                <div class="tabs-list" id="tabsList" role="tablist" aria-label="Open editors">
+                                    <div class="editor-tab active" role="tab" aria-selected="true" data-tab-id="tab-app"
+                                        data-path="src/components/App.jsx" draggable="true">
+                                        <i class="ri-reactjs-line tab-icon jsx"></i>
+                                        <span class="tab-name">App.jsx</span>
+                                        <span class="tab-dirty" title="Unsaved changes" hidden>•</span>
+                                        <button type="button" class="tab-close" aria-label="Close App.jsx"
+                                            title="Close">
+                                            <i class="ri-close-line"></i>
+                                        </button>
+                                    </div>
+                                    <div class="editor-tab" role="tab" aria-selected="false" data-tab-id="tab-navbar"
+                                        data-path="src/components/Navbar.jsx" draggable="true">
+                                        <i class="ri-reactjs-line tab-icon jsx"></i>
+                                        <span class="tab-name">Navbar.jsx</span>
+                                        <span class="tab-dirty" title="Unsaved changes" hidden>•</span>
+                                        <button type="button" class="tab-close" aria-label="Close Navbar.jsx"
+                                            title="Close">
+                                            <i class="ri-close-line"></i>
+                                        </button>
+                                    </div>
+                                    <div class="editor-tab" role="tab" aria-selected="false" data-tab-id="tab-styles"
+                                        data-path="src/styles.css" draggable="true">
+                                        <i class="ri-css3-fill tab-icon css"></i>
+                                        <span class="tab-name">styles.css</span>
+                                        <span class="tab-dirty" title="Unsaved changes" hidden>•</span>
+                                        <button type="button" class="tab-close" aria-label="Close styles.css"
+                                            title="Close">
+                                            <i class="ri-close-line"></i>
+                                        </button>
+                                    </div>
+                                    <div class="editor-tab" role="tab" aria-selected="false" data-tab-id="tab-utils"
+                                        data-path="src/utils.js" draggable="true">
+                                        <i class="ri-javascript-fill tab-icon js"></i>
+                                        <span class="tab-name">utils.js</span>
+                                        <span class="tab-dirty" title="Unsaved changes" hidden>•</span>
+                                        <button type="button" class="tab-close" aria-label="Close utils.js"
+                                            title="Close">
+                                            <i class="ri-close-line"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tabs-actions">
+                                <button type="button" class="tabs-action-btn" id="tabsMoreBtn" title="More actions"
+                                    aria-label="Tab actions" aria-haspopup="true">
+                                    <i class="ri-more-2-fill"></i>
+                                </button>
+                                <button type="button" class="tabs-action-btn" id="splitEditorBtn" title="Split Editor"
+                                    aria-label="Split Editor">
+                                    <i class="ri-layout-column-line"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Editor Surface -->
+                        <div class="editor-surface" id="editorSurface">
+                            <div class="monaco-container" id="monacoContainer">
+                                <div class="monaco-editor-shell" id="monacoEditorShell">
+                                    <div class="editor-gutter" id="editorGutter" aria-hidden="true">
+                                        <div class="gutter-line">1</div>
+                                        <div class="gutter-line">2</div>
+                                        <div class="gutter-line">3</div>
+                                        <div class="gutter-line">4</div>
+                                        <div class="gutter-line">5</div>
+                                        <div class="gutter-line active">6</div>
+                                        <div class="gutter-line">7</div>
+                                        <div class="gutter-line">8</div>
+                                        <div class="gutter-line">9</div>
+                                        <div class="gutter-line">10</div>
+                                        <div class="gutter-line">11</div>
+                                        <div class="gutter-line">12</div>
+                                        <div class="gutter-line">13</div>
+                                        <div class="gutter-line">14</div>
+                                        <div class="gutter-line">15</div>
+                                        <div class="gutter-line">16</div>
+                                        <div class="gutter-line">17</div>
+                                        <div class="gutter-line">18</div>
+                                        <div class="gutter-line">19</div>
+                                        <div class="gutter-line">20</div>
+                                        <div class="gutter-line">21</div>
+                                        <div class="gutter-line">22</div>
+                                        <div class="gutter-line">23</div>
+                                    </div>
+
+                                    <div class="editor-code-area" id="editorCodeArea" tabindex="0" role="textbox"
+                                        aria-multiline="true" aria-label="Code editor">
+                                        <pre class="code-content" id="codeContent"><code class="language-jsx">import React, { useState, useEffect } from "react";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import "./styles.css";
+
+export default function App() {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() =&gt; {
+    const fetchProjects = async () =&gt; {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/projects");
+        const data = await res.json();
+        setProjects(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProjects();
+  }, []);
+
+  return (
+    &lt;div className="app"&gt;
+      &lt;Navbar /&gt;
+      &lt;main&gt;{/* content */}&lt;/main&gt;
+      &lt;Footer /&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+                                    </div>
+
+                                    <div class="editor-minimap" id="editorMinimap" aria-hidden="true">
+                                        <div class="minimap-viewport"></div>
+                                        <div class="minimap-content"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Empty State -->
+                                <div class="editor-empty-state" id="editorEmptyState" hidden>
+                                    <div class="empty-illustration">
+                                        <i class="ri-code-s-slash-line"></i>
+                                    </div>
+                                    <h3>Welcome to Nova Editor</h3>
+                                    <p>Open a file from the explorer or create a new one to start coding.</p>
+                                    <div class="empty-actions">
+                                        <button type="button" class="btn btn-primary" id="emptyOpenFileBtn">
+                                            <i class="ri-folder-open-line"></i>
+                                            Open File
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" id="emptyNewFileBtn">
+                                            <i class="ri-file-add-line"></i>
+                                            New File
+                                        </button>
+                                    </div>
+                                    <div class="empty-shortcuts">
+                                        <div class="shortcut-item">
+                                            <kbd>Ctrl</kbd><kbd>P</kbd>
+                                            <span>Quick Open</span>
+                                        </div>
+                                        <div class="shortcut-item">
+                                            <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>P</kbd>
+                                            <span>Command Palette</span>
+                                        </div>
+                                        <div class="shortcut-item">
+                                            <kbd>Ctrl</kbd><kbd>B</kbd>
+                                            <span>Toggle Explorer</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resizer: Center ↔ Right -->
+                    <div class="panel-resizer vertical" id="rightPanelResizer" data-resizer="right" role="separator"
+                        aria-orientation="vertical" aria-label="Resize right panel" tabindex="0"></div>
+
+                    <!-- ======================== RIGHT PANEL ======================== -->
+                    <aside class="right-panel" id="rightPanel" aria-label="Side Panel">
+                        <div class="right-panel-tabs" role="tablist" aria-label="Right panel views">
+                            <button type="button" class="right-tab active" role="tab" aria-selected="true"
+                                data-right-tab="ai" id="rightTabAI">
+                                <i class="ri-sparkling-2-line"></i>
+                                <span>AI</span>
+                            </button>
+                            <button type="button" class="right-tab" role="tab" aria-selected="false"
+                                data-right-tab="preview" id="rightTabPreview">
+                                <i class="ri-eye-line"></i>
+                                <span>Preview</span>
+                            </button>
+                            <button type="button" class="right-tab" role="tab" aria-selected="false"
+                                data-right-tab="console" id="rightTabConsole">
+                                <i class="ri-terminal-box-line"></i>
+                                <span>Console</span>
+                            </button>
+                            <button type="button" class="right-panel-close" id="rightPanelCloseBtn" title="Close panel"
+                                aria-label="Close right panel">
+                                <i class="ri-close-line"></i>
+                            </button>
+                        </div>
+
+                        <div class="right-panel-body">
+                            <!-- AI View -->
+                            <div class="right-view active" id="rightViewAI" role="tabpanel"
+                                aria-labelledby="rightTabAI">
+                                <div class="ai-header">
+                                    <div class="ai-avatar">
+                                        <i class="ri-sparkling-2-fill"></i>
+                                    </div>
+                                    <div class="ai-intro">
+                                        <strong>Hi there!</strong>
+                                        <span>How can I help you today?</span>
+                                    </div>
+                                </div>
+
+                                <div class="ai-quick-actions">
+                                    <button type="button" class="ai-action-card" data-ai-action="explain">
+                                        <i class="ri-question-line"></i>
+                                        <span>Explain this code</span>
+                                    </button>
+                                    <button type="button" class="ai-action-card" data-ai-action="fix">
+                                        <i class="ri-bug-line"></i>
+                                        <span>Fix Bugs</span>
+                                    </button>
+                                    <button type="button" class="ai-action-card" data-ai-action="refactor">
+                                        <i class="ri-scissors-cut-line"></i>
+                                        <span>Refactor</span>
+                                    </button>
+                                    <button type="button" class="ai-action-card" data-ai-action="generate">
+                                        <i class="ri-magic-line"></i>
+                                        <span>Generate</span>
+                                    </button>
+                                    <button type="button" class="ai-action-card" data-ai-action="comments">
+                                        <i class="ri-chat-1-line"></i>
+                                        <span>Comments</span>
+                                    </button>
+                                    <button type="button" class="ai-action-card" data-ai-action="docs">
+                                        <i class="ri-file-text-line"></i>
+                                        <span>Docs</span>
+                                    </button>
+                                </div>
+
+                                <div class="ai-chat" id="aiChat">
+                                    <div class="ai-message assistant">
+                                        <div class="ai-bubble">
+                                            Hey! I'm Nova AI. Ask me anything about your code.
+                                        </div>
+                                    </div>
+                                    <div class="ai-message user">
+                                        <div class="ai-bubble">
+                                            Can you optimize this useEffect and handle errors better?
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="ai-input-area">
+                                    <div class="ai-input-wrap">
+                                        <textarea id="aiInput" rows="1" placeholder="Ask me anything..."
+                                            aria-label="Ask AI"></textarea>
+                                        <button type="button" class="ai-send-btn" id="aiSendBtn"
+                                            aria-label="Send message">
+                                            <i class="ri-send-plane-fill"></i>
+                                        </button>
+                                    </div>
+                                    <div class="ai-input-hints">
+                                        <span><kbd>Enter</kbd> to send</span>
+                                        <span><kbd>Shift</kbd>+<kbd>Enter</kbd> for new line</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preview View -->
+                            <div class="right-view" id="rightViewPreview" role="tabpanel"
+                                aria-labelledby="rightTabPreview" hidden>
+                                <div class="preview-toolbar">
+                                    <div class="preview-url-bar">
+                                        <i class="ri-global-line"></i>
+                                        <input type="text" id="previewUrl" value="http://localhost:3000" readonly
+                                            aria-label="Preview URL">
+                                        <button type="button" class="preview-btn" id="previewRefreshBtn" title="Refresh"
+                                            aria-label="Refresh preview">
+                                            <i class="ri-refresh-line"></i>
+                                        </button>
+                                    </div>
+                                    <div class="preview-device-switch">
+                                        <button type="button" class="preview-device active" data-device="desktop"
+                                            title="Desktop">
+                                            <i class="ri-computer-line"></i>
+                                        </button>
+                                        <button type="button" class="preview-device" data-device="tablet"
+                                            title="Tablet">
+                                            <i class="ri-tablet-line"></i>
+                                        </button>
+                                        <button type="button" class="preview-device" data-device="mobile"
+                                            title="Mobile">
+                                            <i class="ri-smartphone-line"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="preview-frame-wrap" id="previewFrameWrap">
+                                    <iframe id="previewFrame" class="preview-frame" title="Live Preview"
+                                        sandbox="allow-scripts allow-same-origin"></iframe>
+                                    <div class="preview-placeholder" id="previewPlaceholder">
+                                        <i class="ri-eye-line"></i>
+                                        <p>Preview will appear here</p>
+                                        <span>Click Run to start the development server</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Console View -->
+                            <div class="right-view" id="rightViewConsole" role="tabpanel"
+                                aria-labelledby="rightTabConsole" hidden>
+                                <div class="console-toolbar">
+                                    <div class="console-filters">
+                                        <button type="button" class="console-filter active"
+                                            data-filter="all">All</button>
+                                        <button type="button" class="console-filter" data-filter="log">Logs</button>
+                                        <button type="button" class="console-filter"
+                                            data-filter="warn">Warnings</button>
+                                        <button type="button" class="console-filter" data-filter="error">Errors</button>
+                                    </div>
+                                    <button type="button" class="console-clear-btn" id="consoleClearBtn"
+                                        title="Clear console" aria-label="Clear console">
+                                        <i class="ri-delete-bin-line"></i>
+                                    </button>
+                                </div>
+                                <div class="console-output" id="consoleOutput" role="log" aria-live="polite">
+                                    <div class="console-entry log">
+                                        <span class="console-time">14:32:01</span>
+                                        <span class="console-msg">Vite v5.2.0 ready in 342 ms</span>
+                                    </div>
+                                    <div class="console-entry info">
+                                        <span class="console-time">14:32:01</span>
+                                        <span class="console-msg">→ Local: http://localhost:3000/</span>
+                                    </div>
+                                    <div class="console-entry info">
+                                        <span class="console-time">14:32:01</span>
+                                        <span class="console-msg">→ Network: use --host to expose</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                <!-- Resizer: Top ↔ Terminal -->
+                <div class="panel-resizer horizontal" id="terminalResizer" data-resizer="terminal" role="separator"
+                    aria-orientation="horizontal" aria-label="Resize terminal" tabindex="0"></div>
+
+                <!-- ======================== TERMINAL PANEL ======================== -->
+                <div class="terminal-panel" id="terminalPanel">
+                    <div class="terminal-tabs" role="tablist" aria-label="Bottom panel">
+                        <button type="button" class="terminal-tab active" role="tab" aria-selected="true"
+                            data-terminal-tab="terminal" id="termTabTerminal">
+                            <i class="ri-terminal-line"></i>
+                            <span>Terminal</span>
+                        </button>
+                        <button type="button" class="terminal-tab" role="tab" aria-selected="false"
+                            data-terminal-tab="problems" id="termTabProblems">
+                            <i class="ri-error-warning-line"></i>
+                            <span>Problems</span>
+                            <span class="terminal-badge" id="problemsBadge">2</span>
+                        </button>
+                        <button type="button" class="terminal-tab" role="tab" aria-selected="false"
+                            data-terminal-tab="output" id="termTabOutput">
+                            <i class="ri-file-list-3-line"></i>
+                            <span>Output</span>
+                        </button>
+                        <button type="button" class="terminal-tab" role="tab" aria-selected="false"
+                            data-terminal-tab="git" id="termTabGit">
+                            <i class="ri-git-branch-line"></i>
+                            <span>Git</span>
+                        </button>
+
+                        <div class="terminal-actions">
+                            <button type="button" class="terminal-action-btn" id="terminalNewBtn" title="New Terminal"
+                                aria-label="New Terminal">
+                                <i class="ri-add-line"></i>
+                            </button>
+                            <button type="button" class="terminal-action-btn" id="terminalSplitBtn"
+                                title="Split Terminal" aria-label="Split Terminal">
+                                <i class="ri-layout-column-line"></i>
+                            </button>
+                            <button type="button" class="terminal-action-btn" id="terminalMaximizeBtn" title="Maximize"
+                                aria-label="Maximize panel">
+                                <i class="ri-fullscreen-line"></i>
+                            </button>
+                            <button type="button" class="terminal-action-btn" id="terminalCloseBtn" title="Close Panel"
+                                aria-label="Close terminal panel">
+                                <i class="ri-close-line"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="terminal-body">
+                        <!-- Terminal View -->
+                        <div class="terminal-view active" id="terminalViewTerminal" role="tabpanel"
+                            aria-labelledby="termTabTerminal">
+                            <div class="terminal-instance" id="terminalInstance">
+                                <div class="terminal-output" id="terminalOutput">
+                                    <div class="term-line">
+                                        <span class="term-prompt">nova-editor</span>
+                                        <span class="term-path">~/my-project</span>
+                                        <span class="term-symbol">$</span>
+                                        <span class="term-cmd">npm run dev</span>
+                                    </div>
+                                    <div class="term-line muted">
+                                        <span> VITE v5.2.0 ready in 342 ms</span>
+                                    </div>
+                                    <div class="term-line">
+                                        <span class="term-success">➜</span> Local: <a href="http://localhost:3000/"
+                                            target="_blank" rel="noopener">http://localhost:3000/</a>
+                                    </div>
+                                    <div class="term-line">
+                                        <span class="term-success">➜</span> Network: use --host to expose
+                                    </div>
+                                    <div class="term-line muted">
+                                        <span> press h + enter to show help</span>
+                                    </div>
+                                </div>
+                                <div class="terminal-input-line">
+                                    <span class="term-prompt">nova-editor</span>
+                                    <span class="term-path">~/my-project</span>
+                                    <span class="term-symbol">$</span>
+                                    <input type="text" id="terminalInput" class="terminal-input" spellcheck="false"
+                                        autocomplete="off" aria-label="Terminal input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Problems View -->
+                        <div class="terminal-view" id="terminalViewProblems" role="tabpanel"
+                            aria-labelledby="termTabProblems" hidden>
+                            <div class="problems-list" id="problemsList">
+                                <div class="problem-item error" data-path="src/components/App.jsx" data-line="12">
+                                    <i class="ri-error-warning-fill"></i>
+                                    <div class="problem-content">
+                                        <span class="problem-msg">'fetchProjects' is declared but its value is never
+                                            read.</span>
+                                        <span class="problem-loc">App.jsx:12:11</span>
+                                    </div>
+                                </div>
+                                <div class="problem-item warning" data-path="src/styles.css" data-line="48">
+                                    <i class="ri-alert-fill"></i>
+                                    <div class="problem-content">
+                                        <span class="problem-msg">Unknown property: 'foont-size'</span>
+                                        <span class="problem-loc">styles.css:48:3</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Output View -->
+                        <div class="terminal-view" id="terminalViewOutput" role="tabpanel"
+                            aria-labelledby="termTabOutput" hidden>
+                            <div class="output-content" id="outputContent">
+                                <pre class="output-pre">[Nova Editor] Build started...
+[Nova Editor] Compiling modules...
+[Nova Editor] ✓ 24 modules transformed.
+[Nova Editor] Build completed in 1.2s</pre>
+                            </div>
+                        </div>
+
+                        <!-- Git View -->
+                        <div class="terminal-view" id="terminalViewGit" role="tabpanel" aria-labelledby="termTabGit"
+                            hidden>
+                            <div class="git-panel" id="gitPanel">
+                                <div class="git-section">
+                                    <div class="git-section-header">
+                                        <span>Changes</span>
+                                        <span class="git-count">2</span>
+                                    </div>
+                                    <ul class="git-changes">
+                                        <li class="git-change modified">
+                                            <i class="ri-file-edit-line"></i>
+                                            <span class="git-file">src/components/App.jsx</span>
+                                            <span class="git-status">M</span>
+                                        </li>
+                                        <li class="git-change modified">
+                                            <i class="ri-file-edit-line"></i>
+                                            <span class="git-file">src/styles.css</span>
+                                            <span class="git-status">M</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="git-actions">
+                                    <button type="button" class="btn btn-secondary btn-sm" id="gitStageAllBtn">
+                                        <i class="ri-checkbox-multiple-line"></i>
+                                        Stage All
+                                    </button>
+                                    <button type="button" class="btn btn-primary btn-sm" id="gitCommitBtn">
+                                        <i class="ri-git-commit-line"></i>
+                                        Commit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+       STATUS BAR
+       ============================================================ -->
+        <footer class="editor-statusbar" id="editorStatusbar" role="contentinfo">
+            <div class="statusbar-left">
+                <button type="button" class="statusbar-item" id="statusBranch" title="Current branch">
+                    <i class="ri-git-branch-line"></i>
+                    <span>main</span>
+                </button>
+                <button type="button" class="statusbar-item" id="statusSync" title="Sync changes">
+                    <i class="ri-refresh-line"></i>
+                    <span>0↓ 0↑</span>
+                </button>
+                <span class="statusbar-item error" id="statusErrors" title="Errors">
+                    <i class="ri-error-warning-line"></i>
+                    <span>1</span>
+                </span>
+                <span class="statusbar-item warning" id="statusWarnings" title="Warnings">
+                    <i class="ri-alert-line"></i>
+                    <span>1</span>
+                </span>
+            </div>
+
+            <div class="statusbar-center">
+                <span class="statusbar-item" id="statusCursor">
+                    Ln 7, Col 28
+                </span>
+            </div>
+
+            <div class="statusbar-right">
+                <button type="button" class="statusbar-item" id="statusSpaces" title="Indentation">
+                    Spaces: 2
+                </button>
+                <button type="button" class="statusbar-item" id="statusEncoding" title="Encoding">
+                    UTF-8
+                </button>
+                <button type="button" class="statusbar-item" id="statusEol" title="Line Ending">
+                    LF
+                </button>
+                <button type="button" class="statusbar-item" id="statusLanguage" title="Language Mode">
+                    JavaScript JSX
+                </button>
+                <button type="button" class="statusbar-item" id="statusPrettier" title="Prettier">
+                    <i class="ri-check-line"></i>
+                    Prettier
+                </button>
+                <button type="button" class="statusbar-item" id="statusTheme" title="Color Theme">
+                    <i class="ri-palette-line"></i>
+                </button>
+            </div>
+        </footer>
+    </main>
+
+    <!-- script file -->
+    <script type="module" src="../js/layout.js"></script>
+    <script type="module" src="../js/editor.js"></script>
+</body>
+
+</html>
