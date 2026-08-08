@@ -208,7 +208,7 @@ async function completeLogin(user) {
 
     await wait(CONFIG.redirectDelay);
 
-    window.location.href = CONFIG.setupPage;
+    window.location.replace(CONFIG.setupPage);
 
     return;
   }
@@ -307,9 +307,14 @@ async function redirectUser(user) {
 
   await wait(CONFIG.redirectDelay);
 
+  // SECURITY: replace() (never href) for every auth-flow redirect out
+  // of the login page, so login.html doesn't linger in browser
+  // history. Each branch returns immediately after redirecting so
+  // only one redirect can ever fire per call.
+
   if (!userData) {
 
-    window.location.href = CONFIG.setupPage;
+    window.location.replace(CONFIG.setupPage);
 
     return;
 
@@ -319,7 +324,7 @@ async function redirectUser(user) {
 
     showToast("Complete your setup first.", "info");
 
-    window.location.href = CONFIG.setupPage;
+    window.location.replace(CONFIG.setupPage);
 
     return;
 
@@ -327,11 +332,23 @@ async function redirectUser(user) {
 
   showToast("Redirecting to dashboard...", "success");
 
-  window.location.href = CONFIG.dashboardPage;
+  window.location.replace(CONFIG.dashboardPage);
 }
 
 /* ==========================================
    Initialize
+   ------------------------------------------
+   SECURITY: checkSession() (from auth.js) does
+   not resolve until Firebase Auth has finished
+   restoring its session — so this never fires
+   an early "not logged in" redirect flicker,
+   and it never trusts anything other than a
+   live Firebase Authentication session. If a
+   session exists, the visitor is sent onward
+   (setup or dashboard, depending on profile
+   state); otherwise they simply remain on the
+   login form. No separate/duplicate auth check
+   is performed anywhere else in this file.
 ========================================== */
 
 async function initialize() {

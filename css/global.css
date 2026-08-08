@@ -1,4 +1,4 @@
-/* === google fonts === */
+/* === google fonts & Global.css  === */
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap");
 
 /* === import variables file === */
@@ -27,6 +27,30 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================
+   Smooth theme transitions (active toggle only)
+   ==========================================
+*/
+html,
+body,
+body *,
+body *::before,
+body *::after {
+  transition-property: background-color, color, border-color, box-shadow, fill, stroke;
+  transition-duration: 0.22s;
+  transition-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body,
+  body *,
+  body *::before,
+  body *::after {
+    transition-duration: 0.01ms;
+  }
 }
 
 img,

@@ -145,6 +145,23 @@ export async function logout() {
   }
 }
 
+/**
+ * Convenience wrapper for UI code that wants "sign out and leave the
+ * protected page" in one call. Uses replace() so dashboard.html /
+ * editor.html do not remain in browser history after logout.
+ * Existing callers can keep using logout() directly if they need to
+ * handle the result themselves (e.g. to show a toast first).
+ */
+export async function logoutAndRedirect() {
+  const result = await logout();
+
+  if (result.success) {
+    redirectToLanding();
+  }
+
+  return result;
+}
+
 /* ==========================================
    Current User
 ========================================== */
@@ -209,6 +226,89 @@ export function onAuthStateChangedListener(callback) {
 
 export function onAuthStateChange(callback) {
   return onAuthStateChanged(auth, callback);
+}
+
+/* ==========================================
+   SECURITY: Centralized Route Guard
+   ------------------------------------------
+   Single source of truth for "is there a real
+   Firebase Authentication session right now".
+   dashboard.js and editor.js must use these
+   helpers instead of inventing their own auth
+   checks or trusting localStorage/sessionStorage/
+   custom "isLoggedIn" flags.
+========================================== */
+
+/**
+ * Resolves once Firebase Auth has finished restoring its session
+ * (never before), with the current user or null. This is the only
+ * function in the app that should be treated as the authoritative
+ * "auth state loading vs. resolved" boundary — it deliberately reuses
+ * checkSession()'s single-shot onAuthStateChanged listener so there is
+ * exactly one code path for "wait for Firebase to tell us who's
+ * signed in."
+ */
+export function getAuthenticatedUser() {
+  return checkSession();
+}
+
+/**
+ * Boolean convenience check. Still waits for auth state to settle
+ * before answering, so callers never get a false "not authenticated"
+ * during the brief window before Firebase restores the session.
+ */
+export async function isAuthenticated() {
+  const user = await getAuthenticatedUser();
+  return !!user;
+}
+
+/**
+ * Security-critical redirect used whenever an unauthenticated visitor
+ * must leave a protected page. Uses replace() — never href — so the
+ * protected page is dropped from browser history and pressing "back"
+ * cannot reveal it again.
+ *
+ * NOTE: dashboard.html and editor.html both live under /pages/, so the
+ * root landing page must be addressed as "../index.html" here — a bare
+ * "index.html" would resolve to the non-existent /pages/index.html.
+ */
+export function redirectToLanding() {
+  window.location.replace("../index.html");
+}
+
+/**
+ * Guard for protected pages (dashboard.html, editor.html).
+ *
+ * Waits for Firebase Auth initialization, then either:
+ *   - resolves with the authenticated user, or
+ *   - redirects to index.html and resolves null.
+ *
+ * Callers MUST treat a null return as "stop here": do not render UI,
+ * do not query Firestore, do not initialize Monaco, etc. This is what
+ * prevents protected data from ever being requested before an auth
+ * check completes.
+ */
+export async function requireAuth() {
+  const user = await getAuthenticatedUser();
+
+  if (!user) {
+    redirectToLanding();
+    return null;
+  }
+
+  return user;
+}
+
+/**
+ * Guard for login.html: if a session already exists, the caller
+ * should send the user onward instead of showing the login form
+ * again. This helper only resolves the user (or null) — it does not
+ * redirect itself, because login.js has extra business logic
+ * (e.g. "has the user finished setup?") that decides *where*
+ * an already-authenticated visitor should land.
+ */
+export async function redirectIfAuthenticated() {
+  return getAuthenticatedUser();
 }
 
 /* ==========================================
