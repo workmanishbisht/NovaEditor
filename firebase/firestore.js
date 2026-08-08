@@ -496,6 +496,14 @@ function projectsCollection() {
 
 export async function createProject(projectData) {
   return run(async () => {
+    console.error("[Firestore] createProject() started", {
+      name: projectData?.name,
+      template: projectData?.template,
+      createDefaultFiles: projectData?.createDefaultFiles,
+      createReadme: projectData?.createReadme,
+      ownerUid: projectData?.ownerUid,
+    });
+
     const payload = {
       name: projectData.name,
       description: projectData.description || "",
@@ -519,13 +527,421 @@ export async function createProject(projectData) {
     };
 
     const reference = await addDoc(projectsCollection(), payload);
+    const projectId = reference.id;
+
+    console.error("[Firestore] project document created", {
+      projectId,
+      template: payload.template,
+      createDefaultFiles: payload.createDefaultFiles,
+      createReadme: payload.createReadme,
+    });
+
+    // Initialize default file/folder structure when requested
+    if (payload.createDefaultFiles === true) {
+      console.error("[Firestore] About to call initializeDefaultProjectStructure()", {
+        projectId,
+        template: payload.template,
+      });
+
+      const initResult = await initializeDefaultProjectStructure(
+        projectId,
+        payload
+      );
+
+      console.error("[Firestore] initializeDefaultProjectStructure() returned", {
+        projectId,
+        success: initResult?.success,
+        error: initResult?.error,
+        code: initResult?.code,
+        initResult,
+      });
+
+      if (!initResult.success) {
+        console.error("[Firestore] Default project initialization failed", {
+          projectId,
+          errorCode: initResult.code,
+          errorMessage: initResult.error,
+          error: initResult,
+        });
+        return createResponse(false, {
+          error:
+            initResult.error ||
+            "Project created but failed to initialize default files/folders.",
+          code: initResult.code || null,
+        });
+      }
+    } else {
+      console.error("[Firestore] Skipping default files – createDefaultFiles is not true", {
+        projectId,
+        createDefaultFiles: payload.createDefaultFiles,
+      });
+    }
+
     return createResponse(true, {
       data: {
-        id: reference.id,
+        id: projectId,
         ...payload,
       },
     });
   });
+}
+
+/**
+ * Create the starter folder/file tree for a newly created project.
+ * Currently supports the blank HTML/CSS/JS template.
+ * Extensible for future templates via the template field.
+ */
+async function initializeDefaultProjectStructure(projectId, projectPayload) {
+  const template = (projectPayload.template || "blank").toLowerCase();
+
+  console.error("[Firestore] initializeDefaultProjectStructure() started", {
+    projectId,
+    template,
+    createReadme: projectPayload.createReadme,
+  });
+
+  // Blank HTML/CSS/JS starter (also the fallback for unknown templates)
+  if (template === "blank" || template === "html" || template === "web") {
+    console.error("[Firestore] Template matched – calling createBlankHtmlCssJsStructure()", {
+      projectId,
+      template,
+    });
+    const result = await createBlankHtmlCssJsStructure(projectId, projectPayload);
+    console.error("[Firestore] createBlankHtmlCssJsStructure() returned", {
+      projectId,
+      success: result?.success,
+      error: result?.error,
+      code: result?.code,
+      result,
+    });
+    return result;
+  }
+
+  // Future templates can be added here without changing the createProject contract
+  // e.g. if (template === "react") { ... }
+
+  // Unknown template → still succeed (project exists, just no files)
+  console.error("[Firestore] Skipping default files – unsupported template", {
+    projectId,
+    template,
+  });
+  return createResponse(true);
+}
+
+async function createBlankHtmlCssJsStructure(projectId, projectPayload) {
+  console.error("[Firestore] createBlankHtmlCssJsStructure() entered", {
+    projectId,
+    projectName: projectPayload?.name,
+    createReadme: projectPayload?.createReadme,
+  });
+
+  const projectName = projectPayload.name || "Untitled Project";
+  const projectDescription = projectPayload.description || "";
+
+  // 1. Create css/ folder
+  console.error("[Firestore] About to createFolder(css)", { projectId });
+  const cssFolderResult = await createFolder(projectId, {
+    name: "css",
+    parentId: null,
+  });
+  console.error("[Firestore] createFolder(css) result", {
+    projectId,
+    success: cssFolderResult?.success,
+    error: cssFolderResult?.error,
+    code: cssFolderResult?.code,
+    folderId: cssFolderResult?.data?.id,
+    cssFolderResult,
+  });
+  if (!cssFolderResult.success) {
+    console.error("[Firestore] createFolder(css) failed", {
+      projectId,
+      operation: "createFolder",
+      folderName: "css",
+      collectionPath: `projects/${projectId}/folders`,
+      errorCode: cssFolderResult.code,
+      errorMessage: cssFolderResult.error,
+      error: cssFolderResult,
+    });
+    return createResponse(false, {
+      error: cssFolderResult.error || "Failed to create css folder.",
+      code: cssFolderResult.code,
+    });
+  }
+  const cssFolderId = cssFolderResult.data.id;
+
+  // 2. Create js/ folder
+  console.error("[Firestore] About to createFolder(js)", { projectId });
+  const jsFolderResult = await createFolder(projectId, {
+    name: "js",
+    parentId: null,
+  });
+  console.error("[Firestore] createFolder(js) result", {
+    projectId,
+    success: jsFolderResult?.success,
+    error: jsFolderResult?.error,
+    code: jsFolderResult?.code,
+    folderId: jsFolderResult?.data?.id,
+    jsFolderResult,
+  });
+  if (!jsFolderResult.success) {
+    console.error("[Firestore] createFolder(js) failed", {
+      projectId,
+      operation: "createFolder",
+      folderName: "js",
+      collectionPath: `projects/${projectId}/folders`,
+      errorCode: jsFolderResult.code,
+      errorMessage: jsFolderResult.error,
+      error: jsFolderResult,
+    });
+    return createResponse(false, {
+      error: jsFolderResult.error || "Failed to create js folder.",
+      code: jsFolderResult.code,
+    });
+  }
+  const jsFolderId = jsFolderResult.data.id;
+
+  // 3. index.html (root)
+  const indexHtmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(projectName)}</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <h1>${escapeHtml(projectName)}</h1>
+  <p>Welcome to your new project.</p>
+  <script src="js/script.js"></script>
+</body>
+</html>
+`;
+
+  console.error("[Firestore] About to createFile(index.html)", { projectId });
+  const indexResult = await createFile(projectId, {
+    name: "index.html",
+    extension: "html",
+    language: "html",
+    folderId: null,
+    path: "index.html",
+    content: indexHtmlContent,
+  });
+  console.error("[Firestore] createFile(index.html) result", {
+    projectId,
+    success: indexResult?.success,
+    error: indexResult?.error,
+    code: indexResult?.code,
+    fileId: indexResult?.data?.id,
+    indexResult,
+  });
+  if (!indexResult.success) {
+    console.error("[Firestore] createFile(index.html) failed", {
+      projectId,
+      operation: "createFile",
+      fileName: "index.html",
+      collectionPath: `projects/${projectId}/files`,
+      errorCode: indexResult.code,
+      errorMessage: indexResult.error,
+      error: indexResult,
+    });
+    return createResponse(false, {
+      error: indexResult.error || "Failed to create index.html.",
+      code: indexResult.code,
+    });
+  }
+
+  // 4. css/style.css
+  const styleCssContent = `/* ${projectName} – starter stylesheet */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  color: #1a1a1a;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+  color: #555;
+}
+`;
+
+  console.error("[Firestore] About to createFile(style.css)", {
+    projectId,
+    folderId: cssFolderId,
+  });
+  const styleResult = await createFile(projectId, {
+    name: "style.css",
+    extension: "css",
+    language: "css",
+    folderId: cssFolderId,
+    path: "css/style.css",
+    content: styleCssContent,
+  });
+  console.error("[Firestore] createFile(style.css) result", {
+    projectId,
+    success: styleResult?.success,
+    error: styleResult?.error,
+    code: styleResult?.code,
+    fileId: styleResult?.data?.id,
+    styleResult,
+  });
+  if (!styleResult.success) {
+    console.error("[Firestore] createFile(style.css) failed", {
+      projectId,
+      operation: "createFile",
+      fileName: "style.css",
+      folderId: cssFolderId,
+      collectionPath: `projects/${projectId}/files`,
+      errorCode: styleResult.code,
+      errorMessage: styleResult.error,
+      error: styleResult,
+    });
+    return createResponse(false, {
+      error: styleResult.error || "Failed to create style.css.",
+      code: styleResult.code,
+    });
+  }
+
+  // 5. js/script.js
+  const scriptJsContent = `// ${projectName} – starter script
+
+console.log("${escapeJsString(projectName)} loaded");
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Your code here
+});
+`;
+
+  console.error("[Firestore] About to createFile(script.js)", {
+    projectId,
+    folderId: jsFolderId,
+  });
+  const scriptResult = await createFile(projectId, {
+    name: "script.js",
+    extension: "js",
+    language: "javascript",
+    folderId: jsFolderId,
+    path: "js/script.js",
+    content: scriptJsContent,
+  });
+  console.error("[Firestore] createFile(script.js) result", {
+    projectId,
+    success: scriptResult?.success,
+    error: scriptResult?.error,
+    code: scriptResult?.code,
+    fileId: scriptResult?.data?.id,
+    scriptResult,
+  });
+  if (!scriptResult.success) {
+    console.error("[Firestore] createFile(script.js) failed", {
+      projectId,
+      operation: "createFile",
+      fileName: "script.js",
+      folderId: jsFolderId,
+      collectionPath: `projects/${projectId}/files`,
+      errorCode: scriptResult.code,
+      errorMessage: scriptResult.error,
+      error: scriptResult,
+    });
+    return createResponse(false, {
+      error: scriptResult.error || "Failed to create script.js.",
+      code: scriptResult.code,
+    });
+  }
+
+  // 6. Optional README.md
+  if (projectPayload.createReadme === true) {
+    const readmeContent = `# ${projectName}
+
+${projectDescription || "A new project created with Nova Editor."}
+
+## Structure
+
+- \`index.html\` – main HTML document
+- \`css/style.css\` – styles
+- \`js/script.js\` – client-side JavaScript
+`;
+
+    console.error("[Firestore] About to createFile(README.md)", { projectId });
+    const readmeResult = await createFile(projectId, {
+      name: "README.md",
+      extension: "md",
+      language: "markdown",
+      folderId: null,
+      path: "README.md",
+      content: readmeContent,
+    });
+    console.error("[Firestore] createFile(README.md) result", {
+      projectId,
+      success: readmeResult?.success,
+      error: readmeResult?.error,
+      code: readmeResult?.code,
+      fileId: readmeResult?.data?.id,
+      readmeResult,
+    });
+    if (!readmeResult.success) {
+      console.error("[Firestore] createFile(README.md) failed", {
+        projectId,
+        operation: "createFile",
+        fileName: "README.md",
+        collectionPath: `projects/${projectId}/files`,
+        errorCode: readmeResult.code,
+        errorMessage: readmeResult.error,
+        error: readmeResult,
+      });
+      return createResponse(false, {
+        error: readmeResult.error || "Failed to create README.md.",
+        code: readmeResult.code,
+      });
+    }
+  }
+
+  console.error("[Firestore] Default blank HTML/CSS/JS structure created successfully", {
+    projectId,
+    cssFolderId,
+    jsFolderId,
+  });
+
+  return createResponse(true);
+}
+
+/** Minimal HTML escaping for safe insertion into generated content */
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Minimal escaping for use inside a double-quoted JS string */
+function escapeJsString(str) {
+  return String(str)
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r");
 }
 
 /* ==========================================
@@ -651,11 +1067,31 @@ async function adjustProjectCounters(projectId, { files = 0, folders = 0 } = {})
  */
 export async function createFolder(projectId, data) {
   return run(async () => {
+    console.error("[Firestore] createFolder() entered", {
+      projectId,
+      name: data?.name,
+      parentId: data?.parentId,
+      collectionPath: `projects/${projectId}/folders`,
+    });
+
     const projectError = validateId(projectId, "Project ID");
-    if (projectError) return projectError;
+    if (projectError) {
+      console.error("[Firestore] createFolder() validation failed (projectId)", {
+        projectId,
+        error: projectError,
+      });
+      return projectError;
+    }
 
     const nameError = validateName(data?.name);
-    if (nameError) return nameError;
+    if (nameError) {
+      console.error("[Firestore] createFolder() validation failed (name)", {
+        projectId,
+        name: data?.name,
+        error: nameError,
+      });
+      return nameError;
+    }
 
     const payload = {
       name: data.name.trim(),
@@ -664,8 +1100,49 @@ export async function createFolder(projectId, data) {
       updatedAt: serverTimestamp(),
     };
 
-    const reference = await addDoc(foldersCollection(projectId), payload);
-    await adjustProjectCounters(projectId, { folders: 1 });
+    console.error("[Firestore] createFolder() about to addDoc", {
+      projectId,
+      collectionPath: `projects/${projectId}/folders`,
+      payloadName: payload.name,
+    });
+
+    let reference;
+    try {
+      reference = await addDoc(foldersCollection(projectId), payload);
+      console.error("[Firestore] createFolder() addDoc succeeded", {
+        projectId,
+        folderId: reference.id,
+        collectionPath: `projects/${projectId}/folders`,
+      });
+    } catch (err) {
+      console.error("[Firestore] createFolder() addDoc threw", {
+        projectId,
+        collectionPath: `projects/${projectId}/folders`,
+        errorCode: err?.code,
+        errorMessage: err?.message,
+        error: err,
+      });
+      throw err;
+    }
+
+    console.error("[Firestore] createFolder() about to adjustProjectCounters", {
+      projectId,
+      foldersDelta: 1,
+    });
+    try {
+      await adjustProjectCounters(projectId, { folders: 1 });
+      console.error("[Firestore] createFolder() adjustProjectCounters succeeded", {
+        projectId,
+      });
+    } catch (err) {
+      console.error("[Firestore] createFolder() adjustProjectCounters threw", {
+        projectId,
+        errorCode: err?.code,
+        errorMessage: err?.message,
+        error: err,
+      });
+      throw err;
+    }
 
     return createResponse(true, {
       data: { id: reference.id, ...payload },
@@ -812,11 +1289,32 @@ export async function deleteFolder(projectId, folderId) {
  */
 export async function createFile(projectId, data) {
   return run(async () => {
+    console.error("[Firestore] createFile() entered", {
+      projectId,
+      name: data?.name,
+      path: data?.path,
+      folderId: data?.folderId,
+      collectionPath: `projects/${projectId}/files`,
+    });
+
     const projectError = validateId(projectId, "Project ID");
-    if (projectError) return projectError;
+    if (projectError) {
+      console.error("[Firestore] createFile() validation failed (projectId)", {
+        projectId,
+        error: projectError,
+      });
+      return projectError;
+    }
 
     const nameError = validateName(data?.name);
-    if (nameError) return nameError;
+    if (nameError) {
+      console.error("[Firestore] createFile() validation failed (name)", {
+        projectId,
+        name: data?.name,
+        error: nameError,
+      });
+      return nameError;
+    }
 
     const content = data.content || "";
     const payload = {
@@ -831,8 +1329,50 @@ export async function createFile(projectId, data) {
       updatedAt: serverTimestamp(),
     };
 
-    const reference = await addDoc(filesCollection(projectId), payload);
-    await adjustProjectCounters(projectId, { files: 1 });
+    console.error("[Firestore] createFile() about to addDoc", {
+      projectId,
+      collectionPath: `projects/${projectId}/files`,
+      payloadName: payload.name,
+      payloadPath: payload.path,
+    });
+
+    let reference;
+    try {
+      reference = await addDoc(filesCollection(projectId), payload);
+      console.error("[Firestore] createFile() addDoc succeeded", {
+        projectId,
+        fileId: reference.id,
+        collectionPath: `projects/${projectId}/files`,
+      });
+    } catch (err) {
+      console.error("[Firestore] createFile() addDoc threw", {
+        projectId,
+        collectionPath: `projects/${projectId}/files`,
+        errorCode: err?.code,
+        errorMessage: err?.message,
+        error: err,
+      });
+      throw err;
+    }
+
+    console.error("[Firestore] createFile() about to adjustProjectCounters", {
+      projectId,
+      filesDelta: 1,
+    });
+    try {
+      await adjustProjectCounters(projectId, { files: 1 });
+      console.error("[Firestore] createFile() adjustProjectCounters succeeded", {
+        projectId,
+      });
+    } catch (err) {
+      console.error("[Firestore] createFile() adjustProjectCounters threw", {
+        projectId,
+        errorCode: err?.code,
+        errorMessage: err?.message,
+        error: err,
+      });
+      throw err;
+    }
 
     return createResponse(true, {
       data: { id: reference.id, ...payload },

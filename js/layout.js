@@ -120,7 +120,8 @@ function debounce(fn, delay = 300) {
 async function loadPartial(url, mountSelector) {
     const mount = qs(mountSelector);
     if (!mount) {
-        console.error(`[NovaLayout] Mount point "${mountSelector}" not found in the DOM.`);
+        // Expected on pages that do not include this mount (e.g. editor.html).
+        // Skip quietly — do not treat as an error.
         return null;
     }
     try {
@@ -209,10 +210,8 @@ function attachMobileSidebarToggle() {
     const overlay = qs("#sidebarOverlay") || qs(".sidebar-overlay");
     const closeBtn = qs("#sidebarCloseBtn") || qs(".sidebar-close");
     if (!toggleBtn || !sidebar || !overlay) {
-        console.error(
-            "[NovaLayout] Mobile sidebar toggle not attached — missing element(s):",
-            { toggleBtn: !!toggleBtn, sidebar: !!sidebar, overlay: !!overlay }
-        );
+        // Expected on pages without the dashboard mobile sidebar (e.g. editor.html).
+        // Skip quietly — do not treat as an error.
         return;
     }
     function openMobileSidebar() {
@@ -829,7 +828,41 @@ async function handleProjectFormSubmit(event) {
     createButton?.setAttribute("disabled", "true");
     try {
         notify("Creating project...", "loading");
-        const response = await safeCall(deps.firestore.createProject, "createProject", payload);
+
+        // Targeted debug logging for createProject (do not use safeCall here)
+        console.error("[NovaLayout] Calling createProject", {
+            name: payload.name,
+            template: payload.template,
+            language: payload.language,
+            framework: payload.framework,
+            workspaceId: payload.workspaceId,
+            createDefaultFiles: payload.createDefaultFiles,
+            createReadme: payload.createReadme,
+            visibility: payload.visibility,
+            // ownerUid intentionally omitted from this log
+        });
+
+        let response;
+        try {
+            response = await deps.firestore.createProject(payload);
+        } catch (error) {
+            console.error("[NovaLayout] createProject threw an error:", {
+                errorCode: error?.code,
+                errorMessage: error?.message,
+                error,
+            });
+            notify(error?.message || "Unable to create project.", "error");
+            return;
+        }
+
+        console.error("[NovaLayout] createProject response:", {
+            success: response?.success,
+            error: response?.error,
+            code: response?.code,
+            projectId: response?.data?.id,
+            hasData: !!response?.data,
+        });
+
         if (!response || !response.success) {
             notify(response?.error || "Unable to create project.", "error");
             return;

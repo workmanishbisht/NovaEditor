@@ -1,17 +1,15 @@
 /* ==========================================
    NOVA EDITOR — editor.js
-   Production-ready • Pure ES6
-   Compatible with editor.html + editor.css
    ========================================== */
 
 (() => {
     "use strict";
 
     /* ==========================================
-       FIRESTORE (from ../firebase/firestore.js)
-       Expected to be available on the page.
+       FIRESTORE (loaded dynamically from ../firebase/firestore.js)
+       Named exports are exposed on the module namespace object.
        ========================================== */
-    const FS = window.NovaFirestore || {};
+    let FS = {};
 
     /* ==========================================
        STATE
@@ -104,7 +102,8 @@
 
     function getLanguageFromPath(path) {
         if (!path) return "plaintext";
-        const lower = path.toLowerCase();
+        // Use basename so renamed files (stale path / new name) resolve correctly
+        const lower = String(path).split("/").pop().toLowerCase();
         if (lower.endsWith(".tsx") || lower.endsWith(".ts")) return "typescript";
         if (lower.endsWith(".jsx") || lower.endsWith(".js")) return "javascript";
         if (lower.endsWith(".html") || lower.endsWith(".htm")) return "html";
@@ -130,15 +129,17 @@
         return map[lang] || "Plain Text";
     }
 
-    function getFileIconClass(path) {
-        if (!path) return "ri-file-line tab-icon";
-        if (path.endsWith(".jsx") || path.endsWith(".tsx")) return "ri-reactjs-line tab-icon jsx";
-        if (path.endsWith(".js") || path.endsWith(".ts")) return "ri-javascript-fill tab-icon js";
-        if (path.endsWith(".css")) return "ri-css3-fill tab-icon css";
-        if (path.endsWith(".html") || path.endsWith(".htm")) return "ri-html5-fill tab-icon html";
-        if (path.endsWith(".json")) return "ri-file-code-line tab-icon json";
-        if (path.endsWith(".md")) return "ri-markdown-fill tab-icon md";
-        if (path.endsWith(".py")) return "ri-code-s-slash-line tab-icon";
+    function getFileIconClass(pathOrName) {
+        if (!pathOrName) return "ri-file-line tab-icon";
+        // Always derive from the current basename so renamed files get the correct icon
+        const base = String(pathOrName).split("/").pop().toLowerCase();
+        if (base.endsWith(".jsx") || base.endsWith(".tsx")) return "ri-reactjs-line tab-icon jsx";
+        if (base.endsWith(".js") || base.endsWith(".ts")) return "ri-javascript-fill tab-icon js";
+        if (base.endsWith(".css")) return "ri-css3-fill tab-icon css";
+        if (base.endsWith(".html") || base.endsWith(".htm")) return "ri-html5-fill tab-icon html";
+        if (base.endsWith(".json")) return "ri-file-code-line tab-icon json";
+        if (base.endsWith(".md") || base.endsWith(".markdown")) return "ri-markdown-fill tab-icon md";
+        if (base.endsWith(".py")) return "ri-code-s-slash-line tab-icon";
         return "ri-file-line tab-icon";
     }
 
@@ -211,24 +212,38 @@
     }
 
     async function initMonaco() {
-        const container = qs("#monacoEditorShell") || qs("#editorCodeArea")?.parentElement;
-        if (!container) return;
+        const monacoContainer = qs("#monacoContainer");
+        const surface = qs("#editorSurface");
+        if (!monacoContainer && !surface) return;
 
         try {
             const monaco = await loadMonacoScript();
             STATE.monaco = monaco;
 
-            // Clear any previous textarea content area
-            const existingTextarea = qs("#editorCodeArea");
-            if (existingTextarea) existingTextarea.style.display = "none";
+            // Permanently hide the static mock shell so it never overlays the real editor
+            const shell = qs("#monacoEditorShell");
+            if (shell) {
+                shell.hidden = true;
+                shell.style.display = "none";
+            }
+            const existingCodeArea = qs("#editorCodeArea");
+            if (existingCodeArea) existingCodeArea.style.display = "none";
 
-            let editorEl = qs("#monacoContainer");
+            // Dedicated empty host for Monaco — never mount into the static shell
+            let editorEl = qs("#monacoEditorHost");
             if (!editorEl) {
                 editorEl = document.createElement("div");
-                editorEl.id = "monacoContainer";
+                editorEl.id = "monacoEditorHost";
                 editorEl.style.cssText = "width:100%;height:100%;min-height:200px;";
-                container.appendChild(editorEl);
+                const parent = monacoContainer || surface;
+                // Place host before the empty-state sibling so both can toggle independently
+                if (monacoContainer) {
+                    monacoContainer.insertBefore(editorEl, monacoContainer.firstChild);
+                } else {
+                    parent.appendChild(editorEl);
+                }
             }
+            editorEl.style.display = "block";
 
             if (STATE.monacoEditor) {
                 STATE.monacoEditor.dispose();
@@ -265,6 +280,7 @@
             // Restore active file model if any
             if (STATE.activeFile) {
                 await setMonacoModel(STATE.activeFile);
+                STATE.monacoEditor?.focus();
             }
         } catch (err) {
             console.error("[NovaEditor] initMonaco failed:", err);
@@ -314,6 +330,7 @@
         }
         updateStatusBar();
         schedulePreviewUpdate();
+        STATE.monacoEditor?.focus();
     }
 
     function disposeUnusedModels() {
@@ -351,52 +368,257 @@
     }
 
     /* ==========================================
-       LIVE PREVIEW
+       LIVE PREVIEW (client-side, no backend)
        ========================================== */
     function schedulePreviewUpdate() {
         clearTimeout(STATE.previewTimer);
-        STATE.previewTimer = setTimeout(updateLivePreview, 400);
+        STATE.previewTimer = setTimeout(() => {
+            updateLivePreview();
+        }, 400);
     }
 
-    function updateLivePreview() {
-        const iframe = qs("#previewFrame") || qs("#previewIframe") || qs(".preview-iframe");
-        if (!iframe) return;
+    function setPreviewPlaceholderVisible(show) {
+        const placeholder =
+            qs("#previewPlaceholder") || qs(".preview-placeholder");
+        const iframe =
+            qs("#previewFrame") || qs("#previewIframe") || qs(".preview-frame");
+        const wrap =
+            qs("#previewFrameWrap") || qs(".preview-frame-wrap");
+
+        if (placeholder) {
+            placeholder.hidden = !show;
+            if (show) {
+                placeholder.classList.remove("preview-placeholder--hidden");
+                placeholder.style.removeProperty("display");
+                placeholder.style.removeProperty("height");
+                placeholder.style.removeProperty("overflow");
+                placeholder.style.removeProperty("visibility");
+                placeholder.style.removeProperty("opacity");
+            } else {
+                placeholder.classList.add("preview-placeholder--hidden");
+                placeholder.style.setProperty("display", "none", "important");
+                placeholder.style.setProperty("visibility", "hidden", "important");
+                placeholder.style.setProperty("opacity", "0", "important");
+                placeholder.style.setProperty("height", "0", "important");
+                placeholder.style.setProperty("overflow", "hidden", "important");
+                placeholder.style.setProperty("pointer-events", "none", "important");
+            }
+        }
+
+        if (iframe) {
+            if (show) {
+                iframe.style.visibility = "hidden";
+                iframe.style.opacity = "0";
+            } else {
+                iframe.style.visibility = "visible";
+                iframe.style.opacity = "1";
+                iframe.style.background = "#ffffff";
+                iframe.style.position = "relative";
+                iframe.style.zIndex = "1";
+                iframe.style.width = "100%";
+                iframe.style.height = "100%";
+            }
+        }
+
+        if (wrap) {
+            wrap.classList.toggle("has-preview", !show);
+            wrap.dataset.previewActive = show ? "0" : "1";
+        }
+    }
+
+    function getFileContent(path) {
+        if (!path) return "";
+        if (STATE.fileContents[path] !== undefined) return STATE.fileContents[path];
+        const file = (STATE.files || []).find((f) => f.path === path);
+        return file?.content ?? "";
+    }
+
+    function normalizePreviewPath(p) {
+        if (!p || typeof p !== "string") return "";
+        return p.replace(/^\.\//, "").replace(/^\//, "").trim();
+    }
+
+    function resolveProjectAsset(href) {
+        if (!href || /^(https?:|data:|blob:|\/\/)/i.test(href)) return null;
+        const clean = normalizePreviewPath(href.split("?")[0].split("#")[0]);
+        if (!clean) return null;
+
+        const files = STATE.files || [];
+        const candidates = [clean, clean.split("/").pop()];
+        for (const key of candidates) {
+            const match = files.find(
+                (f) =>
+                    normalizePreviewPath(f.path) === key ||
+                    normalizePreviewPath(f.path).endsWith("/" + key) ||
+                    (f.name && f.name === key)
+            );
+            if (match) {
+                return { path: match.path, content: getFileContent(match.path) };
+            }
+            // Also check live buffers keyed by path
+            if (STATE.fileContents[key] !== undefined) {
+                return { path: key, content: STATE.fileContents[key] };
+            }
+        }
+        return null;
+    }
+
+    async function ensurePreviewContentsLoaded() {
+        if (typeof FS.getFile !== "function" || !STATE.projectId) return;
+
+        const needed = (STATE.files || []).filter((f) => {
+            const path = f.path || "";
+            if (!path) return false;
+            if (STATE.fileContents[path] !== undefined) return false;
+            if (typeof f.content === "string" && f.content.length) {
+                STATE.fileContents[path] = f.content;
+                return false;
+            }
+            return /\.(html?|css|js)$/i.test(path) && f.id;
+        });
+
+        await Promise.all(
+            needed.map(async (file) => {
+                try {
+                    const res = await FS.getFile(STATE.projectId, file.id);
+                    if (res?.success && res.data) {
+                        STATE.fileContents[file.path] =
+                            res.data.content ?? file.content ?? "";
+                    } else {
+                        STATE.fileContents[file.path] = file.content ?? "";
+                    }
+                } catch {
+                    STATE.fileContents[file.path] = file.content ?? "";
+                }
+            })
+        );
+    }
+
+    async function updateLivePreview() {
+        const iframe =
+            qs("#previewFrame") || qs("#previewIframe") || qs(".preview-frame") || qs(".preview-iframe");
+        if (!iframe) return { success: false, error: "Preview iframe not found." };
 
         try {
-            const htmlFile = STATE.files.find((f) => /\.html?$/i.test(f.path));
-            const cssFiles = STATE.files.filter((f) => /\.css$/i.test(f.path));
-            const jsFiles = STATE.files.filter((f) => /\.jsx?$/i.test(f.path) && !/\.tsx?$/i.test(f.path));
-
-            let html = STATE.fileContents[htmlFile?.path] || htmlFile?.content || "<!DOCTYPE html><html><body><p>No HTML file open.</p></body></html>";
-            let css = cssFiles.map((f) => STATE.fileContents[f.path] || f.content || "").join("\n");
-            let js = jsFiles.map((f) => STATE.fileContents[f.path] || f.content || "").join("\n");
-
-            // Prefer currently active file content if matching
-            if (STATE.activeFile) {
-                if (/\.html?$/i.test(STATE.activeFile)) html = STATE.fileContents[STATE.activeFile] || html;
-                if (/\.css$/i.test(STATE.activeFile)) css = STATE.fileContents[STATE.activeFile] || css;
-                if (/\.jsx?$/i.test(STATE.activeFile)) js = STATE.fileContents[STATE.activeFile] || js;
+            // Sync current Monaco buffer into STATE so unsaved edits appear immediately
+            if (STATE.activeFile && STATE.monacoEditor) {
+                STATE.fileContents[STATE.activeFile] = STATE.monacoEditor.getValue();
             }
 
-            const doc = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>${css}</style>
-</head>
-<body>
-${html.replace(/<\/?html[^>]*>/gi, "").replace(/<\/?head[^>]*>[\s\S]*?<\/head>/gi, "").replace(/<\/?body[^>]*>/gi, "")}
-<script>
-try { ${js} } catch(e) { console.error(e); }
-<\/script>
-</body>
-</html>`;
+            await ensurePreviewContentsLoaded();
 
-            iframe.srcdoc = doc;
+            const files = STATE.files || [];
+            const htmlFiles = files.filter((f) => /\.html?$/i.test(f.path || ""));
+            const htmlFile =
+                htmlFiles.find((f) => /(^|\/)index\.html?$/i.test(f.path || "")) ||
+                htmlFiles[0] ||
+                null;
+
+            let html = "";
+            if (htmlFile) {
+                html = getFileContent(htmlFile.path);
+            } else if (STATE.activeFile && /\.html?$/i.test(STATE.activeFile)) {
+                html = getFileContent(STATE.activeFile);
+            }
+
+            if (!html || !String(html).trim()) {
+                iframe.srcdoc = `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:24px;color:#64748b">
+                  <p>No HTML file found. Add an <code>index.html</code> to preview this project.</p>
+                </body></html>`;
+                setPreviewPlaceholderVisible(false);
+                return { success: false, error: "No HTML entry file." };
+            }
+
+            // Prefer live active HTML buffer
+            if (STATE.activeFile && /\.html?$/i.test(STATE.activeFile)) {
+                html = getFileContent(STATE.activeFile) || html;
+            }
+
+            let out = String(html);
+
+            // Inline local <link rel="stylesheet" href="...">
+            out = out.replace(
+                /<link\b[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/gi,
+                (full, href) => {
+                    const isCss =
+                        /\bstylesheet\b/i.test(full) ||
+                        /\.css(\?|#|$)/i.test(href);
+                    if (!isCss) return full;
+                    const resolved = resolveProjectAsset(href);
+                    if (!resolved) return full;
+                    return `<style data-src="${escapeHtml(resolved.path)}">\n${resolved.content}\n</style>`;
+                }
+            );
+
+            // Inline local <script src="...">
+            out = out.replace(
+                /<script\b([^>]*)\bsrc\s*=\s*["']([^"']+)["']([^>]*)>\s*<\/script>/gi,
+                (full, pre, src, post) => {
+                    if (/^(https?:|data:|blob:|\/\/)/i.test(src)) return full;
+                    const resolved = resolveProjectAsset(src);
+                    if (!resolved) return full;
+                    const attrs = `${pre || ""}${post || ""}`
+                        .replace(/\bsrc\s*=\s*["'][^"']*["']/gi, "")
+                        .trim();
+                    return `<script data-src="${escapeHtml(resolved.path)}"${attrs ? " " + attrs : ""}>\n${resolved.content}\n<\/script>`;
+                }
+            );
+
+            // Inject any project CSS/JS not already referenced (simple projects)
+            const cssFiles = files.filter((f) => /\.css$/i.test(f.path || ""));
+            const jsFiles = files.filter(
+                (f) => /\.jsx?$/i.test(f.path || "") && !/\.tsx?$/i.test(f.path || "")
+            );
+
+            let extraCss = "";
+            let extraJs = "";
+            for (const f of cssFiles) {
+                if (out.includes(`data-src="${f.path}"`)) continue;
+                const content = getFileContent(f.path);
+                if (content.trim()) {
+                    extraCss += `<style data-src="${escapeHtml(f.path)}">\n${content}\n</style>\n`;
+                }
+            }
+            for (const f of jsFiles) {
+                if (out.includes(`data-src="${f.path}"`)) continue;
+                const content = getFileContent(f.path);
+                // Skip ES module source that browsers can't run without a bundler
+                if (/\b(import|export)\s/.test(content) && !/type\s*=\s*["']module["']/.test(out)) {
+                    continue;
+                }
+                if (content.trim()) {
+                    extraJs += `<script data-src="${escapeHtml(f.path)}">\ntry {\n${content}\n} catch (e) { console.error(e); }\n<\/script>\n`;
+                }
+            }
+
+            if (extraCss || extraJs) {
+                if (/<\/head>/i.test(out) && extraCss) {
+                    out = out.replace(/<\/head>/i, `${extraCss}</head>`);
+                } else if (extraCss) {
+                    out = extraCss + out;
+                }
+                if (/<\/body>/i.test(out) && extraJs) {
+                    out = out.replace(/<\/body>/i, `${extraJs}</body>`);
+                } else if (extraJs) {
+                    out = out + extraJs;
+                }
+            }
+
+            if (!/<!DOCTYPE/i.test(out) && !/<html[\s>]/i.test(out)) {
+                out = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${out}</body></html>`;
+            }
+
+            iframe.srcdoc = out;
+            setPreviewPlaceholderVisible(false);
+            return {
+                success: true,
+                entry: htmlFile?.path || STATE.activeFile || "document",
+            };
         } catch (err) {
             console.error("[NovaEditor] preview failed:", err);
             showToast("Preview update failed.", "error");
+            setPreviewPlaceholderVisible(false);
+            return { success: false, error: err?.message || String(err) };
         }
     }
 
@@ -623,11 +845,37 @@ try { ${js} } catch(e) { console.error(e); }
         }
 
         const collapseBtn = qs("#explorerCollapseBtn");
-        if (collapseBtn) {
+        if (collapseBtn && !collapseBtn.dataset.bound) {
+            collapseBtn.dataset.bound = "1";
             collapseBtn.addEventListener("click", () => {
                 STATE.expandedFolders.clear();
                 applyExpandedFolders();
                 persistSession();
+            });
+        }
+
+        // Explorer toolbar: New File / New Folder / Refresh
+        const newFileBtn = qs("#explorerNewFileBtn");
+        if (newFileBtn && !newFileBtn.dataset.bound) {
+            newFileBtn.dataset.bound = "1";
+            newFileBtn.addEventListener("click", () => {
+                handleNewFile(STATE.selectedFolder || "");
+            });
+        }
+
+        const newFolderBtn = qs("#explorerNewFolderBtn");
+        if (newFolderBtn && !newFolderBtn.dataset.bound) {
+            newFolderBtn.dataset.bound = "1";
+            newFolderBtn.addEventListener("click", () => {
+                handleNewFolder(STATE.selectedFolder || "");
+            });
+        }
+
+        const refreshBtn = qs("#explorerRefreshBtn");
+        if (refreshBtn && !refreshBtn.dataset.bound) {
+            refreshBtn.dataset.bound = "1";
+            refreshBtn.addEventListener("click", () => {
+                refreshProjectFiles();
             });
         }
     }
@@ -718,7 +966,7 @@ try { ${js} } catch(e) { console.error(e); }
           <div class="tree-item tree-file ${isActive ? "active" : ""}" data-path="${escapeHtml(file.path)}" data-id="${escapeHtml(file.id || "")}">
             <div class="tree-row" style="padding-left:${8 + depth * 14}px">
               <span class="tree-chevron-spacer"></span>
-              <i class="${getFileIconClass(file.path)} tree-icon"></i>
+              <i class="${getFileIconClass(file.name || file.path)} tree-icon"></i>
               <span class="tree-label">${escapeHtml(file.name)}</span>
             </div>
           </div>`;
@@ -922,7 +1170,7 @@ try { ${js} } catch(e) { console.error(e); }
 
         list.innerHTML = STATE.openTabs
             .map((t) => {
-                const iconClass = getFileIconClass(t.path);
+                const iconClass = getFileIconClass(t.name || t.path);
                 return `
         <div class="editor-tab ${t.path === STATE.activeFile ? "active" : ""}" role="tab"
              aria-selected="${t.path === STATE.activeFile}" data-tab-id="${t.id}" data-path="${escapeHtml(t.path)}" draggable="true">
@@ -949,6 +1197,8 @@ try { ${js} } catch(e) { console.error(e); }
     function showEmptyState(show) {
         const empty = qs("#editorEmptyState");
         const shell = qs("#monacoEditorShell");
+        const host = qs("#monacoEditorHost");
+
         if (empty) {
             empty.hidden = !show;
             if (show) {
@@ -960,9 +1210,21 @@ try { ${js} } catch(e) { console.error(e); }
           </div>`;
             }
         }
-        if (shell) shell.style.display = show ? "none" : "flex";
+
+        // Static mock shell must stay hidden whenever the real Monaco editor exists
+        if (shell) {
+            shell.hidden = true;
+            shell.style.display = "none";
+        }
+
+        // Toggle only the dedicated Monaco host (keep #monacoContainer visible so empty-state sibling works)
+        if (host) {
+            host.style.display = show ? "none" : "block";
+        }
+
+        // Keep the outer container visible; empty state lives inside it
         const monacoEl = qs("#monacoContainer");
-        if (monacoEl) monacoEl.style.display = show ? "none" : "block";
+        if (monacoEl) monacoEl.style.display = "block";
     }
 
     /* ==========================================
@@ -1007,7 +1269,8 @@ try { ${js} } catch(e) { console.error(e); }
                 throw new Error("saveFile is not available");
             }
 
-            const res = await FS.saveFile(STATE.projectId, file.id, { content });
+            // firestore.js signature: saveFile(projectId, fileId, content, meta = {})
+            const res = await FS.saveFile(STATE.projectId, file.id, content);
 
             if (!res || !res.success) {
                 const msg = (res && (res.error || res.message)) || "Save failed";
@@ -1036,11 +1299,475 @@ try { ${js} } catch(e) { console.error(e); }
     /* ==========================================
        FILE OPERATIONS (context menu)
        ========================================== */
+
+    /**
+     * Ensure a single reusable Nova Editor prompt modal exists in the DOM.
+     * Created once; subsequent calls reuse the same nodes.
+     */
+    function ensureEditorPromptModal() {
+        let root = qs("#novaPromptModal");
+        if (root) return root;
+
+        // Inject minimal styles once
+        if (!qs("#novaPromptModalStyles")) {
+            const style = document.createElement("style");
+            style.id = "novaPromptModalStyles";
+            style.textContent = `
+#novaPromptModal {
+  position: fixed; inset: 0; z-index: 10050;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+#novaPromptModal[hidden] { display: none !important; }
+#novaPromptModal .nova-prompt-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+}
+#novaPromptModal .nova-prompt-dialog {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 420px;
+  background: var(--surface, #fff);
+  color: var(--text-primary, #0f172a);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xl, 0 20px 40px rgba(15,23,42,0.18));
+  overflow: hidden;
+}
+#novaPromptModal .nova-prompt-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 14px 16px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+#novaPromptModal .nova-prompt-title {
+  margin: 0; font-size: 15px; font-weight: 600;
+}
+#novaPromptModal .nova-prompt-close {
+  border: none; background: transparent; cursor: pointer;
+  color: var(--text-muted, #64748b); font-size: 18px; line-height: 1;
+  padding: 4px; border-radius: 6px;
+}
+#novaPromptModal .nova-prompt-close:hover {
+  background: var(--surface-secondary, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+}
+#novaPromptModal .nova-prompt-body { padding: 16px; }
+#novaPromptModal .nova-prompt-label {
+  display: block; margin-bottom: 6px;
+  font-size: 12.5px; font-weight: 500;
+  color: var(--text-secondary, #475569);
+}
+#novaPromptModal .nova-prompt-input {
+  width: 100%; box-sizing: border-box;
+  padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--border, #e2e8f0);
+  background: var(--surface, #fff);
+  color: var(--text-primary, #0f172a);
+  font-size: 14px; outline: none;
+}
+#novaPromptModal .nova-prompt-input:focus {
+  border-color: var(--primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+#novaPromptModal .nova-prompt-error {
+  margin: 8px 0 0; font-size: 12px; color: var(--danger, #ef4444);
+  min-height: 16px;
+}
+#novaPromptModal .nova-prompt-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+#novaPromptModal .nova-prompt-btn {
+  border: 1px solid var(--border, #e2e8f0);
+  background: var(--surface, #fff);
+  color: var(--text-secondary, #475569);
+  border-radius: 8px; padding: 8px 14px;
+  font-size: 13px; font-weight: 500; cursor: pointer;
+}
+#novaPromptModal .nova-prompt-btn:hover {
+  background: var(--surface-secondary, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+}
+#novaPromptModal .nova-prompt-btn.primary {
+  background: var(--primary, #6366f1);
+  border-color: var(--primary, #6366f1);
+  color: #fff;
+}
+#novaPromptModal .nova-prompt-btn.primary:hover {
+  filter: brightness(1.05);
+}
+#novaPromptModal .nova-prompt-btn:disabled {
+  opacity: 0.6; cursor: not-allowed;
+}
+`;
+            document.head.appendChild(style);
+        }
+
+        root = document.createElement("div");
+        root.id = "novaPromptModal";
+        root.setAttribute("role", "dialog");
+        root.setAttribute("aria-modal", "true");
+        root.hidden = true;
+        root.innerHTML = `
+      <div class="nova-prompt-backdrop" data-nova-prompt-dismiss></div>
+      <div class="nova-prompt-dialog">
+        <div class="nova-prompt-header">
+          <h3 class="nova-prompt-title" id="novaPromptTitle">Dialog</h3>
+          <button type="button" class="nova-prompt-close" data-nova-prompt-dismiss aria-label="Close">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="nova-prompt-body">
+          <label class="nova-prompt-label" for="novaPromptInput" id="novaPromptLabel">Name</label>
+          <input type="text" class="nova-prompt-input" id="novaPromptInput" autocomplete="off" spellcheck="false">
+          <p class="nova-prompt-error" id="novaPromptError" aria-live="polite"></p>
+        </div>
+        <div class="nova-prompt-footer">
+          <button type="button" class="nova-prompt-btn" data-nova-prompt-dismiss id="novaPromptCancel">Cancel</button>
+          <button type="button" class="nova-prompt-btn primary" id="novaPromptConfirm">Create</button>
+        </div>
+      </div>`;
+        document.body.appendChild(root);
+        return root;
+    }
+
+    /**
+     * Show a centered Nova Editor text prompt modal.
+     * Resolves with the trimmed string, or null if cancelled.
+     * @param {{ title?: string, label?: string, placeholder?: string, defaultValue?: string, confirmLabel?: string }} opts
+     * @returns {Promise<string|null>}
+     */
+    function showEditorPrompt(opts = {}) {
+        const {
+            title = "Prompt",
+            label = "Name",
+            placeholder = "",
+            defaultValue = "",
+            confirmLabel = "Create",
+        } = opts;
+
+        const root = ensureEditorPromptModal();
+        const titleEl = qs("#novaPromptTitle", root);
+        const labelEl = qs("#novaPromptLabel", root);
+        const input = qs("#novaPromptInput", root);
+        const errorEl = qs("#novaPromptError", root);
+        const confirmBtn = qs("#novaPromptConfirm", root);
+
+        if (titleEl) titleEl.textContent = title;
+        if (labelEl) labelEl.textContent = label;
+        if (confirmBtn) confirmBtn.textContent = confirmLabel;
+        if (input) {
+            input.value = defaultValue;
+            input.placeholder = placeholder;
+        }
+        if (errorEl) errorEl.textContent = "";
+
+        root.hidden = false;
+
+        return new Promise((resolve) => {
+            let settled = false;
+
+            const cleanup = () => {
+                root.hidden = true;
+                document.removeEventListener("keydown", onKeyDown, true);
+                root.removeEventListener("click", onClick);
+                if (confirmBtn) confirmBtn.removeEventListener("click", onConfirm);
+            };
+
+            const finish = (value) => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                resolve(value);
+            };
+
+            const onConfirm = () => {
+                const value = (input?.value || "").trim();
+                if (!value) {
+                    if (errorEl) errorEl.textContent = "Please enter a name.";
+                    input?.focus();
+                    input?.select();
+                    return;
+                }
+                if (errorEl) errorEl.textContent = "";
+                finish(value);
+            };
+
+            const onClick = (e) => {
+                if (e.target.closest("[data-nova-prompt-dismiss]")) {
+                    finish(null);
+                }
+            };
+
+            const onKeyDown = (e) => {
+                if (root.hidden) return;
+                if (e.key === "Escape") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    finish(null);
+                } else if (e.key === "Enter" && document.activeElement === input) {
+                    e.preventDefault();
+                    onConfirm();
+                }
+            };
+
+            root.addEventListener("click", onClick);
+            if (confirmBtn) confirmBtn.addEventListener("click", onConfirm);
+            document.addEventListener("keydown", onKeyDown, true);
+
+            // Focus after paint
+            requestAnimationFrame(() => {
+                input?.focus();
+                input?.select();
+            });
+        });
+    }
+
+    /**
+     * Confirmation dialog (no text input). Resolves true/false.
+     * Reuses the same visual style as the prompt modal.
+     * @returns {Promise<boolean>}
+     */
+    function showEditorConfirm(opts = {}) {
+        const {
+            title = "Confirm",
+            message = "Are you sure?",
+            confirmLabel = "Delete",
+            cancelLabel = "Cancel",
+            danger = true,
+        } = opts;
+
+        ensureEditorPromptModal();
+
+        let root = qs("#novaConfirmModal");
+        if (!root) {
+            if (!qs("#novaConfirmModalStyles")) {
+                const style = document.createElement("style");
+                style.id = "novaConfirmModalStyles";
+                style.textContent = `
+#novaConfirmModal {
+  position: fixed; inset: 0; z-index: 10050;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+#novaConfirmModal[hidden] { display: none !important; }
+#novaConfirmModal .nova-prompt-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+}
+#novaConfirmModal .nova-prompt-dialog {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 420px;
+  background: var(--surface, #fff);
+  color: var(--text-primary, #0f172a);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xl, 0 20px 40px rgba(15,23,42,0.18));
+  overflow: hidden;
+}
+#novaConfirmModal .nova-prompt-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 14px 16px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+#novaConfirmModal .nova-prompt-title {
+  margin: 0; font-size: 15px; font-weight: 600;
+}
+#novaConfirmModal .nova-prompt-close {
+  border: none; background: transparent; cursor: pointer;
+  color: var(--text-muted, #64748b); font-size: 18px; line-height: 1;
+  padding: 4px; border-radius: 6px;
+}
+#novaConfirmModal .nova-prompt-close:hover {
+  background: var(--surface-secondary, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+}
+#novaConfirmModal .nova-prompt-body { padding: 16px; }
+#novaConfirmModal .nova-confirm-message {
+  margin: 0; font-size: 14px; line-height: 1.55;
+  color: var(--text-secondary, #475569);
+  white-space: pre-line;
+}
+#novaConfirmModal .nova-prompt-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border, #e2e8f0);
+}
+#novaConfirmModal .nova-prompt-btn {
+  border: 1px solid var(--border, #e2e8f0);
+  background: var(--surface, #fff);
+  color: var(--text-secondary, #475569);
+  border-radius: 8px; padding: 8px 14px;
+  font-size: 13px; font-weight: 500; cursor: pointer;
+}
+#novaConfirmModal .nova-prompt-btn:hover {
+  background: var(--surface-secondary, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+}
+#novaConfirmModal .nova-prompt-btn:disabled {
+  opacity: 0.6; cursor: not-allowed;
+}
+#novaConfirmModal .nova-prompt-btn.danger {
+  background: var(--danger, #ef4444);
+  border-color: var(--danger, #ef4444);
+  color: #fff;
+}
+#novaConfirmModal .nova-prompt-btn.danger:hover {
+  filter: brightness(1.05);
+}
+#novaConfirmModal .nova-prompt-btn.primary {
+  background: var(--primary, #6366f1);
+  border-color: var(--primary, #6366f1);
+  color: #fff;
+}
+`;
+                document.head.appendChild(style);
+            }
+
+            root = document.createElement("div");
+            root.id = "novaConfirmModal";
+            root.setAttribute("role", "dialog");
+            root.setAttribute("aria-modal", "true");
+            root.hidden = true;
+            root.innerHTML = `
+      <div class="nova-prompt-backdrop" data-nova-confirm-dismiss></div>
+      <div class="nova-prompt-dialog">
+        <div class="nova-prompt-header">
+          <h3 class="nova-prompt-title" id="novaConfirmTitle">Confirm</h3>
+          <button type="button" class="nova-prompt-close" data-nova-confirm-dismiss aria-label="Close">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="nova-prompt-body">
+          <p class="nova-confirm-message" id="novaConfirmMessage"></p>
+        </div>
+        <div class="nova-prompt-footer">
+          <button type="button" class="nova-prompt-btn" data-nova-confirm-dismiss id="novaConfirmCancel">Cancel</button>
+          <button type="button" class="nova-prompt-btn danger" id="novaConfirmOk">Delete</button>
+        </div>
+      </div>`;
+            document.body.appendChild(root);
+        }
+
+        const titleEl = qs("#novaConfirmTitle", root);
+        const msgEl = qs("#novaConfirmMessage", root);
+        const okBtn = qs("#novaConfirmOk", root);
+        const cancelBtn = qs("#novaConfirmCancel", root);
+        const closeBtn = qs(".nova-prompt-close", root);
+
+        if (titleEl) titleEl.textContent = title;
+        if (msgEl) msgEl.textContent = message;
+        if (okBtn) {
+            okBtn.textContent = confirmLabel;
+            okBtn.disabled = false;
+            okBtn.classList.toggle("danger", !!danger);
+            okBtn.classList.toggle("primary", !danger);
+        }
+        if (cancelBtn) {
+            cancelBtn.textContent = cancelLabel;
+            cancelBtn.disabled = false;
+        }
+        if (closeBtn) closeBtn.disabled = false;
+
+        root.hidden = false;
+
+        return new Promise((resolve) => {
+            let settled = false;
+
+            const cleanup = () => {
+                root.hidden = true;
+                document.removeEventListener("keydown", onKeyDown, true);
+                root.removeEventListener("click", onClick);
+                if (okBtn) okBtn.removeEventListener("click", onOk);
+            };
+
+            const finish = (value) => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                resolve(value);
+            };
+
+            const onOk = () => {
+                if (settled) return;
+                settled = true;
+                // Keep modal open so caller can show loading; it closes in finally
+                document.removeEventListener("keydown", onKeyDown, true);
+                root.removeEventListener("click", onClick);
+                if (okBtn) okBtn.removeEventListener("click", onOk);
+                if (okBtn) {
+                    okBtn.disabled = true;
+                    okBtn.dataset.label = okBtn.textContent;
+                    okBtn.textContent = "Deleting…";
+                }
+                if (cancelBtn) cancelBtn.disabled = true;
+                if (closeBtn) closeBtn.disabled = true;
+                resolve(true);
+            };
+            const onClick = (e) => {
+                if (e.target.closest("[data-nova-confirm-dismiss]")) finish(false);
+            };
+            const onKeyDown = (e) => {
+                if (root.hidden) return;
+                if (e.key === "Escape") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    finish(false);
+                } else if (e.key === "Enter") {
+                    e.preventDefault();
+                    onOk();
+                }
+            };
+
+            root.addEventListener("click", onClick);
+            if (okBtn) okBtn.addEventListener("click", onOk);
+            document.addEventListener("keydown", onKeyDown, true);
+            requestAnimationFrame(() => okBtn?.focus());
+        });
+    }
+
+    /** Set loading state on the confirm modal (while delete is in progress). */
+    function setConfirmModalLoading(loading) {
+        const root = qs("#novaConfirmModal");
+        if (!root) return;
+        const okBtn = qs("#novaConfirmOk", root);
+        const cancelBtn = qs("#novaConfirmCancel", root);
+        const closeBtn = qs(".nova-prompt-close", root);
+        if (okBtn) {
+            okBtn.disabled = !!loading;
+            if (loading) {
+                okBtn.dataset.label = okBtn.textContent;
+                okBtn.textContent = "Deleting…";
+            } else if (okBtn.dataset.label) {
+                okBtn.textContent = okBtn.dataset.label;
+            }
+        }
+        if (cancelBtn) cancelBtn.disabled = !!loading;
+        if (closeBtn) closeBtn.disabled = !!loading;
+    }
+
     async function handleNewFile(parentPath = "") {
-        const name = prompt("New file name:", "untitled.js");
+        const name = await showEditorPrompt({
+            title: "Create New File",
+            label: "File name",
+            placeholder: "e.g. about.html",
+            defaultValue: "untitled.js",
+            confirmLabel: "Create File",
+        });
         if (!name || !name.trim()) return;
 
         const path = parentPath ? `${parentPath}/${name.trim()}` : name.trim();
+
+        // Map path-based parent to the folderId expected by firestore.js
+        let folderId = null;
+        if (parentPath) {
+            const parent = STATE.folders.find(
+                (f) => (f.path || f.name) === parentPath
+            );
+            folderId = parent?.id || null;
+        }
 
         try {
             if (typeof FS.createFile !== "function") {
@@ -1051,7 +1778,7 @@ try { ${js} } catch(e) { console.error(e); }
                 name: name.trim(),
                 path,
                 content: "",
-                parentPath: parentPath || null,
+                folderId,
             });
             if (!res || !res.success) {
                 showToast("Could not create file.", "error");
@@ -1067,10 +1794,25 @@ try { ${js} } catch(e) { console.error(e); }
     }
 
     async function handleNewFolder(parentPath = "") {
-        const name = prompt("New folder name:", "new-folder");
+        const name = await showEditorPrompt({
+            title: "Create New Folder",
+            label: "Folder name",
+            placeholder: "e.g. components",
+            defaultValue: "new-folder",
+            confirmLabel: "Create Folder",
+        });
         if (!name || !name.trim()) return;
 
         const path = parentPath ? `${parentPath}/${name.trim()}` : name.trim();
+
+        // Map path-based parent to the parentId expected by firestore.js
+        let parentId = null;
+        if (parentPath) {
+            const parent = STATE.folders.find(
+                (f) => (f.path || f.name) === parentPath
+            );
+            parentId = parent?.id || null;
+        }
 
         try {
             if (typeof FS.createFolder !== "function") {
@@ -1079,8 +1821,7 @@ try { ${js} } catch(e) { console.error(e); }
             }
             const res = await FS.createFolder(STATE.projectId, {
                 name: name.trim(),
-                path,
-                parentPath: parentPath || null,
+                parentId,
             });
             if (!res || !res.success) {
                 showToast("Could not create folder.", "error");
@@ -1095,14 +1836,112 @@ try { ${js} } catch(e) { console.error(e); }
         }
     }
 
+    /**
+     * Sync all client-side references after a file/folder rename.
+     * newPath becomes the single source of truth.
+     */
+    function syncClientRename({ oldPath, newPath, newName, id, isFolder }) {
+        if (!oldPath || !newPath) return;
+
+        if (isFolder) {
+            const folder = STATE.folders.find((f) => f.id === id || f.path === oldPath);
+            if (folder) {
+                folder.name = newName;
+                folder.path = newPath;
+            }
+            // Update nested folder/file paths that lived under the old folder path
+            const prefix = oldPath.endsWith("/") ? oldPath : oldPath + "/";
+            const newPrefix = newPath.endsWith("/") ? newPath : newPath + "/";
+            STATE.folders.forEach((f) => {
+                if (f.path && f.path.startsWith(prefix)) {
+                    f.path = newPrefix + f.path.slice(prefix.length);
+                }
+            });
+            STATE.files.forEach((f) => {
+                if (f.path && f.path.startsWith(prefix)) {
+                    f.path = newPrefix + f.path.slice(prefix.length);
+                }
+            });
+            if (STATE.expandedFolders.has(oldPath)) {
+                STATE.expandedFolders.delete(oldPath);
+                STATE.expandedFolders.add(newPath);
+            }
+            if (STATE.selectedFolder === oldPath) {
+                STATE.selectedFolder = newPath;
+            }
+            return;
+        }
+
+        // File rename
+        const file = STATE.files.find((f) => f.id === id || f.path === oldPath || f.path === newPath);
+        if (file) {
+            file.name = newName;
+            file.path = newPath;
+        }
+
+        // Content buffer key
+        if (oldPath !== newPath) {
+            if (STATE.fileContents[oldPath] !== undefined) {
+                STATE.fileContents[newPath] = STATE.fileContents[oldPath];
+                delete STATE.fileContents[oldPath];
+            } else if (STATE.fileContents[newPath] === undefined && file) {
+                STATE.fileContents[newPath] = file.content ?? "";
+            }
+        }
+
+        // Open tabs
+        STATE.openTabs.forEach((t) => {
+            if (t.path === oldPath || (id && t.fileId === id)) {
+                t.path = newPath;
+                t.name = newName;
+            }
+        });
+
+        // Active file
+        if (STATE.activeFile === oldPath) {
+            STATE.activeFile = newPath;
+        }
+
+        // Monaco model map + language
+        if (STATE.monacoModels.has(oldPath)) {
+            const model = STATE.monacoModels.get(oldPath);
+            STATE.monacoModels.delete(oldPath);
+            STATE.monacoModels.set(newPath, model);
+            if (STATE.monaco && model) {
+                try {
+                    STATE.monaco.editor.setModelLanguage(model, getLanguageFromPath(newPath));
+                } catch { /* ignore */ }
+            }
+            if (STATE.monacoEditor && STATE.activeFile === newPath) {
+                try {
+                    STATE.monacoEditor.setModel(model);
+                } catch { /* ignore */ }
+            }
+        }
+    }
+
     async function handleRename(item) {
         if (!item) return;
-        const path = item.dataset.path;
-        const id = item.dataset.id;
+        const oldPath = item.dataset.path || "";
+        const id = item.dataset.id || "";
         const isFolder = item.classList.contains("tree-folder");
-        const currentName = path.split("/").pop();
-        const newName = prompt("Rename to:", currentName);
+        const currentName = oldPath.split("/").pop() || "";
+        const wasActive = STATE.activeFile === oldPath;
+
+        const newName = await showEditorPrompt({
+            title: "Rename",
+            label: "New name",
+            placeholder: currentName || "name",
+            defaultValue: currentName || "",
+            confirmLabel: "Rename",
+        });
         if (!newName || !newName.trim() || newName.trim() === currentName) return;
+
+        const trimmed = newName.trim();
+        const parentPath = oldPath.includes("/")
+            ? oldPath.split("/").slice(0, -1).join("/")
+            : "";
+        const newPath = parentPath ? `${parentPath}/${trimmed}` : trimmed;
 
         try {
             const fn = isFolder ? FS.renameFolder : FS.renameFile;
@@ -1110,12 +1949,123 @@ try { ${js} } catch(e) { console.error(e); }
                 showToast("Rename is not available.", "error");
                 return;
             }
-            const res = await fn(STATE.projectId, id, { name: newName.trim() });
+
+            const res = await fn(STATE.projectId, id, trimmed);
             if (!res || !res.success) {
                 showToast("Could not rename.", "error");
                 return;
             }
-            await refreshProjectFiles();
+
+            // Client-authoritative rename — do not refresh from Firestore before UI updates.
+
+            if (isFolder) {
+                const folder = STATE.folders.find((f) => f.id === id || f.path === oldPath);
+                if (folder) {
+                    folder.name = trimmed;
+                    folder.path = newPath;
+                }
+                const prefix = oldPath.endsWith("/") ? oldPath : oldPath + "/";
+                const newPrefix = newPath.endsWith("/") ? newPath : newPath + "/";
+                STATE.folders.forEach((f) => {
+                    if (f.path && f.path !== newPath && f.path.startsWith(prefix)) {
+                        f.path = newPrefix + f.path.slice(prefix.length);
+                    }
+                });
+                STATE.files.forEach((f) => {
+                    if (f.path && f.path.startsWith(prefix)) {
+                        f.path = newPrefix + f.path.slice(prefix.length);
+                    }
+                });
+                if (STATE.expandedFolders.has(oldPath)) {
+                    STATE.expandedFolders.delete(oldPath);
+                    STATE.expandedFolders.add(newPath);
+                }
+                if (STATE.selectedFolder === oldPath) {
+                    STATE.selectedFolder = newPath;
+                }
+                renderExplorer();
+                persistSession();
+                showToast("Renamed.", "success");
+                return;
+            }
+
+            // --- FILE rename ---
+
+            // 1) File record by ID
+            const file = STATE.files.find((f) => f.id === id || f.path === oldPath);
+            if (file) {
+                file.name = trimmed;
+                file.path = newPath;
+            }
+
+            // 2) Open tabs by fileId / old path (label + path only; do not force active)
+            STATE.openTabs.forEach((t) => {
+                if ((id && t.fileId === id) || t.path === oldPath) {
+                    t.path = newPath;
+                    t.name = trimmed;
+                }
+            });
+
+            // 3) fileContents key
+            if (oldPath !== newPath) {
+                if (STATE.fileContents[oldPath] !== undefined) {
+                    STATE.fileContents[newPath] = STATE.fileContents[oldPath];
+                    delete STATE.fileContents[oldPath];
+                } else if (STATE.fileContents[newPath] === undefined && file) {
+                    STATE.fileContents[newPath] = file.content ?? "";
+                }
+            }
+
+            // 4) Monaco model map + language (for the renamed buffer, whether or not active)
+            if (STATE.monacoModels.has(oldPath)) {
+                const model = STATE.monacoModels.get(oldPath);
+                STATE.monacoModels.delete(oldPath);
+                STATE.monacoModels.set(newPath, model);
+                if (STATE.monaco && model) {
+                    try {
+                        STATE.monaco.editor.setModelLanguage(
+                            model,
+                            getLanguageFromPath(newPath)
+                        );
+                    } catch { /* ignore */ }
+                }
+            }
+
+            // 5) Active path — ONLY if the renamed file was the active one
+            if (wasActive) {
+                STATE.activeFile = newPath;
+            }
+
+            // 6) Render explorer + tabs from updated client state
+            renderExplorer();
+            renderTabs();
+
+            // Keep explorer data-path in sync for the renamed row
+            qsa(".tree-file").forEach((el) => {
+                if (
+                    el.dataset.id === id ||
+                    el.dataset.path === oldPath ||
+                    (el.querySelector(".tree-label")?.textContent || "") === trimmed
+                ) {
+                    el.dataset.path = newPath;
+                }
+                // Active highlight follows the real active file, not the renamed one
+                el.classList.toggle(
+                    "active",
+                    el.dataset.path === STATE.activeFile ||
+                        (wasActive && el.dataset.id === id)
+                );
+            });
+
+            // 7) If it was active, reload editor chrome for newPath; otherwise leave current file alone
+            if (wasActive) {
+                STATE.activeFile = newPath;
+                await setMonacoModel(newPath);
+                updateBreadcrumb(newPath);
+                updateStatusBar();
+            }
+
+            persistSession();
             showToast("Renamed.", "success");
         } catch (err) {
             console.error(err);
@@ -1125,12 +2075,21 @@ try { ${js} } catch(e) { console.error(e); }
 
     async function handleDelete(item) {
         if (!item) return;
-        const path = item.dataset.path;
-        const id = item.dataset.id;
+        const path = item.dataset.path || "";
+        const id = item.dataset.id || "";
         const isFolder = item.classList.contains("tree-folder");
-        const label = path.split("/").pop();
+        const label = path.split("/").pop() || (isFolder ? "folder" : "file");
 
-        if (!confirm(`Delete ${isFolder ? "folder" : "file"} "${label}"?`)) return;
+        const confirmed = await showEditorConfirm({
+            title: isFolder ? "Delete Folder?" : "Delete File?",
+            message: isFolder
+                ? `Are you sure you want to delete "${label}"?\nAll files and folders inside this folder will also be deleted.\nThis action cannot be undone.`
+                : `Are you sure you want to delete "${label}"?\nThis action cannot be undone.`,
+            confirmLabel: isFolder ? "Delete Folder" : "Delete File",
+            cancelLabel: "Cancel",
+            danger: true,
+        });
+        if (!confirmed) return;
 
         try {
             const fn = isFolder ? FS.deleteFolder : FS.deleteFile;
@@ -1144,14 +2103,61 @@ try { ${js} } catch(e) { console.error(e); }
                 return;
             }
 
-            const tab = STATE.openTabs.find((t) => t.path === path);
-            if (tab) closeTab(tab.id);
+            // Close open tab(s) for deleted file, or any tab under deleted folder
+            if (isFolder) {
+                const prefix = path.endsWith("/") ? path : path + "/";
+                const tabsToClose = STATE.openTabs.filter(
+                    (t) => t.path === path || (t.path && t.path.startsWith(prefix))
+                );
+                tabsToClose.forEach((t) => closeTab(t.id));
+            } else {
+                const tab = STATE.openTabs.find((t) => t.path === path || (id && t.fileId === id));
+                if (tab) closeTab(tab.id);
+            }
+
+            // Drop local buffers for removed paths
+            if (!isFolder) {
+                delete STATE.fileContents[path];
+                if (STATE.monacoModels.has(path)) {
+                    try { STATE.monacoModels.get(path).dispose(); } catch { /* ignore */ }
+                    STATE.monacoModels.delete(path);
+                }
+            } else {
+                const prefix = path.endsWith("/") ? path : path + "/";
+                Object.keys(STATE.fileContents).forEach((p) => {
+                    if (p === path || p.startsWith(prefix)) delete STATE.fileContents[p];
+                });
+                for (const [p, model] of [...STATE.monacoModels.entries()]) {
+                    if (p === path || p.startsWith(prefix)) {
+                        try { model.dispose(); } catch { /* ignore */ }
+                        STATE.monacoModels.delete(p);
+                    }
+                }
+            }
 
             await refreshProjectFiles();
+
+            // If nothing is active, show empty editor state
+            if (!STATE.activeFile || !STATE.openTabs.some((t) => t.path === STATE.activeFile)) {
+                if (STATE.openTabs.length) {
+                    switchTab(STATE.openTabs[STATE.openTabs.length - 1].id);
+                } else {
+                    STATE.activeFile = null;
+                    showEmptyState(true);
+                    updateBreadcrumb("");
+                    updateStatusBar();
+                }
+            }
+
+            persistSession();
             showToast("Deleted.", "success");
         } catch (err) {
             console.error(err);
             showToast("Network error during delete.", "error");
+        } finally {
+            setConfirmModalLoading(false);
+            const modal = qs("#novaConfirmModal");
+            if (modal) modal.hidden = true;
         }
     }
 
@@ -1164,6 +2170,28 @@ try { ${js} } catch(e) { console.error(e); }
             ]);
             STATE.folders = (foldersRes && foldersRes.success && foldersRes.data) ? foldersRes.data : [];
             STATE.files = (filesRes && filesRes.success && filesRes.data) ? filesRes.data : [];
+
+            // Open-tab paths are client-authoritative after rename.
+            // Firestore must not reintroduce an old path for the same file id.
+            STATE.openTabs.forEach((tab) => {
+                if (!tab || !tab.fileId || !tab.path) return;
+                const file = STATE.files.find((f) => f.id === tab.fileId);
+                if (file) {
+                    file.path = tab.path;
+                    if (tab.name) file.name = tab.name;
+                }
+            });
+            if (STATE.activeFile) {
+                const tab = STATE.openTabs.find((t) => t.path === STATE.activeFile);
+                if (tab?.fileId) {
+                    const file = STATE.files.find((f) => f.id === tab.fileId);
+                    if (file) {
+                        file.path = STATE.activeFile;
+                        if (tab.name) file.name = tab.name;
+                    }
+                }
+            }
+
             renderExplorer();
         } catch (err) {
             console.error("[NovaEditor] refreshProjectFiles:", err);
@@ -1404,30 +2432,54 @@ try { ${js} } catch(e) { console.error(e); }
     function initToolbar() {
         const runBtn = qs("#btnRun");
         if (runBtn) {
-            runBtn.addEventListener("click", () => {
+            runBtn.addEventListener("click", async () => {
                 if (STATE.isRunning) return;
                 STATE.isRunning = true;
                 runBtn.classList.add("loading");
                 runBtn.innerHTML = `<i class="ri-loader-4-line"></i><span>Running...</span>`;
 
-                setTimeout(() => {
+                try {
+                    toggleRightPanel(true);
+                    switchRightTab("preview");
+                    switchTerminalTab("terminal");
+
+                    const result = await updateLivePreview();
+
+                    if (result && result.success) {
+                        appendTerminalLine(
+                            `Preview ready${result.entry ? " → " + result.entry : ""}`,
+                            false
+                        );
+                    } else {
+                        appendTerminalLine(
+                            (result && result.error) || "Preview could not be rendered.",
+                            false
+                        );
+                    }
+                } catch (err) {
+                    console.error("[NovaEditor] Run failed:", err);
+                    appendTerminalLine("Preview failed: " + (err?.message || String(err)), false);
+                } finally {
                     STATE.isRunning = false;
                     runBtn.classList.remove("loading");
                     runBtn.innerHTML = `<i class="ri-play-fill"></i><span>Run</span>`;
-                    switchTerminalTab("terminal");
-                    switchRightTab("preview");
-                    appendTerminalLine("(run backend not connected)", false);
-                    schedulePreviewUpdate();
-                }, 1200);
+                }
             });
         }
 
         const previewBtn = qs("#btnPreview");
         if (previewBtn) {
-            previewBtn.addEventListener("click", () => {
+            previewBtn.addEventListener("click", async () => {
                 toggleRightPanel(true);
                 switchRightTab("preview");
-                schedulePreviewUpdate();
+                await updateLivePreview();
+            });
+        }
+
+        const previewRefreshBtn = qs("#previewRefreshBtn");
+        if (previewRefreshBtn) {
+            previewRefreshBtn.addEventListener("click", async () => {
+                await updateLivePreview();
             });
         }
 
@@ -1449,19 +2501,35 @@ try { ${js} } catch(e) { console.error(e); }
        BREADCRUMB + STATUS BAR
        ========================================== */
     function updateBreadcrumb(path) {
-        const nav = qs("#editorBreadcrumb .breadcrumb-list");
-        if (!nav || !path) return;
+        const nav =
+            qs("#editorBreadcrumb .breadcrumb-list") ||
+            qs("#editorBreadcrumb ol") ||
+            qs(".editor-breadcrumb .breadcrumb-list") ||
+            qs(".breadcrumb-list");
+        if (!nav) return;
 
-        const parts = path.split("/").filter(Boolean);
+        // Prefer explicit argument; fall back to active file — never leave stale DOM
+        const resolved = path || STATE.activeFile || "";
+        if (!resolved) {
+            nav.innerHTML = "";
+            return;
+        }
+
+        const parts = String(resolved).split("/").filter(Boolean);
         let html = "";
         let current = "";
         parts.forEach((part, i) => {
             current += (i ? "/" : "") + part;
+            // Prefer live folder display name when available
+            const folder = STATE.folders.find(
+                (f) => (f.path || "") === current || (f.name || "") === part
+            );
+            const label = i < parts.length - 1 && folder?.name ? folder.name : part;
             if (i < parts.length - 1) {
-                html += `<li class="breadcrumb-item"><a href="#" class="breadcrumb-link" data-path="${escapeHtml(current)}">${escapeHtml(part)}</a></li>`;
+                html += `<li class="breadcrumb-item"><a href="#" class="breadcrumb-link" data-path="${escapeHtml(current)}">${escapeHtml(label)}</a></li>`;
                 html += `<li class="breadcrumb-sep" aria-hidden="true"><i class="ri-arrow-right-s-line"></i></li>`;
             } else {
-                html += `<li class="breadcrumb-item current"><span class="breadcrumb-current">${escapeHtml(part)}</span></li>`;
+                html += `<li class="breadcrumb-item current"><span class="breadcrumb-current">${escapeHtml(label)}</span></li>`;
             }
         });
         nav.innerHTML = html;
@@ -1859,10 +2927,23 @@ try { ${js} } catch(e) { console.error(e); }
             return;
         }
 
+        // Load firestore.js the same way (classic script → dynamic import).
+        // Named exports become properties on the module namespace object,
+        // so existing FS.getProject / FS.saveFile / … call sites continue
+        // to work unchanged.
+        try {
+            FS = await import("../firebase/firestore.js");
+        } catch (err) {
+            console.error("[NovaEditor] Failed to load Firestore module:", err);
+            showToast("Could not load project services.", "error");
+            window.location.replace("../index.html");
+            return;
+        }
+
         const user = await requireAuth();
 
         if (!user) {
-            return; // requireAuth() already redirected to index.html
+            return;
         }
 
         STATE.currentUser = user;
