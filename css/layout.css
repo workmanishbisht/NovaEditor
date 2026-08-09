@@ -1,6 +1,8 @@
 /* ==========================================
    App Shell
 ========================================== */
+
+/* Grid layout when .app-shell wraps sidebar + main */
 .app-shell {
     display: grid;
     grid-template-columns: 260px 1fr;
@@ -8,18 +10,37 @@
     background: var(--bg);
 }
 
+.app-shell .sidebar {
+    position: sticky;
+    width: auto;
+}
+
+.app-shell .app-main {
+    margin-left: 0;
+}
+
+/* ==========================================
+   Main content area
+   (works with OR without .app-shell wrapper)
+========================================== */
 .app-main {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 100vh;
+    margin-left: 260px;
+    background: var(--bg);
 }
 
 /* ==========================================
    Sidebar
 ========================================== */
 .sidebar {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    width: 260px;
+    max-width: 260px;
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -110,7 +131,8 @@
     color: var(--text-primary);
 }
 
-.nav-item.active {
+.nav-item.active,
+.nav-item.is-active {
     background: var(--primary);
     color: var(--white-color);
     font-weight: 600;
@@ -118,11 +140,13 @@
     box-shadow: var(--nav-active-shadow);
 }
 
-.nav-item.active i {
+.nav-item.active i,
+.nav-item.is-active i {
     color: var(--white-color);
 }
 
-.nav-item.active:hover {
+.nav-item.active:hover,
+.nav-item.is-active:hover {
     transform: none;
 }
 
@@ -315,19 +339,21 @@
    Header
 ========================================== */
 .app-header {
-    position: fixed;
+    position: sticky;
     top: 0;
-    left: 260px;
-    right: 0;
+    left: auto;
+    right: auto;
     display: flex;
     align-items: center;
     gap: 20px;
     height: 72px;
+    width: 100%;
     padding: 0 32px;
     background: var(--surface);
     border-bottom: 1px solid var(--border-subtle);
     box-shadow: var(--shadow-xs);
     z-index: 30;
+    flex-shrink: 0;
 }
 
 #headerMount {
@@ -657,8 +683,16 @@
         grid-template-columns: 232px 1fr;
     }
 
+    .sidebar {
+        width: 232px;
+        max-width: 232px;
+    }
+
+    .app-main {
+        margin-left: 232px;
+    }
+
     .app-header {
-        left: 232px;
         padding: 0 20px;
     }
 }
@@ -693,6 +727,7 @@
         top: 0;
         left: 0;
         width: 280px;
+        max-width: 280px;
         height: 100vh;
         height: 100dvh;
         transform: translateX(-100%);
@@ -715,8 +750,12 @@
         flex-shrink: 0;
     }
 
+    .app-main {
+        margin-left: 0;
+        width: 100%;
+    }
+
     .app-header {
-        left: 0;
         padding: 0 14px;
         gap: 12px;
     }
@@ -817,3 +856,4 @@
         font-size: 17px;
     }
 }
+

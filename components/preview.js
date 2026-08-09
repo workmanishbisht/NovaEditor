@@ -30,12 +30,10 @@ function buildContentMap(files, fileContents) {
         const live = contents[f.path] ?? contents[path];
         const value = live !== undefined ? live : (f.content ?? "");
         map.set(path, typeof value === "string" ? value : "");
-        // Also index by basename for loose resolution
         const base = path.split("/").pop();
         if (base && !map.has(base)) map.set(base, map.get(path));
     }
 
-    // Include any open-but-not-yet-in-files live buffers
     for (const [path, value] of Object.entries(contents)) {
         const n = normalizePath(path);
         if (n && !map.has(n) && typeof value === "string") {
@@ -50,7 +48,6 @@ function buildContentMap(files, fileContents) {
 
 /**
  * Resolve a referenced path against the content map.
- * Tries exact, normalized, basename, and common folder prefixes.
  * @param {string} href
  * @param {Map<string, string>} contentMap
  * @returns {{ path: string, content: string } | null}
@@ -73,7 +70,6 @@ function resolveAsset(href, contentMap) {
         }
     }
 
-    // Case-insensitive fallback
     const lower = clean.toLowerCase();
     for (const [path, content] of contentMap) {
         if (path.toLowerCase() === lower || path.toLowerCase().endsWith("/" + lower)) {
@@ -86,7 +82,6 @@ function resolveAsset(href, contentMap) {
 
 /**
  * Pick the best HTML entry file for preview.
- * Prefer index.html, then any .html, then activeFile if HTML.
  * @param {Array<{path?: string}>} files
  * @param {string|null} activeFile
  * @param {Map<string, string>} contentMap
@@ -115,7 +110,6 @@ function pickHtmlEntry(files, activeFile, contentMap) {
         }
     }
 
-    // Active buffer might be HTML even if not in files list yet
     if (activeFile && /\.html?$/i.test(activeFile)) {
         const n = normalizePath(activeFile);
         if (contentMap.has(n)) return { path: n, content: contentMap.get(n) };
@@ -126,8 +120,6 @@ function pickHtmlEntry(files, activeFile, contentMap) {
 
 /**
  * Inline <link rel="stylesheet"> and local <script src> into the HTML document.
- * External http(s) assets are left alone.
- * Unreferenced project CSS/JS are appended as a safety net for simple projects.
  * @param {string} html
  * @param {Map<string, string>} contentMap
  * @returns {{ html: string, missing: string[] }}
@@ -138,7 +130,6 @@ function inlineLocalAssets(html, contentMap) {
     const usedJs = new Set();
     let out = typeof html === "string" ? html : "";
 
-    // Inline stylesheet links
     out = out.replace(
         /<link\b[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/gi,
         (full, href) => {
@@ -159,7 +150,6 @@ function inlineLocalAssets(html, contentMap) {
         }
     );
 
-    // Inline local script src (keep order)
     out = out.replace(
         /<script\b([^>]*)\bsrc\s*=\s*["']([^"']+)["']([^>]*)>\s*<\/script>/gi,
         (full, pre, src, post) => {
@@ -175,7 +165,6 @@ function inlineLocalAssets(html, contentMap) {
         }
     );
 
-    // Collect unreferenced CSS/JS from the project
     const extraCss = [];
     const extraJs = [];
     for (const [path, content] of contentMap) {
@@ -183,7 +172,6 @@ function inlineLocalAssets(html, contentMap) {
             extraCss.push({ path, content });
         }
         if (/\.jsx?$/i.test(path) && !/\.tsx?$/i.test(path) && !usedJs.has(path) && content.trim()) {
-            // Skip obvious module/bundler entry points that aren't plain browser JS
             if (/\b(import|export)\s/.test(content) && !/type\s*=\s*["']module["']/.test(out)) {
                 continue;
             }
@@ -201,7 +189,6 @@ function inlineLocalAssets(html, contentMap) {
         }
 
         if (/<\/head>/i.test(out)) {
-            // CSS before </head>, JS before </body>
             let withCss = out;
             const cssOnly = extraCss
                 .map((c) => `<style data-nova-preview-src="${escapeAttr(c.path)}">\n${c.content}\n</style>`)
@@ -229,7 +216,6 @@ function inlineLocalAssets(html, contentMap) {
         }
     }
 
-    // Ensure a basic document shell if the file is a fragment
     if (!/<!DOCTYPE/i.test(out) && !/<html[\s>]/i.test(out)) {
         out = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n</head>\n<body>\n${out}\n</body>\n</html>`;
     } else if (!/<meta[^>]+charset/i.test(out) && /<head[\s>]/i.test(out)) {
@@ -255,19 +241,12 @@ function escapeHtml(str) {
         .replace(/"/g, "&quot;");
 }
 
-/**
- * Build an error document to show inside the iframe.
- * @param {string} title
- * @param {string} message
- * @param {string[]} [details]
- * @returns {string}
- */
 function buildErrorDocument(title, message, details = []) {
     const list =
         details.length > 0
             ? `<ul style="margin:12px 0 0;padding-left:18px;color:#94a3b8;font-size:13px;">${details
-                  .map((d) => `<li><code>${escapeHtml(d)}</code></li>`)
-                  .join("")}</ul>`
+                .map((d) => `<li><code>${escapeHtml(d)}</code></li>`)
+                .join("")}</ul>`
             : "";
     return `<!DOCTYPE html>
 <html>
@@ -307,10 +286,6 @@ function buildErrorDocument(title, message, details = []) {
 </html>`;
 }
 
-/**
- * Locate preview DOM nodes.
- * @returns {{ iframe: HTMLIFrameElement|null, placeholders: HTMLElement[], wrap: HTMLElement|null }}
- */
 function getPreviewElements() {
     const iframe =
         document.querySelector("#previewFrame") ||
@@ -324,7 +299,6 @@ function getPreviewElements() {
         (iframe && iframe.parentElement) ||
         null;
 
-    // Collect every plausible empty-state node (id, class, or known copy)
     const found = new Set();
     const selectors = [
         "#previewPlaceholder",
@@ -339,7 +313,6 @@ function getPreviewElements() {
         document.querySelectorAll(sel).forEach((el) => found.add(el));
     }
 
-    // Fallback: any sibling of the iframe that still shows the default copy
     if (wrap) {
         Array.from(wrap.children).forEach((el) => {
             if (el === iframe) return;
@@ -358,10 +331,6 @@ function getPreviewElements() {
     return { iframe, placeholders: Array.from(found), wrap };
 }
 
-/**
- * One stylesheet that wins over editor.css when the wrap is marked active.
- * Class-based rules survive layout/tab redraws that may clear inline styles.
- */
 function ensurePreviewHideStyles() {
     if (document.getElementById("nova-preview-hide-styles")) return;
     const style = document.createElement("style");
@@ -407,16 +376,10 @@ function ensurePreviewHideStyles() {
     document.head.appendChild(style);
 }
 
-/**
- * Show or hide the preview empty-state / placeholder overlay.
- * When hidden, the node is fully removed from layout (not stacked behind the iframe).
- * @param {boolean} show
- */
 function setPlaceholderVisible(show) {
     ensurePreviewHideStyles();
     const { placeholders, iframe, wrap } = getPreviewElements();
 
-    // Always include the known editor.html node
     const known =
         document.getElementById("previewPlaceholder") ||
         document.querySelector(".preview-placeholder");
@@ -474,7 +437,6 @@ function setPlaceholderVisible(show) {
         }
     }
 
-    // Hard target the known editor.html node (id="previewPlaceholder")
     const hard = document.getElementById("previewPlaceholder");
     if (hard) {
         if (show) {
@@ -505,7 +467,6 @@ function setPlaceholderVisible(show) {
         }
     }
 
-    // Class on the wrap is the durable signal for CSS (survives style resets)
     if (wrap) {
         wrap.classList.toggle("has-preview", !show);
         wrap.classList.toggle("preview-empty", !!show);
@@ -514,14 +475,59 @@ function setPlaceholderVisible(show) {
 }
 
 /**
- * Render the current project into the preview iframe.
+ * Build a full HTML document for preview WITHOUT touching the Editor iframe.
+ * Same pipeline as renderPreview — used by Dashboard thumbnails.
  *
  * @param {object} options
- * @param {Array}  options.files          - STATE.files from editor
- * @param {Record<string,string>} options.fileContents - live buffers
+ * @param {Array}  options.files
+ * @param {Record<string,string>} [options.fileContents]
  * @param {string|null} [options.activeFile]
- * @param {boolean} [options.showPlaceholderOnEmpty=true]
- * @returns {{ success: boolean, entry: string|null, missing: string[], error: string|null }}
+ * @returns {{ success: boolean, html: string|null, entry: string|null, missing: string[], error: string|null }}
+ */
+export function buildPreviewDocument(options = {}) {
+    const {
+        files = [],
+        fileContents = {},
+        activeFile = null,
+    } = options;
+
+    try {
+        const contentMap = buildContentMap(files, fileContents);
+        const entry = pickHtmlEntry(files, activeFile, contentMap);
+
+        if (!entry || !String(entry.content || "").trim()) {
+            return {
+                success: false,
+                html: null,
+                entry: null,
+                missing: [],
+                error: "No HTML entry file found.",
+            };
+        }
+
+        const { html, missing } = inlineLocalAssets(entry.content, contentMap);
+        return {
+            success: true,
+            html,
+            entry: entry.path,
+            missing,
+            error: missing.length ? `Missing assets: ${missing.join(", ")}` : null,
+        };
+    } catch (err) {
+        console.error("[NovaPreview] buildPreviewDocument failed:", err);
+        const message = err && err.message ? err.message : String(err);
+        return {
+            success: false,
+            html: null,
+            entry: null,
+            missing: [],
+            error: message,
+        };
+    }
+}
+
+/**
+ * Render the current project into the preview iframe.
  */
 export function renderPreview(options = {}) {
     const {
@@ -542,10 +548,9 @@ export function renderPreview(options = {}) {
     }
 
     try {
-        const contentMap = buildContentMap(files, fileContents);
-        const entry = pickHtmlEntry(files, activeFile, contentMap);
+        const built = buildPreviewDocument({ files, fileContents, activeFile });
 
-        if (!entry || !entry.content.trim()) {
+        if (!built.success || !built.html) {
             const doc = buildErrorDocument(
                 "No HTML entry file",
                 "Add an index.html (or any .html file) to this project, then click Run / Preview.",
@@ -557,21 +562,18 @@ export function renderPreview(options = {}) {
                 success: false,
                 entry: null,
                 missing: [],
-                error: "No HTML entry file found.",
+                error: built.error || "No HTML entry file found.",
             };
         }
 
-        const { html, missing } = inlineLocalAssets(entry.content, contentMap);
-        iframe.srcdoc = html;
+        iframe.srcdoc = built.html;
         setPlaceholderVisible(false);
 
         return {
             success: true,
-            entry: entry.path,
-            missing,
-            error: missing.length
-                ? `Missing assets: ${missing.join(", ")}`
-                : null,
+            entry: built.entry,
+            missing: built.missing || [],
+            error: built.error,
         };
     } catch (err) {
         console.error("[NovaPreview] render failed:", err);
@@ -587,9 +589,6 @@ export function renderPreview(options = {}) {
     }
 }
 
-/**
- * Clear the preview and restore the placeholder.
- */
 export function clearPreview() {
     const { iframe } = getPreviewElements();
     if (iframe) {
@@ -601,9 +600,6 @@ export function clearPreview() {
     setPlaceholderVisible(true);
 }
 
-/**
- * Hide placeholder without changing iframe content (e.g. after a successful run).
- */
 export function hidePreviewPlaceholder() {
     setPlaceholderVisible(false);
 }
@@ -612,10 +608,10 @@ export function showPreviewPlaceholder() {
     setPlaceholderVisible(true);
 }
 
-// Optional global for non-module consumers
 if (typeof window !== "undefined") {
     window.NovaPreview = {
         renderPreview,
+        buildPreviewDocument,
         clearPreview,
         hidePreviewPlaceholder,
         showPreviewPlaceholder,

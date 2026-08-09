@@ -18,13 +18,13 @@
     <main class="editor-page" id="editorPage" data-page="editor">
 
         <!-- ============================================================
-       EDITOR WORKSPACE
-       ============================================================ -->
+             EDITOR WORKSPACE
+             ============================================================ -->
         <div class="editor-workspace" id="editorWorkspace">
 
             <!-- ==========================================================
-         LEFT: EXPLORER PANEL
-         ========================================================== -->
+                 LEFT: EXPLORER PANEL
+                 ========================================================== -->
             <aside class="explorer-panel" id="explorerPanel" aria-label="File Explorer">
                 <div class="explorer-header">
                     <div class="explorer-title-row">
@@ -84,129 +84,9 @@
                 </div>
 
                 <div class="explorer-body">
-                    <!-- Files Tree -->
+                    <!-- Files Tree (empty – populated by editor.js after real project loads) -->
                     <div class="explorer-view active" id="explorerViewFiles" role="tabpanel" aria-labelledby="tabFiles">
-                        <div class="explorer-tree" id="explorerTree" role="tree" aria-label="Project files">
-                            <div class="tree-item tree-folder open" role="treeitem" aria-expanded="true" data-path="src"
-                                data-type="folder">
-                                <div class="tree-row">
-                                    <button type="button" class="tree-chevron" aria-label="Toggle folder">
-                                        <i class="ri-arrow-right-s-line"></i>
-                                    </button>
-                                    <i class="ri-folder-open-fill tree-icon folder"></i>
-                                    <span class="tree-label">src</span>
-                                </div>
-                                <div class="tree-children" role="group">
-                                    <div class="tree-item tree-folder open" role="treeitem" aria-expanded="true"
-                                        data-path="src/components" data-type="folder">
-                                        <div class="tree-row">
-                                            <button type="button" class="tree-chevron" aria-label="Toggle folder">
-                                                <i class="ri-arrow-right-s-line"></i>
-                                            </button>
-                                            <i class="ri-folder-open-fill tree-icon folder"></i>
-                                            <span class="tree-label">components</span>
-                                        </div>
-                                        <div class="tree-children" role="group">
-                                            <div class="tree-item tree-file active" role="treeitem"
-                                                data-path="src/components/App.jsx" data-type="file" data-lang="jsx">
-                                                <div class="tree-row">
-                                                    <span class="tree-indent"></span>
-                                                    <i class="ri-reactjs-line tree-icon jsx"></i>
-                                                    <span class="tree-label">App.jsx</span>
-                                                    <span class="tree-badge modified" title="Modified">M</span>
-                                                </div>
-                                            </div>
-                                            <div class="tree-item tree-file" role="treeitem"
-                                                data-path="src/components/Navbar.jsx" data-type="file" data-lang="jsx">
-                                                <div class="tree-row">
-                                                    <span class="tree-indent"></span>
-                                                    <i class="ri-reactjs-line tree-icon jsx"></i>
-                                                    <span class="tree-label">Navbar.jsx</span>
-                                                </div>
-                                            </div>
-                                            <div class="tree-item tree-file" role="treeitem"
-                                                data-path="src/components/Footer.jsx" data-type="file" data-lang="jsx">
-                                                <div class="tree-row">
-                                                    <span class="tree-indent"></span>
-                                                    <i class="ri-reactjs-line tree-icon jsx"></i>
-                                                    <span class="tree-label">Footer.jsx</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="tree-item tree-file" role="treeitem" data-path="src/styles.css"
-                                        data-type="file" data-lang="css">
-                                        <div class="tree-row">
-                                            <span class="tree-indent"></span>
-                                            <i class="ri-css3-fill tree-icon css"></i>
-                                            <span class="tree-label">styles.css</span>
-                                            <span class="tree-badge modified" title="Modified">M</span>
-                                        </div>
-                                    </div>
-                                    <div class="tree-item tree-file" role="treeitem" data-path="src/utils.js"
-                                        data-type="file" data-lang="js">
-                                        <div class="tree-row">
-                                            <span class="tree-indent"></span>
-                                            <i class="ri-javascript-fill tree-icon js"></i>
-                                            <span class="tree-label">utils.js</span>
-                                        </div>
-                                    </div>
-                                    <div class="tree-item tree-file" role="treeitem" data-path="src/App.js"
-                                        data-type="file" data-lang="js">
-                                        <div class="tree-row">
-                                            <span class="tree-indent"></span>
-                                            <i class="ri-javascript-fill tree-icon js"></i>
-                                            <span class="tree-label">App.js</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="tree-item tree-folder" role="treeitem" aria-expanded="false" data-path="public"
-                                data-type="folder">
-                                <div class="tree-row">
-                                    <button type="button" class="tree-chevron" aria-label="Toggle folder">
-                                        <i class="ri-arrow-right-s-line"></i>
-                                    </button>
-                                    <i class="ri-folder-fill tree-icon folder"></i>
-                                    <span class="tree-label">public</span>
-                                </div>
-                                <div class="tree-children" role="group" hidden></div>
-                            </div>
-
-                            <div class="tree-item tree-file" role="treeitem" data-path="package.json" data-type="file"
-                                data-lang="json">
-                                <div class="tree-row">
-                                    <span class="tree-indent"></span>
-                                    <i class="ri-file-code-line tree-icon json"></i>
-                                    <span class="tree-label">package.json</span>
-                                </div>
-                            </div>
-                            <div class="tree-item tree-file" role="treeitem" data-path="vite.config.js" data-type="file"
-                                data-lang="js">
-                                <div class="tree-row">
-                                    <span class="tree-indent"></span>
-                                    <i class="ri-javascript-fill tree-icon js"></i>
-                                    <span class="tree-label">vite.config.js</span>
-                                </div>
-                            </div>
-                            <div class="tree-item tree-file" role="treeitem" data-path="README.md" data-type="file"
-                                data-lang="md">
-                                <div class="tree-row">
-                                    <span class="tree-indent"></span>
-                                    <i class="ri-markdown-fill tree-icon md"></i>
-                                    <span class="tree-label">README.md</span>
-                                </div>
-                            </div>
-                            <div class="tree-item tree-file" role="treeitem" data-path=".gitignore" data-type="file"
-                                data-lang="text">
-                                <div class="tree-row">
-                                    <span class="tree-indent"></span>
-                                    <i class="ri-file-forbid-line tree-icon text"></i>
-                                    <span class="tree-label">.gitignore</span>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="explorer-tree" id="explorerTree" role="tree" aria-label="Project files"></div>
                     </div>
 
                     <!-- Search View -->
@@ -245,42 +125,18 @@
                     <!-- Favorites View -->
                     <div class="explorer-view" id="explorerViewFavorites" role="tabpanel" aria-labelledby="tabFavorites"
                         hidden>
-                        <div class="explorer-empty-state">
+                        <div class="explorer-tree" id="favoritesTree" role="tree" aria-label="Favorite files"></div>
+                        <div class="explorer-empty-state" id="favoritesEmptyState" hidden>
                             <i class="ri-star-line"></i>
                             <p>No favorites yet</p>
                             <span>Star files to pin them here for quick access.</span>
                         </div>
                     </div>
 
-                    <!-- Recent View -->
+                    <!-- Recent View (empty – populated by editor.js) -->
                     <div class="explorer-view" id="explorerViewRecent" role="tabpanel" aria-labelledby="tabRecent"
                         hidden>
-                        <ul class="recent-list" id="recentList">
-                            <li class="recent-item" data-path="src/components/App.jsx">
-                                <i class="ri-reactjs-line"></i>
-                                <div class="recent-meta">
-                                    <span class="recent-name">App.jsx</span>
-                                    <span class="recent-path">src/components</span>
-                                </div>
-                                <span class="recent-time">Just now</span>
-                            </li>
-                            <li class="recent-item" data-path="src/styles.css">
-                                <i class="ri-css3-fill"></i>
-                                <div class="recent-meta">
-                                    <span class="recent-name">styles.css</span>
-                                    <span class="recent-path">src</span>
-                                </div>
-                                <span class="recent-time">2m ago</span>
-                            </li>
-                            <li class="recent-item" data-path="package.json">
-                                <i class="ri-file-code-line"></i>
-                                <div class="recent-meta">
-                                    <span class="recent-name">package.json</span>
-                                    <span class="recent-path">/</span>
-                                </div>
-                                <span class="recent-time">15m ago</span>
-                            </li>
-                        </ul>
+                        <ul class="recent-list" id="recentList"></ul>
                     </div>
                 </div>
 
@@ -297,8 +153,8 @@
                 aria-orientation="vertical" aria-label="Resize explorer" tabindex="0"></div>
 
             <!-- ==========================================================
-         CENTER + RIGHT + BOTTOM
-         ========================================================== -->
+                 CENTER + RIGHT + BOTTOM
+                 ========================================================== -->
             <div class="editor-main-area" id="editorMainArea">
 
                 <div class="editor-top-row" id="editorTopRow">
@@ -310,28 +166,7 @@
                         <div class="editor-toolbar" id="editorToolbar">
                             <div class="toolbar-left">
                                 <nav class="editor-breadcrumb" id="editorBreadcrumb" aria-label="Breadcrumb">
-                                    <ol class="breadcrumb-list">
-                                        <li class="breadcrumb-item">
-                                            <a href="#" class="breadcrumb-link"
-                                                data-path="my-portfolio">my-portfolio</a>
-                                        </li>
-                                        <li class="breadcrumb-sep" aria-hidden="true"><i
-                                                class="ri-arrow-right-s-line"></i></li>
-                                        <li class="breadcrumb-item">
-                                            <a href="#" class="breadcrumb-link" data-path="src">src</a>
-                                        </li>
-                                        <li class="breadcrumb-sep" aria-hidden="true"><i
-                                                class="ri-arrow-right-s-line"></i></li>
-                                        <li class="breadcrumb-item">
-                                            <a href="#" class="breadcrumb-link"
-                                                data-path="src/components">components</a>
-                                        </li>
-                                        <li class="breadcrumb-sep" aria-hidden="true"><i
-                                                class="ri-arrow-right-s-line"></i></li>
-                                        <li class="breadcrumb-item current">
-                                            <span class="breadcrumb-current">App.jsx</span>
-                                        </li>
-                                    </ol>
+                                    <ol class="breadcrumb-list"></ol>
                                 </nav>
                             </div>
 
@@ -386,54 +221,23 @@
                                         <i class="ri-settings-3-line"></i>
                                     </button>
                                 </div>
+
+                                <div class="toolbar-divider"></div>
+
+                                <div class="toolbar-group">
+                                    <button type="button" class="toolbar-btn exit" id="btnExitEditor"
+                                        title="Exit Editor" aria-label="Exit Editor">
+                                        <i class="ri-logout-box-r-line"></i>
+                                        <span>Exit</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Tabs Bar -->
+                        <!-- Tabs Bar (empty – populated by editor.js) -->
                         <div class="editor-tabs-bar" id="editorTabsBar">
                             <div class="tabs-scroll" id="tabsScroll">
-                                <div class="tabs-list" id="tabsList" role="tablist" aria-label="Open editors">
-                                    <div class="editor-tab active" role="tab" aria-selected="true" data-tab-id="tab-app"
-                                        data-path="src/components/App.jsx" draggable="true">
-                                        <i class="ri-reactjs-line tab-icon jsx"></i>
-                                        <span class="tab-name">App.jsx</span>
-                                        <span class="tab-dirty" title="Unsaved changes" hidden>•</span>
-                                        <button type="button" class="tab-close" aria-label="Close App.jsx"
-                                            title="Close">
-                                            <i class="ri-close-line"></i>
-                                        </button>
-                                    </div>
-                                    <div class="editor-tab" role="tab" aria-selected="false" data-tab-id="tab-navbar"
-                                        data-path="src/components/Navbar.jsx" draggable="true">
-                                        <i class="ri-reactjs-line tab-icon jsx"></i>
-                                        <span class="tab-name">Navbar.jsx</span>
-                                        <span class="tab-dirty" title="Unsaved changes" hidden>•</span>
-                                        <button type="button" class="tab-close" aria-label="Close Navbar.jsx"
-                                            title="Close">
-                                            <i class="ri-close-line"></i>
-                                        </button>
-                                    </div>
-                                    <div class="editor-tab" role="tab" aria-selected="false" data-tab-id="tab-styles"
-                                        data-path="src/styles.css" draggable="true">
-                                        <i class="ri-css3-fill tab-icon css"></i>
-                                        <span class="tab-name">styles.css</span>
-                                        <span class="tab-dirty" title="Unsaved changes" hidden>•</span>
-                                        <button type="button" class="tab-close" aria-label="Close styles.css"
-                                            title="Close">
-                                            <i class="ri-close-line"></i>
-                                        </button>
-                                    </div>
-                                    <div class="editor-tab" role="tab" aria-selected="false" data-tab-id="tab-utils"
-                                        data-path="src/utils.js" draggable="true">
-                                        <i class="ri-javascript-fill tab-icon js"></i>
-                                        <span class="tab-name">utils.js</span>
-                                        <span class="tab-dirty" title="Unsaved changes" hidden>•</span>
-                                        <button type="button" class="tab-close" aria-label="Close utils.js"
-                                            title="Close">
-                                            <i class="ri-close-line"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                                <div class="tabs-list" id="tabsList" role="tablist" aria-label="Open editors"></div>
                             </div>
                             <div class="tabs-actions">
                                 <button type="button" class="tabs-action-btn" id="tabsMoreBtn" title="More actions"
@@ -450,78 +254,8 @@
                         <!-- Editor Surface -->
                         <div class="editor-surface" id="editorSurface">
                             <div class="monaco-container" id="monacoContainer">
-                                <div class="monaco-editor-shell" id="monacoEditorShell">
-                                    <div class="editor-gutter" id="editorGutter" aria-hidden="true">
-                                        <div class="gutter-line">1</div>
-                                        <div class="gutter-line">2</div>
-                                        <div class="gutter-line">3</div>
-                                        <div class="gutter-line">4</div>
-                                        <div class="gutter-line">5</div>
-                                        <div class="gutter-line active">6</div>
-                                        <div class="gutter-line">7</div>
-                                        <div class="gutter-line">8</div>
-                                        <div class="gutter-line">9</div>
-                                        <div class="gutter-line">10</div>
-                                        <div class="gutter-line">11</div>
-                                        <div class="gutter-line">12</div>
-                                        <div class="gutter-line">13</div>
-                                        <div class="gutter-line">14</div>
-                                        <div class="gutter-line">15</div>
-                                        <div class="gutter-line">16</div>
-                                        <div class="gutter-line">17</div>
-                                        <div class="gutter-line">18</div>
-                                        <div class="gutter-line">19</div>
-                                        <div class="gutter-line">20</div>
-                                        <div class="gutter-line">21</div>
-                                        <div class="gutter-line">22</div>
-                                        <div class="gutter-line">23</div>
-                                    </div>
-
-                                    <div class="editor-code-area" id="editorCodeArea" tabindex="0" role="textbox"
-                                        aria-multiline="true" aria-label="Code editor">
-                                        <pre class="code-content" id="codeContent"><code class="language-jsx">import React, { useState, useEffect } from "react";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import "./styles.css";
-
-export default function App() {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() =&gt; {
-    const fetchProjects = async () =&gt; {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/projects");
-        const data = await res.json();
-        setProjects(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProjects();
-  }, []);
-
-  return (
-    &lt;div className="app"&gt;
-      &lt;Navbar /&gt;
-      &lt;main&gt;{/* content */}&lt;/main&gt;
-      &lt;Footer /&gt;
-    &lt;/div&gt;
-  );
-}</code></pre>
-                                    </div>
-
-                                    <div class="editor-minimap" id="editorMinimap" aria-hidden="true">
-                                        <div class="minimap-viewport"></div>
-                                        <div class="minimap-content"></div>
-                                    </div>
-                                </div>
-
-                                <!-- Empty State -->
-                                <div class="editor-empty-state" id="editorEmptyState" hidden>
+                                <!-- Empty State (legitimate default UI – kept) -->
+                                <div class="editor-empty-state" id="editorEmptyState">
                                     <div class="empty-illustration">
                                         <i class="ri-code-s-slash-line"></i>
                                     </div>
@@ -626,16 +360,7 @@ export default function App() {
                                 </div>
 
                                 <div class="ai-chat" id="aiChat">
-                                    <div class="ai-message assistant">
-                                        <div class="ai-bubble">
-                                            Hey! I'm Nova AI. Ask me anything about your code.
-                                        </div>
-                                    </div>
-                                    <div class="ai-message user">
-                                        <div class="ai-bubble">
-                                            Can you optimize this useEffect and handle errors better?
-                                        </div>
-                                    </div>
+                                    <!-- Empty – real messages added by AI logic -->
                                 </div>
 
                                 <div class="ai-input-area">
@@ -711,18 +436,7 @@ export default function App() {
                                     </button>
                                 </div>
                                 <div class="console-output" id="consoleOutput" role="log" aria-live="polite">
-                                    <div class="console-entry log">
-                                        <span class="console-time">14:32:01</span>
-                                        <span class="console-msg">Vite v5.2.0 ready in 342 ms</span>
-                                    </div>
-                                    <div class="console-entry info">
-                                        <span class="console-time">14:32:01</span>
-                                        <span class="console-msg">→ Local: http://localhost:3000/</span>
-                                    </div>
-                                    <div class="console-entry info">
-                                        <span class="console-time">14:32:01</span>
-                                        <span class="console-msg">→ Network: use --host to expose</span>
-                                    </div>
+                                    <!-- Empty – populated by runtime -->
                                 </div>
                             </div>
                         </div>
@@ -745,7 +459,7 @@ export default function App() {
                             data-terminal-tab="problems" id="termTabProblems">
                             <i class="ri-error-warning-line"></i>
                             <span>Problems</span>
-                            <span class="terminal-badge" id="problemsBadge">2</span>
+                            <span class="terminal-badge" id="problemsBadge" hidden>0</span>
                         </button>
                         <button type="button" class="terminal-tab" role="tab" aria-selected="false"
                             data-terminal-tab="output" id="termTabOutput">
@@ -784,29 +498,11 @@ export default function App() {
                             aria-labelledby="termTabTerminal">
                             <div class="terminal-instance" id="terminalInstance">
                                 <div class="terminal-output" id="terminalOutput">
-                                    <div class="term-line">
-                                        <span class="term-prompt">nova-editor</span>
-                                        <span class="term-path">~/my-project</span>
-                                        <span class="term-symbol">$</span>
-                                        <span class="term-cmd">npm run dev</span>
-                                    </div>
-                                    <div class="term-line muted">
-                                        <span> VITE v5.2.0 ready in 342 ms</span>
-                                    </div>
-                                    <div class="term-line">
-                                        <span class="term-success">➜</span> Local: <a href="http://localhost:3000/"
-                                            target="_blank" rel="noopener">http://localhost:3000/</a>
-                                    </div>
-                                    <div class="term-line">
-                                        <span class="term-success">➜</span> Network: use --host to expose
-                                    </div>
-                                    <div class="term-line muted">
-                                        <span> press h + enter to show help</span>
-                                    </div>
+                                    <!-- Empty – no fake npm/vite output -->
                                 </div>
                                 <div class="terminal-input-line">
                                     <span class="term-prompt">nova-editor</span>
-                                    <span class="term-path">~/my-project</span>
+                                    <span class="term-path">~</span>
                                     <span class="term-symbol">$</span>
                                     <input type="text" id="terminalInput" class="terminal-input" spellcheck="false"
                                         autocomplete="off" aria-label="Terminal input">
@@ -814,60 +510,30 @@ export default function App() {
                             </div>
                         </div>
 
-                        <!-- Problems View -->
+                        <!-- Problems View (empty) -->
                         <div class="terminal-view" id="terminalViewProblems" role="tabpanel"
                             aria-labelledby="termTabProblems" hidden>
-                            <div class="problems-list" id="problemsList">
-                                <div class="problem-item error" data-path="src/components/App.jsx" data-line="12">
-                                    <i class="ri-error-warning-fill"></i>
-                                    <div class="problem-content">
-                                        <span class="problem-msg">'fetchProjects' is declared but its value is never
-                                            read.</span>
-                                        <span class="problem-loc">App.jsx:12:11</span>
-                                    </div>
-                                </div>
-                                <div class="problem-item warning" data-path="src/styles.css" data-line="48">
-                                    <i class="ri-alert-fill"></i>
-                                    <div class="problem-content">
-                                        <span class="problem-msg">Unknown property: 'foont-size'</span>
-                                        <span class="problem-loc">styles.css:48:3</span>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="problems-list" id="problemsList"></div>
                         </div>
 
-                        <!-- Output View -->
+                        <!-- Output View (empty) -->
                         <div class="terminal-view" id="terminalViewOutput" role="tabpanel"
                             aria-labelledby="termTabOutput" hidden>
                             <div class="output-content" id="outputContent">
-                                <pre class="output-pre">[Nova Editor] Build started...
-[Nova Editor] Compiling modules...
-[Nova Editor] ✓ 24 modules transformed.
-[Nova Editor] Build completed in 1.2s</pre>
+                                <pre class="output-pre"></pre>
                             </div>
                         </div>
 
-                        <!-- Git View -->
+                        <!-- Git View (empty) -->
                         <div class="terminal-view" id="terminalViewGit" role="tabpanel" aria-labelledby="termTabGit"
                             hidden>
                             <div class="git-panel" id="gitPanel">
                                 <div class="git-section">
                                     <div class="git-section-header">
                                         <span>Changes</span>
-                                        <span class="git-count">2</span>
+                                        <span class="git-count" id="gitChangeCount">0</span>
                                     </div>
-                                    <ul class="git-changes">
-                                        <li class="git-change modified">
-                                            <i class="ri-file-edit-line"></i>
-                                            <span class="git-file">src/components/App.jsx</span>
-                                            <span class="git-status">M</span>
-                                        </li>
-                                        <li class="git-change modified">
-                                            <i class="ri-file-edit-line"></i>
-                                            <span class="git-file">src/styles.css</span>
-                                            <span class="git-status">M</span>
-                                        </li>
-                                    </ul>
+                                    <ul class="git-changes" id="gitChangesList"></ul>
                                 </div>
                                 <div class="git-actions">
                                     <button type="button" class="btn btn-secondary btn-sm" id="gitStageAllBtn">
@@ -887,31 +553,31 @@ export default function App() {
         </div>
 
         <!-- ============================================================
-       STATUS BAR
-       ============================================================ -->
+             STATUS BAR
+             ============================================================ -->
         <footer class="editor-statusbar" id="editorStatusbar" role="contentinfo">
             <div class="statusbar-left">
                 <button type="button" class="statusbar-item" id="statusBranch" title="Current branch">
                     <i class="ri-git-branch-line"></i>
-                    <span>main</span>
+                    <span>—</span>
                 </button>
                 <button type="button" class="statusbar-item" id="statusSync" title="Sync changes">
                     <i class="ri-refresh-line"></i>
                     <span>0↓ 0↑</span>
                 </button>
-                <span class="statusbar-item error" id="statusErrors" title="Errors">
+                <span class="statusbar-item error" id="statusErrors" title="Errors" hidden>
                     <i class="ri-error-warning-line"></i>
-                    <span>1</span>
+                    <span>0</span>
                 </span>
-                <span class="statusbar-item warning" id="statusWarnings" title="Warnings">
+                <span class="statusbar-item warning" id="statusWarnings" title="Warnings" hidden>
                     <i class="ri-alert-line"></i>
-                    <span>1</span>
+                    <span>0</span>
                 </span>
             </div>
 
             <div class="statusbar-center">
                 <span class="statusbar-item" id="statusCursor">
-                    Ln 7, Col 28
+                    Ln 1, Col 1
                 </span>
             </div>
 
@@ -926,7 +592,7 @@ export default function App() {
                     LF
                 </button>
                 <button type="button" class="statusbar-item" id="statusLanguage" title="Language Mode">
-                    JavaScript JSX
+                    Plain Text
                 </button>
                 <button type="button" class="statusbar-item" id="statusPrettier" title="Prettier">
                     <i class="ri-check-line"></i>
@@ -937,7 +603,46 @@ export default function App() {
                 </button>
             </div>
         </footer>
+
+        <!-- Loading overlay (shown until real project data arrives) -->
+        <div id="editorLoadingState" class="editor-loading-state">
+            <div class="loading-spinner"></div>
+            <span>Loading project...</span>
+        </div>
     </main>
+
+    <!-- ============================================================
+         EXIT EDITOR CONFIRMATION MODAL
+         (queried by editor.js – do not change these IDs)
+         ============================================================ -->
+    <div id="novaExitModal" class="nova-exit-modal" role="dialog" aria-modal="true" aria-labelledby="novaExitTitle"
+        aria-describedby="novaExitMessage" hidden>
+        <div class="nova-prompt-backdrop" data-nova-exit-dismiss></div>
+        <div class="nova-prompt-dialog">
+            <div class="nova-prompt-header">
+                <h3 id="novaExitTitle" class="nova-prompt-title">Leave Project?</h3>
+                <button type="button" class="nova-prompt-close" aria-label="Close" data-nova-exit-dismiss>
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="nova-prompt-body">
+                <p id="novaExitMessage" class="nova-confirm-message">
+                    Are you sure you want to leave this project?
+                </p>
+            </div>
+            <div class="nova-prompt-footer">
+                <button type="button" id="novaExitCancel" class="nova-prompt-btn" data-nova-exit-dismiss>
+                    Cancel
+                </button>
+                <button type="button" id="novaExitLeave" class="nova-prompt-btn danger">
+                    Leave Project
+                </button>
+                <button type="button" id="novaExitSaveLeave" class="nova-prompt-btn primary" hidden>
+                    Save &amp; Leave
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- script file -->
     <script type="module" src="../js/layout.js"></script>

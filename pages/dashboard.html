@@ -10,7 +10,7 @@
     <!-- RemixIcon -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
     <!-- Css file link -->
-  <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/variables.css" />
     <link rel="stylesheet" href="../css/global.css" />
     <link rel="stylesheet" href="../css/layout.css" />
     <link rel="stylesheet" href="../css/dashboard.css" />
@@ -153,6 +153,12 @@
                                 </a>
                             </div>
 
+                            <!-- Cards are rendered dynamically by dashboard.js.
+                                 Each card MUST include the 3-dot button inside .project-card-thumb:
+                                 <button type="button" class="project-card-menu-btn" aria-label="Project actions" title="Project actions">
+                                     <i class="ri-more-2-fill"></i>
+                                 </button>
+                            -->
                             <div class="projects-grid" id="recentProjectsGrid">
                                 <p class="panel-empty">Loading projects...</p>
                             </div>

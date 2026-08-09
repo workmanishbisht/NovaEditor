@@ -208,7 +208,6 @@
     transition: box-shadow 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
 }
 
-
 .dash-continue-info {
     display: flex;
     flex-direction: column;
@@ -548,9 +547,12 @@
     flex-direction: column;
     overflow: hidden;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
 }
 
+/* Thumbnail is positioning context for the 3-dot button */
 .project-card-thumb {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -558,6 +560,114 @@
     background: linear-gradient(135deg, #1e293b, #0f172a);
     color: #64748b;
     font-size: 26px;
+}
+
+/* 3-dot menu button — top-right of thumbnail */
+.project-card-menu-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    cursor: pointer;
+    z-index: 5;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.project-card-menu-btn i {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.project-card-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+}
+
+.project-card-menu-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.project-card-menu-btn:active {
+    transform: scale(0.96);
+}
+
+.project-card-menu-btn.is-open {
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+}
+
+/* ==========================================
+   Project Actions Dropdown
+========================================== */
+
+.project-card-menu {
+    position: absolute;
+    min-width: 180px;
+    padding: var(--space-1);
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-dropdown);
+    opacity: 1;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow: hidden;
+}
+
+.project-card-menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    text-align: left;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.project-card-menu-item:hover {
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+}
+
+.project-card-menu-item:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+}
+
+.project-card-menu-item-danger {
+    color: var(--danger);
+}
+
+.project-card-menu-item-danger:hover {
+    background: var(--surface-secondary);
+    color: var(--danger);
+}
+
+.project-card-menu-divider {
+    height: 1px;
+    margin: var(--space-1) 0;
+    background: var(--border);
+    border: none;
 }
 
 .project-card-body {
@@ -946,6 +1056,334 @@
 }
 
 /* ==========================================
+   Import Project Modal
+========================================== */
+
+body.nova-modal-open {
+    overflow: hidden;
+}
+
+#importProjectModal.nova-modal,
+.nova-modal {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    margin: 0;
+    box-sizing: border-box;
+}
+
+#importProjectModal.nova-modal[hidden],
+.nova-modal[hidden] {
+    display: none !important;
+}
+
+.nova-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    cursor: pointer;
+}
+
+.nova-modal-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(520px, calc(100vw - 32px));
+    max-width: 520px;
+    max-height: min(90vh, 640px);
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+}
+
+.nova-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.nova-modal-title {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.nova-modal-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    background: transparent;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.nova-modal-close:hover {
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+}
+
+.nova-modal-close i {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.nova-modal-body {
+    padding: var(--space-5);
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+
+.nova-modal-description {
+    margin: 0 0 var(--space-4);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+}
+
+.nova-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.nova-modal-footer .btn {
+    height: 40px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    line-height: 1;
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        opacity var(--transition-fast);
+}
+
+.nova-modal-footer .btn-outline {
+    min-width: 76px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.nova-modal-footer .btn-outline:hover {
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+    transform: none;
+    box-shadow: none;
+}
+
+.nova-modal-footer .btn-primary {
+    min-width: 130px;
+    background: var(--primary);
+    color: var(--white-color);
+    border: 1px solid transparent;
+}
+
+.nova-modal-footer .btn-primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: none;
+    box-shadow: none;
+}
+
+.nova-modal-footer .btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.import-dropzone {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 140px;
+    padding: var(--space-4);
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-secondary);
+    cursor: pointer;
+    transition:
+        border-color var(--transition-fast),
+        background-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.import-dropzone:hover,
+.import-dropzone.is-dragover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    box-shadow: var(--shadow-xs);
+}
+
+.import-dropzone:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.import-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.import-dropzone-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    text-align: center;
+    padding: var(--space-3) 0;
+}
+
+.import-dropzone-inner[hidden] {
+    display: none !important;
+}
+
+.import-dropzone-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--primary);
+    font-size: 22px;
+}
+
+.import-dropzone-label {
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+}
+
+.import-dropzone-hint {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+}
+
+.import-selected {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+}
+
+.import-selected[hidden] {
+    display: none !important;
+}
+
+.import-selected-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+    font-size: 18px;
+}
+
+.import-selected-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.import-selected-meta strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.import-selected-meta small {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+}
+
+.import-selected-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    background: transparent;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.import-selected-clear:hover {
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+}
+
+.import-error {
+    margin: var(--space-3) 0 0;
+    color: var(--danger);
+    font-size: var(--text-sm);
+    line-height: 1.4;
+}
+
+.import-error[hidden] {
+    display: none !important;
+}
+
+/* ==========================================
    Responsive
 ========================================== */
 
@@ -1018,6 +1456,7 @@
 
     .dash-hero-actions .btn {
         flex: 1;
+        font-size: 13px;
     }
 }
 
@@ -1029,4 +1468,27 @@
     .code-editor-mock-body {
         font-size: 11.5px;
     }
+
+    .nova-modal {
+        padding: var(--space-3);
+        align-items: flex-end;
+    }
+
+    .nova-modal-dialog {
+        width: min(100%, calc(100vw - 16px));
+        max-width: none;
+        max-height: 92vh;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    }
+
+    .nova-modal-footer {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .nova-modal-footer .btn {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
 }
+
