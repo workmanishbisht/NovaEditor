@@ -722,7 +722,8 @@
         grid-template-columns: 1fr;
     }
 
-    .sidebar {
+    .sidebar,
+    .app-shell .sidebar {
         position: fixed;
         top: 0;
         left: 0;
@@ -735,7 +736,8 @@
         box-shadow: var(--shadow-xl);
     }
 
-    .sidebar.open {
+    .sidebar.open,
+    .app-shell .sidebar.open {
         transform: translateX(0);
     }
 
@@ -856,4 +858,3 @@
         font-size: 17px;
     }
 }
-
