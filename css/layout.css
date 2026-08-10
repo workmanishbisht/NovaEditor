@@ -738,6 +738,21 @@
         grid-template-columns: 1fr;
     }
 
+    /* Sticky can silently fail to stick in some mobile browsers/WebViews.
+       Fixed positioning is always viewport-relative, so it's used here
+       instead — mobile only. #headerMount already reserves the exact
+       header height (see height rules below and at the 768px/480px
+       breakpoints), so removing .app-header from flow does not create
+       any extra gap: the placeholder box keeps occupying that same
+       height, meaning the offset is still counted exactly once. */
+    .app-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+    }
+
     .sidebar,
     .app-shell .sidebar {
         position: fixed;
