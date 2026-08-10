@@ -339,6 +339,7 @@
    Header
 ========================================== */
 .app-header {
+    position: -webkit-sticky;
     position: sticky;
     top: 0;
     left: auto;
@@ -381,6 +382,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .header-search:hover {
@@ -405,10 +407,24 @@
     background: transparent;
     color: var(--text-primary);
     font-size: 14px;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .header-search input::placeholder {
     color: var(--text-muted);
+}
+
+/* The site-wide :focus-visible rule (global.css) has higher specificity
+   than the base `input { outline: none; }` reset, so it was painting a
+   second, harsher blue outline on top of the ring above on focus/tap.
+   .header-search:focus-within already gives a clear, theme-consistent
+   focus indication, so the raw browser outline is suppressed here only
+   — every other focusable element on the site keeps its normal
+   :focus-visible accessibility outline untouched. */
+.header-search input:focus,
+.header-search input:focus-visible {
+    outline: none;
+    box-shadow: none;
 }
 
 .search-kbd {
