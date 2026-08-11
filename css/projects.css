@@ -125,7 +125,7 @@
     box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
-.proj-search > i {
+.proj-search>i {
     flex-shrink: 0;
     font-size: 17px;
     color: var(--text-muted);
@@ -274,7 +274,7 @@
     font-weight: 500;
 }
 
-.proj-sort > i {
+.proj-sort>i {
     font-size: 16px;
     color: var(--text-muted);
 }
@@ -678,101 +678,116 @@
     font-size: 13px;
 }
 
+
 /* ==========================================
    Responsive
 ========================================== */
 
-/* Tablet: 2-column grid */
+@media (max-width: 1400px) {
+    .dash-layout {
+        grid-template-columns: 1fr 320px;
+    }
+}
+
 @media (max-width: 1300px) {
-    .proj-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .dash-layout {
+        grid-template-columns: 1fr 300px;
+    }
+
+    .projects-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
 @media (max-width: 1100px) {
-    .projects-page {
+    .quick-actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dash-split-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dash-continue {
+        grid-template-columns: 1fr;
+    }
+
+    .dash-continue-info {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .dashboard {
         padding: 28px 24px 56px;
     }
 }
 
-@media (max-width: 768px) {
-    .projects-page {
-        padding: 24px 20px 48px;
+@media (max-width: 992px) {
+    .dash-layout {
+        grid-template-columns: 1fr;
     }
 
-    .proj-hero {
+    .dashboard {
+        padding: 24px 20px 48px;
+    }
+}
+
+@media (max-width: 768px) {
+    .projects-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dash-hero {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .proj-hero-actions {
+    .dash-hero-actions {
         width: 100%;
+        flex-direction: column;
+        gap: 10px;
     }
 
-    .proj-hero-actions .btn {
-        flex: 1;
+    .dash-hero-actions .btn {
+        width: 100%;
+        flex: none;
+        justify-content: center;
         font-size: 13px;
     }
+}
 
-    .proj-search {
+@media (max-width: 560px) {
+    .projects-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .code-editor-mock-body {
+        font-size: 11.5px;
+    }
+
+    .nova-modal {
+        padding: var(--space-3);
+        align-items: flex-end;
+    }
+
+    .nova-modal-dialog {
+        width: min(100%, calc(100vw - 16px));
         max-width: none;
+        max-height: 92vh;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     }
 
-    /* Filters stay in their own scrollable row; sort + view controls
-       drop to a second row instead of competing for the same line. */
-    .proj-toolbar {
-        flex-direction: column;
-        align-items: stretch;
+    .nova-modal-footer {
+        flex-wrap: wrap;
+        gap: 8px;
     }
 
-    .proj-toolbar-right {
-        justify-content: space-between;
-    }
-}
-
-/* Mobile: 1-column grid */
-@media (max-width: 640px) {
-    .proj-grid {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-
-/* Small phones (320–430px): page padding trimmed to ~16px, hero
-   actions stack full-width so button labels never get clipped, and
-   secondary text is dropped from compact controls to save room. */
-@media (max-width: 480px) {
-    .projects-page {
-        padding: 20px 16px 40px;
-    }
-
-    .proj-hero-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .proj-hero-actions .btn {
-        width: 100%;
-    }
-
-    .proj-sort-label {
-        display: none;
-    }
-
-    .proj-pagination {
-        justify-content: center;
-        text-align: center;
-    }
-
-    .proj-pagination-info {
-        width: 100%;
-        text-align: center;
-    }
-
-    .proj-page-btn-label {
-        display: none;
-    }
-
-    .proj-page-btn {
-        padding: 0 10px;
+    .nova-modal-footer .btn {
+        flex: 1 1 auto;
+        min-width: 0;
     }
 }
