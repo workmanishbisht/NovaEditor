@@ -173,20 +173,32 @@
     border-bottom: 1px solid var(--border-subtle);
 }
 
-.proj-tabs {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
+/* Owns the shrinking + scrolling: this is the element that must be
+   allowed to become narrower than its content so overflow-x actually
+   activates instead of pushing the toolbar row wider than the page. */
+.proj-tabs-scroll {
     flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
     scroll-behavior: smooth;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
 
-.proj-tabs::-webkit-scrollbar {
+.proj-tabs-scroll::-webkit-scrollbar {
     display: none;
+}
+
+/* Sized to exactly fit its own tabs — never shrinks, so tabs never
+   wrap or get squeezed; .proj-tabs-scroll above is what scrolls it. */
+.proj-tabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: max-content;
+    min-width: max-content;
 }
 
 .proj-tab {
