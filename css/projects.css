@@ -167,6 +167,7 @@
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
+    min-width: 0;
     margin-bottom: 24px;
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border-subtle);
@@ -176,7 +177,10 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
+    flex: 1 1 auto;
     overflow-x: auto;
+    scroll-behavior: smooth;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -229,6 +233,7 @@
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
+    flex-wrap: wrap;
 }
 
 .proj-sort {
@@ -299,7 +304,7 @@
 
 .proj-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 20px;
     margin-bottom: 32px;
 }
@@ -307,6 +312,7 @@
 .proj-card {
     display: flex;
     flex-direction: column;
+    min-width: 0;
     overflow: hidden;
     background: var(--surface);
     border: 1px solid var(--border-subtle);
@@ -594,6 +600,7 @@
 .proj-pagination-controls {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     flex-wrap: wrap;
 }
@@ -663,21 +670,16 @@
    Responsive
 ========================================== */
 
+/* Tablet: 2-column grid */
 @media (max-width: 1300px) {
     .proj-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 1100px) {
     .projects-page {
         padding: 28px 24px 56px;
-    }
-}
-
-@media (max-width: 992px) {
-    .proj-toolbar {
-        align-items: flex-start;
     }
 }
 
@@ -704,6 +706,8 @@
         max-width: none;
     }
 
+    /* Filters stay in their own scrollable row; sort + view controls
+       drop to a second row instead of competing for the same line. */
     .proj-toolbar {
         flex-direction: column;
         align-items: stretch;
@@ -714,13 +718,30 @@
     }
 }
 
+/* Mobile: 1-column grid */
 @media (max-width: 640px) {
     .proj-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
+/* Small phones (320–430px): page padding trimmed to ~16px, hero
+   actions stack full-width so button labels never get clipped, and
+   secondary text is dropped from compact controls to save room. */
 @media (max-width: 480px) {
+    .projects-page {
+        padding: 20px 16px 40px;
+    }
+
+    .proj-hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .proj-hero-actions .btn {
+        width: 100%;
+    }
+
     .proj-sort-label {
         display: none;
     }
@@ -728,5 +749,18 @@
     .proj-pagination {
         justify-content: center;
         text-align: center;
+    }
+
+    .proj-pagination-info {
+        width: 100%;
+        text-align: center;
+    }
+
+    .proj-page-btn-label {
+        display: none;
+    }
+
+    .proj-page-btn {
+        padding: 0 10px;
     }
 }
