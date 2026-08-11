@@ -380,6 +380,7 @@
     display: flex;
     align-items: center;
     flex: 1;
+    min-width: 0;
     max-width: 460px;
     height: 44px;
     padding: 0 14px;
@@ -408,6 +409,7 @@
 .header-search input {
     flex: 1;
     height: 100%;
+    min-width: 0;
     padding: 0 10px;
     background: transparent;
     color: var(--text-primary);
