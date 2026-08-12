@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="../css/global.css" />
     <link rel="stylesheet" href="../css/layout.css" />
     <link rel="stylesheet" href="../css/projects.css" />
-        <link rel="stylesheet" href="../css/projectmodal.css" />
+    <link rel="stylesheet" href="../css/projectmodal.css" />
     <link rel="stylesheet" href="../css/toast.css">
 </head>
 
@@ -67,26 +67,26 @@
 
                     <div class="proj-tabs-scroll">
                         <div class="proj-tabs" role="tablist" aria-label="Project filters" id="projectsTabs">
-                        <button type="button" class="proj-tab is-active" role="tab" aria-selected="true">
-                            <i class="ri-apps-2-line"></i>
-                            All Projects
-                        </button>
-                        <button type="button" class="proj-tab" role="tab" aria-selected="false">
-                            <i class="ri-time-line"></i>
-                            Recent
-                        </button>
-                        <button type="button" class="proj-tab" role="tab" aria-selected="false">
-                            <i class="ri-star-line"></i>
-                            Starred
-                        </button>
-                        <button type="button" class="proj-tab" role="tab" aria-selected="false">
-                            <i class="ri-share-forward-line"></i>
-                            Shared with me
-                        </button>
-                        <button type="button" class="proj-tab" role="tab" aria-selected="false">
-                            <i class="ri-delete-bin-line"></i>
-                            Trash
-                        </button>
+                            <button type="button" class="proj-tab is-active" role="tab" aria-selected="true">
+                                <i class="ri-apps-2-line"></i>
+                                All Projects
+                            </button>
+                            <button type="button" class="proj-tab" role="tab" aria-selected="false">
+                                <i class="ri-time-line"></i>
+                                Recent
+                            </button>
+                            <button type="button" class="proj-tab" role="tab" aria-selected="false">
+                                <i class="ri-star-line"></i>
+                                Starred
+                            </button>
+                            <button type="button" class="proj-tab" role="tab" aria-selected="false">
+                                <i class="ri-share-forward-line"></i>
+                                Shared with me
+                            </button>
+                            <button type="button" class="proj-tab" role="tab" aria-selected="false">
+                                <i class="ri-delete-bin-line"></i>
+                                Trash
+                            </button>
                         </div>
                     </div>
 
@@ -112,190 +112,13 @@
 
                 <!-- =======================================
                 Project Grid
-                =======================================
-                Static UI placeholder cards for visual development only.
-                Each .proj-card is the render template for a single project —
-                when dynamic data is wired up, replace the children of
-                #projectsGrid with cards generated from that same structure.
+                Dynamic cards are injected here by projects.js
                 ======================================= -->
-                <div class="proj-grid" id="projectsGrid">
-
-                    <article class="proj-card">
-                        <div class="proj-card-thumb">
-                            <span class="proj-card-tech html" title="HTML"><i class="ri-html5-line"></i></span>
-                            <button type="button" class="proj-card-menu-btn" aria-label="Project actions" title="Project actions">
-                                <i class="ri-more-2-fill"></i>
-                            </button>
-                            <div class="proj-card-preview" aria-hidden="true">
-                                <i class="ri-layout-4-line"></i>
-                            </div>
-                        </div>
-                        <div class="proj-card-body">
-                            <div class="proj-card-title-row">
-                                <div class="proj-card-title-group">
-                                    <strong>Portfolio Website</strong>
-                                    <span class="proj-card-path">/portfolio-website</span>
-                                </div>
-                                <button type="button" class="proj-card-star is-starred" aria-label="Remove from starred" aria-pressed="true">
-                                    <i class="ri-star-fill"></i>
-                                </button>
-                            </div>
-                            <p class="proj-card-desc">Personal portfolio website built with HTML, CSS and JS.</p>
-                            <div class="proj-card-footer">
-                                <span class="proj-card-avatar">M</span>
-                                <span class="proj-card-updated">Updated 2 min ago</span>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="proj-card">
-                        <div class="proj-card-thumb">
-                            <span class="proj-card-tech react" title="React"><i class="ri-reactjs-line"></i></span>
-                            <button type="button" class="proj-card-menu-btn" aria-label="Project actions" title="Project actions">
-                                <i class="ri-more-2-fill"></i>
-                            </button>
-                            <div class="proj-card-preview" aria-hidden="true">
-                                <i class="ri-dashboard-3-line"></i>
-                            </div>
-                        </div>
-                        <div class="proj-card-body">
-                            <div class="proj-card-title-row">
-                                <div class="proj-card-title-group">
-                                    <strong>Admin Dashboard</strong>
-                                    <span class="proj-card-path">/admin-dashboard</span>
-                                </div>
-                                <button type="button" class="proj-card-star" aria-label="Add to starred" aria-pressed="false">
-                                    <i class="ri-star-line"></i>
-                                </button>
-                            </div>
-                            <p class="proj-card-desc">Analytics dashboard with charts, tables and dark mode.</p>
-                            <div class="proj-card-footer">
-                                <span class="proj-card-avatar">M</span>
-                                <span class="proj-card-updated">Updated 1 hour ago</span>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="proj-card">
-                        <div class="proj-card-thumb">
-                            <span class="proj-card-tech vue" title="Vue"><i class="ri-vuejs-line"></i></span>
-                            <button type="button" class="proj-card-menu-btn" aria-label="Project actions" title="Project actions">
-                                <i class="ri-more-2-fill"></i>
-                            </button>
-                            <div class="proj-card-preview" aria-hidden="true">
-                                <i class="ri-list-check-3"></i>
-                            </div>
-                        </div>
-                        <div class="proj-card-body">
-                            <div class="proj-card-title-row">
-                                <div class="proj-card-title-group">
-                                    <strong>Task Manager</strong>
-                                    <span class="proj-card-path">/task-manager</span>
-                                </div>
-                                <button type="button" class="proj-card-star" aria-label="Add to starred" aria-pressed="false">
-                                    <i class="ri-star-line"></i>
-                                </button>
-                            </div>
-                            <p class="proj-card-desc">Kanban-style task board with drag and drop columns.</p>
-                            <div class="proj-card-footer">
-                                <span class="proj-card-avatar">M</span>
-                                <span class="proj-card-updated">Updated yesterday</span>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="proj-card">
-                        <div class="proj-card-thumb">
-                            <span class="proj-card-tech js" title="JavaScript"><i class="ri-javascript-line"></i></span>
-                            <button type="button" class="proj-card-menu-btn" aria-label="Project actions" title="Project actions">
-                                <i class="ri-more-2-fill"></i>
-                            </button>
-                            <div class="proj-card-preview" aria-hidden="true">
-                                <i class="ri-store-2-line"></i>
-                            </div>
-                        </div>
-                        <div class="proj-card-body">
-                            <div class="proj-card-title-row">
-                                <div class="proj-card-title-group">
-                                    <strong>E-Commerce Store</strong>
-                                    <span class="proj-card-path">/ecommerce-store</span>
-                                </div>
-                                <button type="button" class="proj-card-star" aria-label="Add to starred" aria-pressed="false">
-                                    <i class="ri-star-line"></i>
-                                </button>
-                            </div>
-                            <p class="proj-card-desc">Storefront with cart, checkout flow and product filters.</p>
-                            <div class="proj-card-footer">
-                                <span class="proj-card-avatar">M</span>
-                                <span class="proj-card-updated">Updated 3 days ago</span>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="proj-card">
-                        <div class="proj-card-thumb">
-                            <span class="proj-card-tech react" title="React"><i class="ri-reactjs-line"></i></span>
-                            <button type="button" class="proj-card-menu-btn" aria-label="Project actions" title="Project actions">
-                                <i class="ri-more-2-fill"></i>
-                            </button>
-                            <div class="proj-card-preview" aria-hidden="true">
-                                <i class="ri-pie-chart-2-line"></i>
-                            </div>
-                        </div>
-                        <div class="proj-card-body">
-                            <div class="proj-card-title-row">
-                                <div class="proj-card-title-group">
-                                    <strong>CRM Dashboard</strong>
-                                    <span class="proj-card-path">/crm-dashboard</span>
-                                </div>
-                                <button type="button" class="proj-card-star is-starred" aria-label="Remove from starred" aria-pressed="true">
-                                    <i class="ri-star-fill"></i>
-                                </button>
-                            </div>
-                            <p class="proj-card-desc">Customer pipeline tracking with deal stages and notes.</p>
-                            <div class="proj-card-footer">
-                                <span class="proj-card-avatar">M</span>
-                                <span class="proj-card-updated">Updated 5 days ago</span>
-                            </div>
-                        </div>
-                    </article>
-
-                    <article class="proj-card">
-                        <div class="proj-card-thumb">
-                            <span class="proj-card-tech html" title="HTML"><i class="ri-html5-line"></i></span>
-                            <button type="button" class="proj-card-menu-btn" aria-label="Project actions" title="Project actions">
-                                <i class="ri-more-2-fill"></i>
-                            </button>
-                            <div class="proj-card-preview" aria-hidden="true">
-                                <i class="ri-rocket-2-line"></i>
-                            </div>
-                        </div>
-                        <div class="proj-card-body">
-                            <div class="proj-card-title-row">
-                                <div class="proj-card-title-group">
-                                    <strong>Landing Page</strong>
-                                    <span class="proj-card-path">/landing-page</span>
-                                </div>
-                                <button type="button" class="proj-card-star" aria-label="Add to starred" aria-pressed="false">
-                                    <i class="ri-star-line"></i>
-                                </button>
-                            </div>
-                            <p class="proj-card-desc">Marketing landing page with hero, pricing and FAQ sections.</p>
-                            <div class="proj-card-footer">
-                                <span class="proj-card-avatar">M</span>
-                                <span class="proj-card-updated">Updated 1 week ago</span>
-                            </div>
-                        </div>
-                    </article>
-
-                </div>
+                <div class="proj-grid" id="projectsGrid"></div>
 
                 <!-- =======================================
                 Empty State
-                =======================================
-                Hidden by default (the grid above already has cards).
-                Toggle this and hide #projectsGrid once real project data
-                determines the workspace has zero projects.
+                Shown by JS when there are no projects
                 ======================================= -->
                 <section class="proj-empty-state" id="projectsEmptyState" hidden>
                     <div class="proj-empty-icon">
