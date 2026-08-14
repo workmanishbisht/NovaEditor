@@ -1,0 +1,627 @@
+/* ==========================================
+   Profile Page Container
+========================================== */
+
+.profile-page {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 32px 36px 64px;
+}
+
+/* ==========================================
+   Buttons (page-local, mirrors dashboard.css
+   conventions — this page does not load
+   dashboard.css so these are defined here too)
+========================================== */
+
+.btn-primary,
+.pf-hero .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 42px;
+    padding: 0 18px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: var(--white-color);
+    border: 1px solid transparent;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-outline {
+    background: var(--surface);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.btn-outline:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ==========================================
+   Page Header
+========================================== */
+
+.pf-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+}
+
+.pf-hero-text h1 {
+    margin-bottom: 6px;
+    color: var(--text-primary);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.pf-hero-text p {
+    color: var(--text-secondary);
+    font-size: 14.5px;
+    line-height: 1.5;
+}
+
+/* ==========================================
+   Profile Summary Card
+========================================== */
+
+.pf-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding: 28px;
+    margin-bottom: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xs);
+}
+
+.pf-summary-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    min-width: 0;
+}
+
+.pf-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.pf-avatar {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border);
+}
+
+.pf-avatar-badge {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: var(--white-color);
+    border: 3px solid var(--surface);
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.pf-avatar-badge:hover {
+    background: var(--primary-hover);
+    transform: scale(1.05);
+}
+
+.pf-summary-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.pf-summary-info strong {
+    color: var(--text-primary);
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.pf-summary-username {
+    color: var(--primary);
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.pf-summary-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.pf-summary-meta i {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.pf-summary-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.pf-mini-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    min-width: 160px;
+}
+
+.pf-mini-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 17px;
+}
+
+.pf-mini-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.pf-mini-text small {
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.pf-mini-text strong {
+    color: var(--text-primary);
+    font-size: 14.5px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ==========================================
+   Info Cards (Personal / Workspace / Preferences)
+========================================== */
+
+.pf-grid-2col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.pf-card {
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xs);
+    min-width: 0;
+}
+
+.pf-card h3 {
+    margin-bottom: 12px;
+    color: var(--text-primary);
+    font-size: 15.5px;
+    font-weight: 700;
+}
+
+.pf-card-wide {
+    margin-bottom: 0;
+}
+
+.pf-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.pf-rows-2col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 16px;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 13px 8px;
+    border-top: 1px solid var(--border-subtle);
+    text-align: left;
+    min-width: 0;
+    transition: var(--transition);
+}
+
+.pf-rows > .info-row:first-child,
+.pf-rows-2col > .info-row:nth-child(-n+2) {
+    border-top: none;
+}
+
+button.info-row {
+    cursor: pointer;
+    border-radius: var(--radius-md);
+}
+
+button.info-row:hover {
+    background: var(--surface-secondary);
+}
+
+.info-row--readonly {
+    cursor: default;
+}
+
+.info-row-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: var(--surface-secondary);
+    color: var(--text-secondary);
+    font-size: 16px;
+}
+
+.info-row-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.info-row-text small {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.info-row-text strong {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.info-row-chevron {
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 18px;
+    transition: transform 0.18s ease, color 0.18s ease;
+}
+
+button.info-row:hover .info-row-chevron {
+    color: var(--primary);
+    transform: translateX(2px);
+}
+
+/* ==========================================
+   Modals (mirrors the app's existing
+   .nova-modal pattern for consistency)
+========================================== */
+
+body.nova-modal-open {
+    overflow: hidden;
+}
+
+.nova-modal {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+}
+
+.nova-modal[hidden] {
+    display: none !important;
+}
+
+.nova-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    cursor: pointer;
+}
+
+.nova-modal-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(480px, calc(100vw - 32px));
+    max-height: min(90vh, 640px);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.nova-modal.show .nova-modal-dialog {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.nova-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.nova-modal-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+}
+
+.nova-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nova-modal-close:hover {
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+}
+
+.nova-modal-body {
+    padding: var(--space-5);
+    overflow-y: auto;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.nova-modal-description {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+}
+
+.nova-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.nova-modal-footer .btn-outline,
+.nova-modal-footer .btn-primary {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+/* ==========================================
+   Modal Form Fields
+========================================== */
+
+.pf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pf-field label {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.pf-field input,
+.pf-field select {
+    height: 42px;
+    padding: 0 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.pf-field input:focus,
+.pf-field select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+.pf-field input:disabled {
+    background: var(--surface-secondary);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.pf-field-hint {
+    color: var(--text-muted);
+    font-size: 11.5px;
+}
+
+.pf-field-prefixed {
+    display: flex;
+    align-items: center;
+    height: 42px;
+    padding: 0 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.pf-field-prefixed:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+.pf-field-prefixed span {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-right: 2px;
+}
+
+.pf-field-prefixed input {
+    height: 100%;
+    border: none;
+    padding: 0;
+    background: transparent;
+}
+
+.pf-field-prefixed input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* ==========================================
+   Responsive
+========================================== */
+
+@media (max-width: 1300px) {
+    .profile-page {
+        padding: 28px 24px 56px;
+    }
+}
+
+@media (max-width: 992px) {
+    .pf-grid-2col {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pf-rows > .info-row:nth-child(1) {
+        border-top: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .profile-page {
+        padding: 24px 20px 48px;
+    }
+
+    .pf-hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .pf-summary {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 22px;
+    }
+
+    .pf-summary-right {
+        width: 100%;
+    }
+
+    .pf-mini-card {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pf-rows-2col {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pf-rows-2col > .info-row:nth-child(-n+2) {
+        border-top: 1px solid var(--border-subtle);
+    }
+
+    .pf-rows-2col > .info-row:first-child {
+        border-top: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-page {
+        padding: 20px 16px 40px;
+    }
+
+    .pf-summary-left {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    .pf-mini-card {
+        min-width: 0;
+    }
+}
