@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../assets/images/favicon/favicon.png">
+    <title>Profile - Nova Editor</title>
+
+    <!-- RemixIcon -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+    <!-- Css file link -->
+    <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/profile.css" />
+    <link rel="stylesheet" href="../css/toast.css">
+</head>
+
+<body data-page="profile">
+    <div class="app-shell">
+
+        <!-- Sidebar mounts here (existing component, reused as-is) -->
+        <div id="sidebarMount"></div>
+
+        <div class="app-main">
+
+            <!-- Header mounts here (existing component, reused as-is) -->
+            <div id="headerMount"></div>
+
+            <main class="profile-page" id="profileContent">
+
+                <!-- =======================================
+                Page Header
+                ======================================= -->
+                <section class="pf-hero">
+                    <div class="pf-hero-text">
+                        <h1>My Profile</h1>
+                        <p>View and manage your account details and preferences</p>
+                    </div>
+                    <button type="button" class="btn btn-outline" id="editProfileBtn">
+                        <i class="ri-pencil-line"></i>
+                        Edit Profile
+                    </button>
+                </section>
+
+                <!-- =======================================
+                Profile Summary Card
+                ======================================= -->
+                <section class="pf-summary">
+                    <div class="pf-summary-left">
+                        <div class="pf-avatar-wrap">
+                            <img id="profileAvatar" class="pf-avatar" src="../assets/images/avatar/default.png" alt="Profile photo">
+                            <button type="button" class="pf-avatar-badge" id="avatarEditBadge" aria-label="Change profile photo" title="Change profile photo">
+                                <i class="ri-camera-line"></i>
+                            </button>
+                        </div>
+                        <div class="pf-summary-info">
+                            <strong id="profileName">Loading...</strong>
+                            <span class="pf-summary-username" id="profileUsername">@...</span>
+                            <span class="pf-summary-meta">
+                                <i class="ri-mail-line"></i>
+                                <span id="profileEmail">—</span>
+                            </span>
+                            <span class="pf-summary-meta">
+                                <i class="ri-calendar-line"></i>
+                                <span id="profileMemberSince">Member since —</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="pf-summary-right">
+                        <div class="pf-mini-card">
+                            <span class="pf-mini-icon"><i class="ri-stack-line"></i></span>
+                            <div class="pf-mini-text">
+                                <small>Workspace</small>
+                                <strong id="profileWorkspaceValue">—</strong>
+                            </div>
+                        </div>
+                        <div class="pf-mini-card">
+                            <span class="pf-mini-icon"><i class="ri-briefcase-4-line"></i></span>
+                            <div class="pf-mini-text">
+                                <small>Role</small>
+                                <strong id="profileRoleValue">—</strong>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- =======================================
+                Personal Information + Workspace Information
+                ======================================= -->
+                <div class="pf-grid-2col">
+
+                    <section class="pf-card">
+                        <h3>Personal Information</h3>
+                        <div class="pf-rows">
+
+                            <button type="button" class="info-row" id="infoRowFullName">
+                                <span class="info-row-icon"><i class="ri-user-3-line"></i></span>
+                                <span class="info-row-text">
+                                    <small>Full Name</small>
+                                    <strong id="infoFullName">—</strong>
+                                </span>
+                                <i class="ri-arrow-right-s-line info-row-chevron"></i>
+                            </button>
+
+                            <div class="info-row info-row--readonly" id="infoRowEmail">
+                                <span class="info-row-icon"><i class="ri-mail-line"></i></span>
+                                <span class="info-row-text">
+                                    <small>Email Address</small>
+                                    <strong id="infoEmail">—</strong>
+                                </span>
+                            </div>
+
+                            <button type="button" class="info-row" id="infoRowUsername">
+                                <span class="info-row-icon"><i class="ri-at-line"></i></span>
+                                <span class="info-row-text">
+                                    <small>Username</small>
+                                    <strong id="infoUsername">—</strong>
+                                </span>
+                                <i class="ri-arrow-right-s-line info-row-chevron"></i>
+                            </button>
+
+                            <button type="button" class="info-row" id="infoRowLocation">
+                                <span class="info-row-icon"><i class="ri-map-pin-line"></i></span>
+                                <span class="info-row-text">
+                                    <small>Location</small>
+                                    <strong id="infoLocation">—</strong>
+                                </span>
+                                <i class="ri-arrow-right-s-line info-row-chevron"></i>
+                            </button>
+
+                            <button type="button" class="info-row" id="infoRowRole">
+                                <span class="info-row-icon"><i class="ri-briefcase-4-line"></i></span>
+                                <span class="info-row-text">
+                                    <small>Role</small>
+                                    <strong id="infoRole">—</strong>
+                                </span>
+                                <i class="ri-arrow-right-s-line info-row-chevron"></i>
+                            </button>
+
+                        </div>
+                    </section>
+
+                    <section class="pf-card">
+                        <h3>Workspace Information</h3>
+                        <div class="pf-rows">
+
+                            <div class="info-row info-row--readonly">
+                                <span class="info-row-icon"><i class="ri-stack-line"></i></span>
+                                <span class="info-row-text">
+                                    <small>Workspace Name</small>
+                                    <strong id="infoWorkspaceName">—</strong>
+                                </span>
+                            </div>
+
+                            <div class="info-row info-row--readonly">
+                                <span class="info-row-icon"><i class="ri-folder-3-line"></i></span>
+                                <span class="info-row-text">
+                                    <small>Default Project Name</small>
+                                    <strong id="infoDefaultProject">—</strong>
+                                </span>
+                            </div>
+
+                            <div class="info-row info-row--readonly">
+                                <span class="info-row-icon"><i class="ri-bar-chart-line"></i></span>
+                                <span class="info-row-text">
+                                    <small>Coding Experience</small>
+                                    <strong id="infoExperience">—</strong>
+                                </span>
+                            </div>
+
+                        </div>
+                    </section>
+
+                </div>
+
+                <!-- =======================================
+                Editor Preferences
+                ======================================= -->
+                <section class="pf-card pf-card-wide">
+                    <h3>Editor Preferences</h3>
+                    <div class="pf-rows pf-rows-2col">
+
+                        <button type="button" class="info-row" id="prefRowTheme">
+                            <span class="info-row-icon"><i class="ri-contrast-2-line"></i></span>
+                            <span class="info-row-text">
+                                <small>Theme</small>
+                                <strong id="prefTheme">System</strong>
+                            </span>
+                            <i class="ri-arrow-right-s-line info-row-chevron"></i>
+                        </button>
+
+                        <button type="button" class="info-row" id="prefRowLanguage">
+                            <span class="info-row-icon"><i class="ri-code-s-slash-line"></i></span>
+                            <span class="info-row-text">
+                                <small>Default Language</small>
+                                <strong id="prefLanguage">JavaScript</strong>
+                            </span>
+                            <i class="ri-arrow-right-s-line info-row-chevron"></i>
+                        </button>
+
+                        <button type="button" class="info-row" id="prefRowFontSize">
+                            <span class="info-row-icon"><i class="ri-font-size-2"></i></span>
+                            <span class="info-row-text">
+                                <small>Font Size</small>
+                                <strong id="prefFontSize">14 px</strong>
+                            </span>
+                            <i class="ri-arrow-right-s-line info-row-chevron"></i>
+                        </button>
+
+                        <button type="button" class="info-row" id="prefRowTabSize">
+                            <span class="info-row-icon"><i class="ri-space"></i></span>
+                            <span class="info-row-text">
+                                <small>Tab Size</small>
+                                <strong id="prefTabSize">2 Spaces</strong>
+                            </span>
+                            <i class="ri-arrow-right-s-line info-row-chevron"></i>
+                        </button>
+
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- =======================================
+    Edit Profile Modal
+    ======================================= -->
+    <div class="nova-modal" id="editProfileModal" hidden>
+        <div class="nova-modal-backdrop"></div>
+        <div class="nova-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="editProfileModalTitle">
+            <div class="nova-modal-header">
+                <h3 class="nova-modal-title" id="editProfileModalTitle">Edit Profile</h3>
+                <button type="button" class="nova-modal-close" data-modal-close aria-label="Close">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <form id="editProfileForm">
+                <div class="nova-modal-body">
+                    <p class="nova-modal-description">Update the details shown on your profile.</p>
+
+                    <div class="pf-field">
+                        <label for="editFullName">Full Name</label>
+                        <input type="text" id="editFullName" name="fullName" required maxlength="80" placeholder="Your full name">
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="editEmailReadonly">Email Address</label>
+                        <input type="email" id="editEmailReadonly" disabled>
+                        <small class="pf-field-hint">Contact support to change your email address.</small>
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="editUsername">Username</label>
+                        <div class="pf-field-prefixed">
+                            <span>@</span>
+                            <input type="text" id="editUsername" name="username" maxlength="30" placeholder="username">
+                        </div>
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="editLocation">Location</label>
+                        <input type="text" id="editLocation" name="location" maxlength="80" placeholder="City, State">
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="editRole">Role</label>
+                        <select id="editRole" name="role">
+                            <option value="Developer">Developer</option>
+                            <option value="Designer">Designer</option>
+                            <option value="Product Manager">Product Manager</option>
+                            <option value="Student">Student</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="editPhotoURL">Photo URL</label>
+                        <input type="url" id="editPhotoURL" name="photoURL" placeholder="https://...">
+                    </div>
+                </div>
+                <div class="nova-modal-footer">
+                    <button type="button" class="btn-outline" data-modal-close>Cancel</button>
+                    <button type="submit" class="btn-primary" id="saveProfileBtn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- =======================================
+    Edit Editor Preferences Modal
+    ======================================= -->
+    <div class="nova-modal" id="editPreferencesModal" hidden>
+        <div class="nova-modal-backdrop"></div>
+        <div class="nova-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="editPreferencesModalTitle">
+            <div class="nova-modal-header">
+                <h3 class="nova-modal-title" id="editPreferencesModalTitle">Editor Preferences</h3>
+                <button type="button" class="nova-modal-close" data-modal-close aria-label="Close">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <form id="editPreferencesForm">
+                <div class="nova-modal-body">
+                    <p class="nova-modal-description">These preferences apply across the code editor.</p>
+
+                    <div class="pf-field">
+                        <label for="editTheme">Theme</label>
+                        <select id="editTheme" name="theme">
+                            <option value="system">System</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="editLanguage">Default Language</label>
+                        <select id="editLanguage" name="defaultLanguage">
+                            <option value="javascript">JavaScript</option>
+                            <option value="typescript">TypeScript</option>
+                            <option value="python">Python</option>
+                            <option value="html">HTML</option>
+                            <option value="css">CSS</option>
+                        </select>
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="editFontSize">Font Size (px)</label>
+                        <input type="number" id="editFontSize" name="fontSize" min="10" max="24" step="1">
+                    </div>
+
+                    <div class="pf-field">
+                        <label for="editTabSize">Tab Size</label>
+                        <select id="editTabSize" name="tabSize">
+                            <option value="2">2 Spaces</option>
+                            <option value="4">4 Spaces</option>
+                            <option value="8">8 Spaces</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="nova-modal-footer">
+                    <button type="button" class="btn-outline" data-modal-close>Cancel</button>
+                    <button type="submit" class="btn-primary" id="savePreferencesBtn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- script file (existing/shared — not modified) -->
+    <script type="module" src="../components/toast.js"></script>
+    <script type="module" src="../js/layout.js"></script>
+    <script type="module" src="../js/profile.js"></script>
+
+</body>
+</html>
