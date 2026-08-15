@@ -481,14 +481,64 @@
     color: var(--text-primary);
 }
 
+/* Shared Header "New Project" button */
 .btn-new-project {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     height: 42px;
     padding: 0 18px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: var(--primary);
+    color: var(--white-color, #fff);
     font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.18s ease, color 0.18s ease,
+        box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .btn-new-project i {
     font-size: 17px;
+    color: inherit;
+    flex-shrink: 0;
+}
+
+.btn-new-project:hover {
+    background: var(--primary-hover, var(--primary));
+    color: var(--white-color, #fff);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+}
+
+.btn-new-project:active {
+    background: var(--primary-active, var(--primary-hover, var(--primary)));
+    color: var(--white-color, #fff);
+    transform: translateY(1px);
+    box-shadow: none;
+}
+
+.btn-new-project:focus {
+    outline: none;
+}
+
+.btn-new-project:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px var(--focus-ring, rgba(59, 130, 246, 0.35));
+}
+
+.btn-new-project:disabled,
+.btn-new-project[disabled],
+.btn-new-project.loading {
+    opacity: 0.65;
+    cursor: not-allowed;
+    pointer-events: none;
+    transform: none;
+    box-shadow: none;
 }
 
 /* ==========================================

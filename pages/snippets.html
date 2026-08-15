@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../assets/images/favicon/favicon.png">
+    <title>Snippets - Nova Editor</title>
+    <!-- RemixIcon -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+
+    <!-- Css file link -->
+    <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/snippets.css" />
+    <link rel="stylesheet" href="../css/projectmodal.css" />
+    <link rel="stylesheet" href="../css/toast.css">
+</head>
+
+<body data-page="snippets">
+    <div class="app-shell">
+
+        <div id="sidebarMount"></div>
+
+        <div class="app-main">
+
+            <div id="headerMount"></div>
+
+            <!-- Snippets page -->
+            <main class="snippets-page" id="snippetsPage">
+
+                <!-- Header -->
+                <div class="snippets-header">
+                    <div class="snippets-header-text">
+                        <h1 class="snippets-title">Snippets</h1>
+                        <p class="snippets-subtitle">
+                            Store, organize and reuse code snippets to save time and boost productivity.
+                        </p>
+                    </div>
+                    <div class="snippets-header-actions">
+                        <button type="button" class="snippets-btn snippets-btn-outline" id="importSnippetBtn"
+                            data-import-snippet>
+                            <i class="ri-upload-2-line"></i>
+                            <span>Import Snippet</span>
+                        </button>
+                        <div class="view-toggle" role="group" aria-label="View mode">
+                            <button type="button" class="view-toggle-btn is-active" id="viewGridBtn" data-view="grid"
+                                aria-pressed="true" title="Grid view">
+                                <i class="ri-grid-fill"></i>
+                            </button>
+                            <button type="button" class="view-toggle-btn" id="viewListBtn" data-view="list"
+                                aria-pressed="false" title="List view">
+                                <i class="ri-list-unordered"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search -->
+                <div class="snippets-search-wrap">
+                    <div class="snippets-search">
+                        <i class="ri-search-line"></i>
+                        <input type="text" id="snippetsSearchInput" placeholder="Search snippets..."
+                            data-snippets-search autocomplete="off">
+                        <span class="search-kbd" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+                    </div>
+                </div>
+
+                <!-- Filter tabs -->
+                <div class="snippets-tabs" role="tablist" aria-label="Snippet filters">
+                    <button type="button" class="snippets-tab is-active" role="tab" aria-selected="true"
+                        data-filter-tab="all" id="tabAll">
+                        All Snippets
+                    </button>
+                    <button type="button" class="snippets-tab" role="tab" aria-selected="false" data-filter-tab="mine"
+                        id="tabMine">
+                        My Snippets
+                    </button>
+                    <button type="button" class="snippets-tab" role="tab" aria-selected="false"
+                        data-filter-tab="favorites" id="tabFavorites">
+                        Favorites
+                    </button>
+                    <button type="button" class="snippets-tab" role="tab" aria-selected="false" data-filter-tab="shared"
+                        id="tabShared">
+                        Shared with me
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="snippets-body">
+
+                    <!-- Filters -->
+                    <aside class="snippets-filters" id="snippetsFilters" aria-label="Snippet filters">
+                        <div class="filter-card">
+
+                            <!-- Categories -->
+                            <div class="filter-section">
+                                <h3 class="filter-section-title">Categories</h3>
+                                <ul class="filter-list" data-filter-group="category" id="snippetsCategoryList">
+                                    <!-- Populated by JS -->
+                                </ul>
+                            </div>
+
+                            <div class="filter-divider"></div>
+
+                            <!-- Tags -->
+                            <div class="filter-section">
+                                <h3 class="filter-section-title">Tags</h3>
+                                <div class="filter-tags" data-filter-group="tag" id="snippetsTagList">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+
+                            <div class="filter-divider"></div>
+
+                            <!-- Collections -->
+                            <div class="filter-section">
+                                <h3 class="filter-section-title">Collections</h3>
+                                <ul class="filter-list" data-filter-group="collection" id="snippetsCollectionList">
+                                    <!-- Populated by JS -->
+                                </ul>
+                            </div>
+
+                        </div>
+                    </aside>
+
+                    <!-- Content -->
+                    <section class="snippets-content" aria-label="Snippet list">
+                        <div class="snippets-toolbar">
+                            <p class="snippets-result-count" id="snippetsResultCount">
+                                Showing <strong>0</strong> snippets
+                            </p>
+                            <div class="snippets-sort">
+                                <label for="snippetsSort" class="visually-hidden">Sort by</label>
+                                <select id="snippetsSort" data-snippets-sort>
+                                    <option value="updated">Last updated</option>
+                                    <option value="name">Name</option>
+                                    <option value="created">Date created</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Grid (populated by JS) -->
+                        <div class="snippets-grid is-grid" id="snippetsGrid" data-view-mode="grid"></div>
+
+                        <!-- Empty state -->
+                        <div class="snippets-empty hidden" id="snippetsEmpty">
+                            <div class="snippets-empty-icon">
+                                <i class="ri-code-s-slash-line"></i>
+                            </div>
+                            <h3>No snippets found</h3>
+                            <p>Try adjusting your filters or create a new snippet.</p>
+                            <button type="button" class="snippets-btn snippets-btn-primary" data-new-snippet>
+                                <i class="ri-add-line"></i>
+                                <span>New Snippet</span>
+                            </button>
+                        </div>
+                    </section>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="projectModalMount"></div>
+
+    <!-- script file  -->
+    <script type="module" src="../components/toast.js"></script>
+    <script type="module" src="../js/layout.js"></script>
+    <script type="module" src="../js/snippets.js"></script>
+
+</body>
+
+</html>

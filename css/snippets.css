@@ -1,0 +1,1220 @@
+/* ==========================================
+   Nova Editor — Snippets Module
+   Premium SaaS UI · theme-aware · self-contained buttons
+
+   NOTE ON SCOPING
+   ----------------
+   Every rule in this file is namespaced under `.snippets-page`
+   (the module's own <main> root). The shared Header and Sidebar
+   live in #headerMount / #sidebarMount, siblings of `.snippets-page`,
+   so nothing in here can leak onto them or override their styling —
+   this file only ever paints inside the Snippets module itself.
+========================================== */
+
+/* ---------- Page shell ---------- */
+.snippets-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: 32px 36px 64px;
+    min-height: calc(100vh - var(--header-height, 72px));
+    max-width: 1440px;
+    margin-inline: auto;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.snippets-page * {
+    box-sizing: border-box;
+}
+
+/* ---------- Local button system (avoids global conflicts) ---------- */
+.snippets-page .snippets-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 20px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: var(--font-semibold);
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        background-color 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
+}
+
+.snippets-page .snippets-btn i {
+    font-size: 17px;
+    flex-shrink: 0;
+}
+
+/* Primary — solid Nova blue */
+.snippets-page .snippets-btn-primary {
+    background: var(--primary);
+    border: 1px solid var(--primary);
+    color: var(--white-color);
+    box-shadow: var(--nav-active-shadow);
+}
+
+.snippets-page .snippets-btn-primary:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: var(--white-color);
+    transform: translateY(-1px);
+}
+
+.snippets-page .snippets-btn-primary:active {
+    transform: translateY(0);
+}
+
+/* Outline — blue border, transparent fill */
+.snippets-page .snippets-btn-outline {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-xs);
+}
+
+.snippets-page .snippets-btn-outline:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ---------- Page header ---------- */
+.snippets-page .snippets-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.snippets-page .snippets-header-text {
+    min-width: 0;
+    flex: 1 1 280px;
+}
+
+.snippets-page .snippets-title {
+    margin: 0 0 6px;
+    color: var(--text-primary);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.snippets-page .snippets-subtitle {
+    margin: 0;
+    max-width: 520px;
+    color: var(--text-secondary);
+    font-size: 14.5px;
+    line-height: 1.5;
+}
+
+.snippets-page .snippets-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+/* View toggle (grid / list) */
+.snippets-page .view-toggle {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.snippets-page .view-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 34px;
+    border-radius: calc(var(--radius-sm) - 2px);
+    color: var(--text-muted);
+    font-size: 17px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.snippets-page .view-toggle-btn:hover {
+    color: var(--text-primary);
+    background: var(--surface);
+}
+
+.snippets-page .view-toggle-btn.is-active {
+    background: var(--surface);
+    color: var(--primary);
+    box-shadow: var(--shadow-xs);
+}
+
+.snippets-page .view-toggle-btn.is-active i {
+    color: var(--primary);
+}
+
+/* ---------- Search ---------- */
+.snippets-page .snippets-search-wrap {
+    width: 100%;
+}
+
+.snippets-page .snippets-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 420px;
+    height: 46px;
+    padding: 0 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        background-color 0.18s ease;
+}
+
+.snippets-page .snippets-search:hover {
+    border-color: var(--border-hover);
+}
+
+.snippets-page .snippets-search:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--focus-ring);
+    background: var(--surface);
+}
+
+.snippets-page .snippets-search > i {
+    font-size: 17px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.snippets-page .snippets-search input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.snippets-page .snippets-search input::placeholder {
+    color: var(--text-muted);
+}
+
+.snippets-page .snippets-search input:focus,
+.snippets-page .snippets-search input:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
+.snippets-page .snippets-search .search-kbd {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.snippets-page .snippets-search .search-kbd kbd {
+    padding: 3px 7px;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: inherit;
+    font-weight: 600;
+}
+
+/* ---------- Filter tabs ---------- */
+.snippets-page .snippets-tabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.snippets-page .snippets-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.snippets-page .snippets-tab {
+    flex-shrink: 0;
+    height: 38px;
+    padding: 0 16px;
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: var(--font-medium);
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.snippets-page .snippets-tab:hover {
+    color: var(--text-primary);
+    background: var(--surface);
+}
+
+.snippets-page .snippets-tab.is-active {
+    background: var(--primary);
+    color: var(--white-color);
+    font-weight: var(--font-semibold);
+    box-shadow: var(--nav-active-shadow);
+}
+
+.snippets-page .snippets-tab.is-active:hover {
+    background: var(--primary-hover);
+    color: var(--white-color);
+}
+
+/* ---------- Two-column body ---------- */
+.snippets-page .snippets-body {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    gap: var(--space-6);
+    align-items: start;
+    min-width: 0;
+}
+
+/* ---------- Left filters card ---------- */
+.snippets-page .snippets-filters {
+    position: sticky;
+    top: calc(var(--header-height, 72px) + var(--space-4));
+    min-width: 0;
+}
+
+.snippets-page .filter-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    box-shadow: var(--shadow-xs);
+}
+
+.snippets-page .filter-section-title {
+    margin: 0 0 var(--space-3);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: var(--font-bold);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.snippets-page .filter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.snippets-page .filter-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: var(--font-medium);
+    text-align: left;
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.snippets-page .filter-item i {
+    font-size: 16px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: color 0.15s ease;
+}
+
+.snippets-page .filter-item:hover {
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+}
+
+.snippets-page .filter-item:hover i {
+    color: var(--text-primary);
+}
+
+.snippets-page .filter-item.is-active {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.snippets-page .filter-item.is-active i {
+    color: var(--primary);
+}
+
+.snippets-page .filter-item-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.snippets-page .filter-count {
+    flex-shrink: 0;
+    min-width: 22px;
+    padding: 1px 6px;
+    background: var(--surface-secondary);
+    border-radius: var(--radius-full);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: var(--font-semibold);
+    text-align: center;
+}
+
+.snippets-page .filter-item.is-active .filter-count {
+    background: rgba(37, 99, 235, 0.18);
+    color: var(--primary);
+}
+
+.snippets-page .filter-divider {
+    height: 1px;
+    margin: var(--space-4) 0;
+    background: var(--border-subtle);
+}
+
+/* Tags */
+.snippets-page .filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.snippets-page .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 12px;
+    background: var(--surface-secondary);
+    border: 1px solid transparent;
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.snippets-page .tag-chip:hover {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text-primary);
+}
+
+.snippets-page .tag-chip.is-active {
+    background: var(--primary-light);
+    border-color: transparent;
+    color: var(--primary);
+}
+
+/* ---------- Right content ---------- */
+.snippets-page .snippets-content {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.snippets-page .snippets-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.snippets-page .snippets-result-count {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+}
+
+.snippets-page .snippets-result-count strong {
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+}
+
+.snippets-page .snippets-sort select {
+    height: 38px;
+    padding: 0 32px 0 12px;
+    background-color: var(--surface);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    appearance: none;
+    max-width: 100%;
+    transition: border-color 0.15s ease;
+}
+
+.snippets-page .snippets-sort select:hover,
+.snippets-page .snippets-sort select:focus {
+    border-color: var(--border-hover);
+    outline: none;
+}
+
+/* ---------- Snippet grid / list ---------- */
+.snippets-page .snippets-grid {
+    display: grid;
+    gap: 20px;
+    min-width: 0;
+}
+
+.snippets-page .snippets-grid.is-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.snippets-page .snippets-grid.is-list {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.snippets-page .snippets-grid.is-list .snippet-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "header header"
+        "meta meta"
+        "code code"
+        "footer footer";
+}
+
+.snippets-page .snippets-grid.is-list .snippet-card-header {
+    grid-area: header;
+}
+
+.snippets-page .snippets-grid.is-list .snippet-card-meta {
+    grid-area: meta;
+}
+
+.snippets-page .snippets-grid.is-list .snippet-code-preview {
+    grid-area: code;
+    max-height: 112px;
+}
+
+.snippets-page .snippets-grid.is-list .snippet-card-footer {
+    grid-area: footer;
+}
+
+/* ---------- Snippet card ---------- */
+.snippets-page .snippet-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-xs);
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.snippets-page .snippet-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.snippets-page .snippet-card-header {
+    padding: var(--space-4) var(--space-4) var(--space-3);
+}
+
+.snippets-page .snippet-card-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-bottom: 6px;
+}
+
+.snippets-page .snippet-card-title {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: var(--font-semibold);
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.snippets-page .snippet-fav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    transition:
+        color 0.15s ease,
+        background-color 0.15s ease;
+}
+
+.snippets-page .snippet-fav-btn:hover {
+    background: var(--surface-secondary);
+    color: var(--warning);
+}
+
+.snippets-page .snippet-fav-btn.is-favorited {
+    color: var(--warning);
+}
+
+.snippets-page .snippet-card-desc {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Meta row */
+.snippets-page .snippet-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 0 var(--space-4) var(--space-3);
+    flex-wrap: wrap;
+}
+
+.snippets-page .snippet-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+}
+
+.snippets-page .tech-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: var(--font-semibold);
+    letter-spacing: 0.02em;
+}
+
+.snippets-page .tech-html {
+    background: rgba(234, 88, 12, 0.12);
+    color: #c2410c;
+}
+
+.snippets-page .tech-css {
+    background: rgba(37, 99, 235, 0.12);
+    color: #1d4ed8;
+}
+
+.snippets-page .tech-js {
+    background: rgba(202, 138, 4, 0.14);
+    color: #a16207;
+}
+
+.snippets-page .tech-react {
+    background: rgba(14, 165, 233, 0.12);
+    color: #0284c7;
+}
+
+.snippets-page .tech-node {
+    background: rgba(22, 163, 74, 0.12);
+    color: #15803d;
+}
+
+.snippets-page .snippet-meta-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.snippets-page .lang-badge {
+    padding: 3px 8px;
+    background: var(--surface-secondary);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: var(--font-semibold);
+    font-family: var(--code-font);
+}
+
+.snippets-page .line-count {
+    color: var(--text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* Code preview — always dark editor surface, horizontal scroll allowed INSIDE */
+.snippets-page .snippet-code-preview {
+    margin: 0 var(--space-4);
+    padding: 12px 14px;
+    background: #0f172a;
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: 140px;
+    scrollbar-width: thin;
+}
+
+.snippets-page .snippet-code-preview pre {
+    margin: 0;
+}
+
+.snippets-page .snippet-code-preview code {
+    display: block;
+    width: max-content;
+    min-width: 100%;
+    color: #e2e8f0;
+    font-family: var(--code-font);
+    font-size: 12px;
+    line-height: 1.55;
+    white-space: pre;
+}
+
+/* Footer */
+.snippets-page .snippet-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-top: auto;
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+    flex-wrap: wrap;
+}
+
+.snippets-page .snippet-author {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.snippets-page .snippet-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.snippets-page .snippet-author-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.snippets-page .snippet-author-name {
+    color: var(--text-primary);
+    font-size: 12.5px;
+    font-weight: var(--font-semibold);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.snippets-page .snippet-updated {
+    color: var(--text-muted);
+    font-size: 11.5px;
+    white-space: nowrap;
+}
+
+.snippets-page .snippet-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.snippets-page .snippet-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.snippets-page .snippet-action-btn:hover {
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+}
+
+.snippets-page .snippet-action-btn[data-copy-snippet]:hover {
+    color: var(--primary);
+}
+
+/* ---------- Empty state ---------- */
+.snippets-page .snippets-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 24px;
+    text-align: center;
+    background: var(--surface-secondary);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-xl);
+}
+
+.snippets-page .snippets-empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    margin-bottom: var(--space-4);
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 26px;
+}
+
+.snippets-page .snippets-empty h3 {
+    margin: 0 0 var(--space-2);
+    color: var(--text-primary);
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.snippets-page .snippets-empty p {
+    margin: 0 0 var(--space-5);
+    color: var(--text-muted);
+    font-size: 13.5px;
+    line-height: 1.6;
+    max-width: 320px;
+}
+
+/* Utility */
+.snippets-page .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ==========================================
+   Dark theme refinements (scoped to module)
+========================================== */
+html[data-theme="dark"] .snippets-page .snippet-code-preview {
+    background: #020617;
+    border: 1px solid var(--border);
+}
+
+html[data-theme="dark"] .snippets-page .tech-html {
+    background: rgba(234, 88, 12, 0.22);
+    color: #fdba74;
+}
+
+html[data-theme="dark"] .snippets-page .tech-css {
+    background: rgba(37, 99, 235, 0.22);
+    color: #93c5fd;
+}
+
+html[data-theme="dark"] .snippets-page .tech-js {
+    background: rgba(202, 138, 4, 0.24);
+    color: #fde047;
+}
+
+html[data-theme="dark"] .snippets-page .tech-react {
+    background: rgba(14, 165, 233, 0.22);
+    color: #7dd3fc;
+}
+
+html[data-theme="dark"] .snippets-page .tech-node {
+    background: rgba(22, 163, 74, 0.22);
+    color: #86efac;
+}
+
+html[data-theme="dark"] .snippets-page .snippets-tab:hover:not(.is-active) {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+html[data-theme="dark"] .snippets-page .filter-item.is-active .filter-count {
+    background: rgba(37, 99, 235, 0.28);
+}
+
+html[data-theme="dark"] .snippets-page .snippets-btn-outline {
+    background: var(--surface);
+    border-color: var(--border);
+}
+
+html[data-theme="dark"] .snippets-page .snippets-btn-outline:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: #93c5fd;
+}
+
+html[data-theme="dark"] .snippets-page .snippets-empty {
+    background: var(--surface-secondary);
+}
+
+/* ==========================================
+   Responsive
+   Verified at: 1440 / 1280 / 1024 / 768 / 600 / 480 / 390 / 360
+========================================== */
+
+/* ----- ≤1300px: tighten side padding, keep 3-col as long as it fits ----- */
+@media (max-width: 1300px) {
+    .snippets-page {
+        padding: 28px 24px 56px;
+    }
+}
+
+/* ----- ≤1280px: drop to 2-col grid, narrower filter rail ----- */
+@media (max-width: 1280px) {
+    .snippets-page .snippets-grid.is-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .snippets-page .snippets-body {
+        grid-template-columns: 216px minmax(0, 1fr);
+        gap: 20px;
+    }
+}
+
+/* ----- ≤1100px: compact filter card padding ----- */
+@media (max-width: 1100px) {
+    .snippets-page .filter-card {
+        padding: var(--space-4);
+    }
+}
+
+/* ----- ≤1024px / tablet: filters become a horizontal row above content ----- */
+@media (max-width: 1024px) {
+    .snippets-page {
+        padding: 24px 20px 48px;
+    }
+
+    .snippets-page .snippets-body {
+        grid-template-columns: 1fr;
+    }
+
+    .snippets-page .snippets-filters {
+        position: static;
+    }
+
+    .snippets-page .filter-card {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: var(--space-4);
+        padding: var(--space-4);
+    }
+
+    .snippets-page .filter-section {
+        flex: 1 1 200px;
+        min-width: 180px;
+    }
+
+    .snippets-page .filter-divider {
+        display: none;
+    }
+
+    .snippets-page .snippets-title {
+        font-size: 24px;
+    }
+}
+
+/* ----- ≤768px: mobile layout begins ----- */
+@media (max-width: 768px) {
+    .snippets-page {
+        padding: 20px 16px 40px;
+        gap: 20px;
+    }
+
+    /* Page header — compact, no dead vertical space, actions in a clean row */
+    .snippets-page .snippets-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .snippets-page .snippets-title {
+        font-size: 21px;
+    }
+
+    .snippets-page .snippets-subtitle {
+        font-size: 13px;
+        max-width: none;
+    }
+
+    .snippets-page .snippets-header-actions {
+        width: 100%;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .snippets-page .snippets-btn-outline {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .snippets-page .view-toggle {
+        flex-shrink: 0;
+    }
+
+    /* Search — full width, comfortable touch target */
+    .snippets-page .snippets-search {
+        max-width: none;
+        width: 100%;
+        height: 46px;
+    }
+
+    .snippets-page .snippets-search .search-kbd {
+        display: none;
+    }
+
+    /* Tabs — true horizontal scroll, no stretching/wrapping */
+    .snippets-page .snippets-tabs {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .snippets-page .snippets-tab {
+        flex-shrink: 0;
+    }
+
+    /* Filters — clean stacked full-width section, wraps instead of scrolling */
+    .snippets-page .filter-card {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .snippets-page .filter-section {
+        flex: none;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .snippets-page .filter-section + .filter-section {
+        margin-top: var(--space-4);
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--border-subtle);
+    }
+
+    .snippets-page .filter-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .snippets-page .filter-item {
+        flex-shrink: 0;
+        width: auto;
+        white-space: nowrap;
+    }
+
+    .snippets-page .filter-tags {
+        flex-wrap: wrap;
+    }
+
+    /* Toolbar / sort — align naturally on mobile */
+    .snippets-page .snippets-toolbar {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .snippets-page .snippets-sort select {
+        min-width: 0;
+    }
+
+    /* Cards — one per row, full width */
+    .snippets-page .snippets-grid.is-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .snippets-page .snippet-code-preview {
+        max-height: 108px;
+    }
+
+    .snippets-page .snippet-code-preview code {
+        font-size: 11.5px;
+    }
+
+    /* List view stacks cleanly too — footer wraps instead of overflowing */
+    .snippets-page .snippets-grid.is-list .snippet-card-footer {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+}
+
+/* ----- ≤600px: extra breathing room fixes for mid-small phones ----- */
+@media (max-width: 600px) {
+    .snippets-page .snippets-header-actions {
+        flex-wrap: wrap;
+    }
+
+    .snippets-page .snippet-card-meta {
+        gap: 8px;
+    }
+}
+
+/* ----- ≤480px: small phones ----- */
+@media (max-width: 480px) {
+    .snippets-page {
+        padding: 16px 12px 32px;
+    }
+
+    .snippets-page .snippets-title {
+        font-size: 19px;
+    }
+
+    .snippets-page .snippets-subtitle {
+        font-size: 12.5px;
+    }
+
+    /* Import Snippet collapses to an icon-only touch target */
+    .snippets-page .snippets-btn-outline span {
+        display: none;
+    }
+
+    .snippets-page .snippets-btn-outline {
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        flex: 0 0 auto;
+    }
+
+    .snippets-page .snippets-tab {
+        padding: 0 13px;
+        font-size: 12.5px;
+    }
+
+    .snippets-page .snippet-card-header,
+    .snippets-page .snippet-card-meta,
+    .snippets-page .snippet-card-footer {
+        padding-left: var(--space-3);
+        padding-right: var(--space-3);
+    }
+
+    .snippets-page .snippet-code-preview {
+        margin-left: var(--space-3);
+        margin-right: var(--space-3);
+    }
+
+    .snippets-page .snippet-card-footer {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    .snippets-page .snippets-empty {
+        padding: 44px 16px;
+    }
+}
+
+/* ----- ≤390px: very small phones (iPhone SE / mini widths) ----- */
+@media (max-width: 390px) {
+    .snippets-page {
+        padding: 14px 10px 28px;
+        gap: 16px;
+    }
+
+    .snippets-page .snippets-search {
+        height: 44px;
+        padding: 0 12px;
+    }
+
+    .snippets-page .snippets-tab {
+        padding: 0 11px;
+        height: 36px;
+        font-size: 12px;
+    }
+
+    .snippets-page .snippet-card-title {
+        font-size: 14px;
+    }
+
+    .snippets-page .snippet-badges {
+        gap: 4px;
+    }
+
+    .snippets-page .tech-badge {
+        padding: 2px 7px;
+        font-size: 10px;
+    }
+}
