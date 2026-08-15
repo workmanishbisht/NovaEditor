@@ -1,8 +1,5 @@
 /* ==========================================
    NOVA EDITOR — PROFILE.JS
-   Reuses window.NovaLayout (from layout.js) for
-   currentUser / userData / currentWorkspace so
-   auth + Firestore wiring is not duplicated here.
 ========================================== */
 import { showToast } from "../components/toast.js";
 
@@ -11,19 +8,60 @@ import { showToast } from "../components/toast.js";
 ========================================== */
 const MODULE_URL = new URL(".", import.meta.url);
 const PROJECT_ROOT = new URL("../", MODULE_URL);
-const DEFAULT_AVATAR = new URL("assets/images/avatar/default.png", PROJECT_ROOT).href;
-const MODAL_CLOSE_ANIMATION_MS = 200;
+const CONFIG = {
+    DEFAULT_AVATAR: new URL("assets/images/avatar/default.png", PROJECT_ROOT).href,
+    THEME_STORAGE_KEY: "novaeditor:theme",
+    LANGUAGE_LABELS: {
+        javascript: "JavaScript",
+        typescript: "TypeScript",
+        python: "Python",
+        html: "HTML",
+        css: "CSS",
+    },
+    THEME_LABELS: {
+        system: "System",
+        light: "Light",
+        dark: "Dark",
+    },
+    DEFAULTS: {
+        theme: "system",
+        defaultLanguage: "javascript",
+        fontSize: 14,
+        tabSize: "2",
+    },
+};
 
 /* ==========================================
-   DEPENDENCIES
+   STATE
 ========================================== */
-let firestore = {};
-async function loadFirestore() {
+const STATE = {
+    currentUser: null,
+    userData: null,
+    currentWorkspace: null,
+    editorPrefs: null,
+    ready: false,
+};
+
+/* ==========================================
+   DEPENDENCIES (Firebase — same modules
+   layout.js already relies on)
+========================================== */
+const deps = {
+    auth: {},
+    firestore: {},
+};
+async function loadDependencies() {
     try {
-        firestore = await import("../firebase/firestore.js");
+        deps.auth = await import("../firebase/auth.js");
     } catch (error) {
-        console.error("[Profile] Failed to load firebase/firestore.js:", error);
-        firestore = {};
+        console.error("[NovaProfile] Failed to load firebase/auth.js:", error);
+        deps.auth = {};
+    }
+    try {
+        deps.firestore = await import("../firebase/firestore.js");
+    } catch (error) {
+        console.error("[NovaProfile] Failed to load firebase/firestore.js:", error);
+        deps.firestore = {};
     }
 }
 
@@ -34,341 +72,463 @@ function notify(message, type = "info") {
     if (typeof showToast === "function") {
         showToast(message, type);
     } else {
-        console.warn(`[Profile] showToast unavailable — ${type}: ${message}`);
+        console.warn(`[NovaProfile] showToast unavailable — ${type}: ${message}`);
+    }
+}
+async function safeCall(fn, fnName, ...args) {
+    if (typeof fn !== "function") {
+        console.error(`[NovaProfile] "${fnName}" is not exported by the expected module.`);
+        return undefined;
+    }
+    try {
+        return await fn(...args);
+    } catch (error) {
+        console.error(`[NovaProfile] "${fnName}" threw an error:`, error);
+        return undefined;
     }
 }
 function qs(selector, scope = document) {
     return scope.querySelector(selector);
 }
-function setText(id, value, fallback = "—") {
-    const el = document.getElementById(id);
+function setText(selector, value, fallback = "—") {
+    const el = qs(selector);
     if (el) el.textContent = value || fallback;
 }
-function formatMemberSince(value) {
+
+/* ==========================================
+   FORMATTERS
+========================================== */
+function toDateSafe(raw) {
+    if (!raw) return null;
+    if (typeof raw.toDate === "function") return raw.toDate();
+    if (typeof raw.seconds === "number") return new Date(raw.seconds * 1000);
+    const parsed = new Date(raw);
+    return isNaN(parsed.getTime()) ? null : parsed;
+}
+function formatMemberSince() {
+    const date =
+        toDateSafe(STATE.userData?.createdAt) ||
+        toDateSafe(STATE.currentUser?.metadata?.creationTime);
+    if (!date) return "Member since —";
+    const formatted = date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+    });
+    return `Member since ${formatted}`;
+}
+function languageLabel(value) {
     if (!value) return "—";
-    const date = typeof value.toDate === "function" ? value.toDate() : new Date(value);
-    if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+    return CONFIG.LANGUAGE_LABELS[value] || value;
+}
+function themeLabel(value) {
+    if (!value) return "System";
+    return CONFIG.THEME_LABELS[value] || value;
 }
 
 /* ==========================================
-   PAGE STATE
+   POPULATE — SUMMARY
 ========================================== */
-const PAGE_STATE = {
-    currentUser: null,
-    userData: null,
-    currentWorkspace: null,
-    preferences: null,
-};
+function populateSummary() {
+    const user = STATE.currentUser;
+    const data = STATE.userData;
+
+    const displayName = data?.displayName || user?.displayName || "User";
+    const username = data?.username ? `@${data.username}` : "@—";
+    const email = data?.email || user?.email || "—";
+    const photoURL = data?.photoURL || user?.photoURL || CONFIG.DEFAULT_AVATAR;
+
+    setText("#profileName", displayName, "User");
+    setText("#profileUsername", username, "@—");
+    setText("#profileEmail", email);
+    setText("#profileMemberSince", formatMemberSince(), "Member since —");
+
+    const avatar = qs("#profileAvatar");
+    if (avatar) {
+        avatar.src = photoURL;
+        avatar.onerror = () => {
+            avatar.onerror = null;
+            avatar.src = CONFIG.DEFAULT_AVATAR;
+        };
+    }
+
+    const workspaceName =
+        STATE.currentWorkspace?.workspaceName || STATE.currentWorkspace?.name || "—";
+    setText("#profileWorkspaceValue", workspaceName);
+    setText("#profileRoleValue", data?.role || "—");
+}
 
 /* ==========================================
-   RENDER
+   POPULATE — PERSONAL INFORMATION
 ========================================== */
-function renderSummary() {
-    const { currentUser, userData, currentWorkspace } = PAGE_STATE;
-    const displayName = userData?.displayName || currentUser?.displayName || "User";
-    const avatarUrl = userData?.photoURL || currentUser?.photoURL || DEFAULT_AVATAR;
+function populatePersonalInfo() {
+    const user = STATE.currentUser;
+    const data = STATE.userData;
 
-    const avatarEl = qs("#profileAvatar");
-    if (avatarEl) avatarEl.src = avatarUrl;
+    setText("#infoFullName", data?.displayName || user?.displayName || "—");
+    setText("#infoEmail", data?.email || user?.email || "—");
+    setText("#infoUsername", data?.username ? `@${data.username}` : "—");
+    setText("#infoLocation", data?.location || "—");
+    setText("#infoRole", data?.role || "—");
+}
 
-    setText("profileName", displayName, "User");
-    setText("profileUsername", userData?.username ? `@${userData.username}` : "@—");
-    setText("profileEmail", currentUser?.email || userData?.email);
+/* ==========================================
+   POPULATE — WORKSPACE INFORMATION
+========================================== */
+function populateWorkspaceInfo() {
+    const workspace = STATE.currentWorkspace;
 
-    const memberSinceEl = qs("#profileMemberSince");
-    if (memberSinceEl) memberSinceEl.textContent = `Member since ${formatMemberSince(userData?.createdAt)}`;
+    setText("#infoWorkspaceName", workspace?.workspaceName || workspace?.name || "—");
+    setText("#infoDefaultProject", workspace?.defaultProject || "—");
+    setText("#infoExperience", workspace?.experience || "—");
+}
 
-    setText("profileWorkspaceValue", currentWorkspace?.workspaceName || currentWorkspace?.name);
-    setText("profileRoleValue", userData?.role);
-}
-function renderPersonalInfo() {
-    const { currentUser, userData } = PAGE_STATE;
-    setText("infoFullName", userData?.displayName || currentUser?.displayName);
-    setText("infoEmail", currentUser?.email || userData?.email);
-    setText("infoUsername", userData?.username ? `@${userData.username}` : null);
-    setText("infoLocation", userData?.location);
-    setText("infoRole", userData?.role);
-}
-function renderWorkspaceInfo() {
-    const { currentWorkspace } = PAGE_STATE;
-    setText("infoWorkspaceName", currentWorkspace?.workspaceName || currentWorkspace?.name);
-    setText("infoDefaultProject", currentWorkspace?.defaultProject);
-    setText("infoExperience", currentWorkspace?.experience);
-}
-function renderPreferences() {
-    const prefs = PAGE_STATE.preferences || {};
-    setText("prefTheme", prefs.theme ? capitalize(prefs.theme) : "System");
-    setText("prefLanguage", prefs.defaultLanguage ? capitalize(prefs.defaultLanguage) : "JavaScript");
-    setText("prefFontSize", prefs.fontSize ? `${prefs.fontSize} px` : "14 px");
-    setText("prefTabSize", prefs.tabSize ? `${prefs.tabSize} Spaces` : "2 Spaces");
-}
-function capitalize(value) {
-    const str = String(value);
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
-function renderAll() {
-    renderSummary();
-    renderPersonalInfo();
-    renderWorkspaceInfo();
-    renderPreferences();
+/* ==========================================
+   POPULATE — EDITOR PREFERENCES
+========================================== */
+function populateEditorPreferences() {
+    const prefs = STATE.editorPrefs || {};
+
+    setText("#prefTheme", themeLabel(prefs.theme), "System");
+    setText("#prefLanguage", languageLabel(prefs.defaultLanguage), "JavaScript");
+
+    const fontSize = prefs.fontSize ?? CONFIG.DEFAULTS.fontSize;
+    setText("#prefFontSize", `${fontSize} px`, "14 px");
+
+    const tabSize = prefs.tabSize ?? CONFIG.DEFAULTS.tabSize;
+    setText("#prefTabSize", `${tabSize} Spaces`, "2 Spaces");
 }
 
 /* ==========================================
    DATA LOADING
 ========================================== */
-function syncFromLayoutState(state) {
-    PAGE_STATE.currentUser = state?.currentUser || null;
-    PAGE_STATE.userData = state?.userData || null;
-    PAGE_STATE.currentWorkspace = state?.currentWorkspace || null;
-}
-async function loadPreferences() {
-    if (!PAGE_STATE.currentUser || typeof firestore.getEditorPreferences !== "function") {
-        PAGE_STATE.preferences = null;
+async function loadEditorPreferences() {
+    if (!STATE.currentUser) {
+        STATE.editorPrefs = null;
         return;
     }
-    const response = await firestore.getEditorPreferences(PAGE_STATE.currentUser.uid);
-    PAGE_STATE.preferences = response && response.success && response.exists ? response.data : null;
+    const response = await safeCall(
+        deps.firestore.getEditorPreferences,
+        "getEditorPreferences",
+        STATE.currentUser.uid
+    );
+    STATE.editorPrefs = response && response.success && response.exists ? response.data : null;
 }
-async function refreshPage() {
-    if (window.NovaLayout && typeof window.NovaLayout.getState === "function") {
-        syncFromLayoutState(window.NovaLayout.getState());
-    }
-    try {
-        await loadPreferences();
-    } catch (error) {
-        console.error("[Profile] loadPreferences failed:", error);
-    }
-    renderAll();
+
+function syncFromLayoutState() {
+    const layoutState =
+        typeof window.NovaLayout?.getState === "function" ? window.NovaLayout.getState() : null;
+    if (!layoutState) return;
+    STATE.currentUser = layoutState.currentUser || null;
+    STATE.userData = layoutState.userData || null;
+    STATE.currentWorkspace = layoutState.currentWorkspace || null;
+}
+
+async function loadProfileData() {
+    syncFromLayoutState();
+    await loadEditorPreferences();
+    populateSummary();
+    populatePersonalInfo();
+    populateWorkspaceInfo();
+    populateEditorPreferences();
+    STATE.ready = true;
 }
 
 /* ==========================================
-   MODAL HELPERS (shared show/hide)
+   GENERIC MODAL HELPERS
 ========================================== */
-const modalCloseTimers = new WeakMap();
-function showModal(modal) {
+let modalCloseTimer = null;
+function openModal(modal, focusEl) {
     if (!modal) return;
-    const pending = modalCloseTimers.get(modal);
-    if (pending) {
-        clearTimeout(pending);
-        modalCloseTimers.delete(modal);
+    if (modalCloseTimer) {
+        clearTimeout(modalCloseTimer);
+        modalCloseTimer = null;
     }
     modal.hidden = false;
+    document.body.classList.add("nova-modal-open");
     requestAnimationFrame(() => {
         modal.classList.add("show");
-        modal.classList.remove("hide");
     });
-    document.body.classList.add("nova-modal-open");
+    setTimeout(() => {
+        (focusEl || qs("input, select", modal))?.focus();
+    }, 60);
 }
-function hideModal(modal) {
+function closeModal(modal) {
     if (!modal) return;
     modal.classList.remove("show");
-    modal.classList.add("hide");
-    const timer = setTimeout(() => {
+    if (modalCloseTimer) clearTimeout(modalCloseTimer);
+    modalCloseTimer = setTimeout(() => {
         modal.hidden = true;
-        modal.classList.remove("hide");
-        modalCloseTimers.delete(modal);
-    }, MODAL_CLOSE_ANIMATION_MS);
-    modalCloseTimers.set(modal, timer);
+        modalCloseTimer = null;
+    }, 200);
     document.body.classList.remove("nova-modal-open");
 }
-function attachModalDismiss(modal, onClose) {
-    if (!modal) return;
-    qsa("[data-modal-close]", modal).forEach((btn) => {
-        btn.addEventListener("click", onClose);
+function attachModalDismiss(modal) {
+    if (!modal || modal.dataset.dismissBound === "true") return;
+    modal.querySelectorAll("[data-modal-close]").forEach((el) => {
+        el.addEventListener("click", () => closeModal(modal));
     });
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && modal.classList.contains("show")) onClose();
-    });
+    const backdrop = qs(".nova-modal-backdrop", modal);
+    if (backdrop) backdrop.addEventListener("click", () => closeModal(modal));
+    modal.dataset.dismissBound = "true";
 }
-function qsa(selector, scope = document) {
-    return Array.from(scope.querySelectorAll(selector));
-}
+document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    document.querySelectorAll(".nova-modal.show").forEach((modal) => closeModal(modal));
+});
 
 /* ==========================================
    EDIT PROFILE MODAL
 ========================================== */
-function getEditProfileModal() {
-    return qs("#editProfileModal");
+function fillEditProfileForm() {
+    const user = STATE.currentUser;
+    const data = STATE.userData;
+
+    const fullNameInput = qs("#editFullName");
+    const emailInput = qs("#editEmailReadonly");
+    const usernameInput = qs("#editUsername");
+    const locationInput = qs("#editLocation");
+    const roleSelect = qs("#editRole");
+    const photoInput = qs("#editPhotoURL");
+
+    if (fullNameInput) fullNameInput.value = data?.displayName || user?.displayName || "";
+    if (emailInput) emailInput.value = data?.email || user?.email || "";
+    if (usernameInput) usernameInput.value = data?.username || "";
+    if (locationInput) locationInput.value = data?.location || "";
+    if (roleSelect) roleSelect.value = data?.role || "Developer";
+    if (photoInput) photoInput.value = data?.photoURL || "";
 }
-function openEditProfileModal() {
-    const modal = getEditProfileModal();
+function openEditProfileModal(focusSelector) {
+    const modal = qs("#editProfileModal");
     if (!modal) return;
-    const { currentUser, userData } = PAGE_STATE;
-    qs("#editFullName", modal).value = userData?.displayName || currentUser?.displayName || "";
-    qs("#editEmailReadonly", modal).value = currentUser?.email || userData?.email || "";
-    qs("#editUsername", modal).value = userData?.username || "";
-    qs("#editLocation", modal).value = userData?.location || "";
-    if (userData?.role) qs("#editRole", modal).value = userData.role;
-    qs("#editPhotoURL", modal).value = userData?.photoURL || "";
-    showModal(modal);
-    qs("#editFullName", modal)?.focus();
-}
-function closeEditProfileModal() {
-    hideModal(getEditProfileModal());
+    fillEditProfileForm();
+    openModal(modal, focusSelector ? qs(focusSelector, modal) : null);
 }
 async function handleEditProfileSubmit(event) {
     event.preventDefault();
-    if (!PAGE_STATE.currentUser) {
+    if (!STATE.currentUser) {
         notify("You must be signed in to update your profile.", "error");
         return;
     }
-    if (typeof firestore.updateUser !== "function") {
+    if (typeof deps.firestore.updateUser !== "function") {
         notify("Profile updates are currently unavailable.", "error");
         return;
     }
-    const form = event.currentTarget;
-    const submitBtn = qs("#saveProfileBtn", form);
 
-    const fullName = qs("#editFullName", form).value.trim();
-    const username = qs("#editUsername", form).value.trim().toLowerCase();
-    const location = qs("#editLocation", form).value.trim();
-    const role = qs("#editRole", form).value;
-    const photoURL = qs("#editPhotoURL", form).value.trim();
+    const form = event.currentTarget;
+    const fullName = qs("#editFullName", form)?.value.trim() || "";
+    const usernameRaw = qs("#editUsername", form)?.value.trim().toLowerCase() || "";
+    const location = qs("#editLocation", form)?.value.trim() || "";
+    const role = qs("#editRole", form)?.value || "";
+    const photoURL = qs("#editPhotoURL", form)?.value.trim() || "";
 
     if (!fullName) {
         notify("Full name is required.", "warning");
         return;
     }
 
-    submitBtn?.classList.add("loading");
-    submitBtn?.setAttribute("disabled", "true");
+    const saveButton = qs("#saveProfileBtn", form);
+    saveButton?.setAttribute("disabled", "true");
+
     try {
-        if (username && username !== PAGE_STATE.userData?.username) {
-            if (typeof firestore.updateUsername === "function") {
-                const usernameResult = await firestore.updateUsername(PAGE_STATE.currentUser.uid, username);
-                if (!usernameResult.success) {
-                    notify(usernameResult.error || "That username is unavailable.", "error");
-                    return;
-                }
+        const currentUsername = (STATE.userData?.username || "").toLowerCase();
+
+        if (usernameRaw && usernameRaw !== currentUsername) {
+            const availability = await safeCall(
+                deps.firestore.isUsernameAvailable,
+                "isUsernameAvailable",
+                usernameRaw
+            );
+            if (!availability?.success) {
+                notify("Unable to verify username availability.", "error");
+                return;
+            }
+            if (!availability.data?.available) {
+                notify("That username is already taken.", "warning");
+                qs("#editUsername", form)?.focus();
+                return;
             }
         }
-        const result = await firestore.updateUser(PAGE_STATE.currentUser.uid, {
+
+        const payload = {
             displayName: fullName,
             location,
             role,
             photoURL,
-        });
-        if (!result || !result.success) {
-            notify(result?.error || "Unable to update profile.", "error");
+        };
+        if (usernameRaw) {
+            payload.username = usernameRaw;
+        }
+
+        const response = await deps.firestore.updateUser(STATE.currentUser.uid, payload);
+        if (!response || !response.success) {
+            notify(response?.error || "Unable to update profile.", "error");
             return;
         }
+
         notify("Profile updated successfully.", "success");
-        closeEditProfileModal();
-        if (window.NovaLayout && typeof window.NovaLayout.refresh === "function") {
-            await window.NovaLayout.refresh();
-        }
-        await refreshPage();
+        closeModal(qs("#editProfileModal"));
+
+        await safeCall(window.NovaLayout?.refresh, "NovaLayout.refresh");
+        await loadProfileData();
     } catch (error) {
-        console.error("[Profile] handleEditProfileSubmit error:", error);
-        notify(error?.message || "Unable to update profile.", "error");
+        console.error("[NovaProfile] handleEditProfileSubmit error:", error);
+        notify("Something went wrong while updating your profile.", "error");
     } finally {
-        submitBtn?.classList.remove("loading");
-        submitBtn?.removeAttribute("disabled");
+        saveButton?.removeAttribute("disabled");
     }
 }
 
 /* ==========================================
-   EDIT PREFERENCES MODAL
+   EDITOR PREFERENCES MODAL
 ========================================== */
-function getEditPreferencesModal() {
-    return qs("#editPreferencesModal");
+function fillEditPreferencesForm() {
+    const prefs = STATE.editorPrefs || {};
+    const themeSelect = qs("#editTheme");
+    const languageSelect = qs("#editLanguage");
+    const fontSizeInput = qs("#editFontSize");
+    const tabSizeSelect = qs("#editTabSize");
+
+    if (themeSelect) themeSelect.value = prefs.theme || CONFIG.DEFAULTS.theme;
+    if (languageSelect) languageSelect.value = prefs.defaultLanguage || CONFIG.DEFAULTS.defaultLanguage;
+    if (fontSizeInput) fontSizeInput.value = prefs.fontSize ?? CONFIG.DEFAULTS.fontSize;
+    if (tabSizeSelect) tabSizeSelect.value = String(prefs.tabSize ?? CONFIG.DEFAULTS.tabSize);
 }
-function openEditPreferencesModal() {
-    const modal = getEditPreferencesModal();
+function openEditPreferencesModal(focusSelector) {
+    const modal = qs("#editPreferencesModal");
     if (!modal) return;
-    const prefs = PAGE_STATE.preferences || {};
-    if (prefs.theme) qs("#editTheme", modal).value = prefs.theme;
-    if (prefs.defaultLanguage) qs("#editLanguage", modal).value = prefs.defaultLanguage;
-    qs("#editFontSize", modal).value = prefs.fontSize || 14;
-    qs("#editTabSize", modal).value = prefs.tabSize || 2;
-    showModal(modal);
+    fillEditPreferencesForm();
+    openModal(modal, focusSelector ? qs(focusSelector, modal) : null);
 }
-function closeEditPreferencesModal() {
-    hideModal(getEditPreferencesModal());
+function applyThemePreference(theme) {
+    try {
+        if (theme && theme !== "system") {
+            localStorage.setItem(CONFIG.THEME_STORAGE_KEY, theme);
+            document.documentElement.setAttribute("data-theme", theme);
+        } else {
+            localStorage.removeItem(CONFIG.THEME_STORAGE_KEY);
+        }
+    } catch (error) {
+        console.error("[NovaProfile] applyThemePreference failed:", error);
+    }
 }
 async function handleEditPreferencesSubmit(event) {
     event.preventDefault();
-    if (!PAGE_STATE.currentUser) {
+    if (!STATE.currentUser) {
         notify("You must be signed in to update preferences.", "error");
         return;
     }
-    if (typeof firestore.saveEditorPreferences !== "function") {
-        notify("Preference updates are currently unavailable.", "error");
+    if (typeof deps.firestore.saveEditorPreferences !== "function") {
+        notify("Editor preferences are currently unavailable.", "error");
         return;
     }
+
     const form = event.currentTarget;
-    const submitBtn = qs("#savePreferencesBtn", form);
+    const theme = qs("#editTheme", form)?.value || CONFIG.DEFAULTS.theme;
+    const defaultLanguage = qs("#editLanguage", form)?.value || CONFIG.DEFAULTS.defaultLanguage;
+    const fontSizeRaw = Number(qs("#editFontSize", form)?.value);
+    const fontSize = Number.isFinite(fontSizeRaw) && fontSizeRaw > 0 ? fontSizeRaw : CONFIG.DEFAULTS.fontSize;
+    const tabSize = qs("#editTabSize", form)?.value || CONFIG.DEFAULTS.tabSize;
 
-    const payload = {
-        theme: qs("#editTheme", form).value,
-        defaultLanguage: qs("#editLanguage", form).value,
-        fontSize: Number(qs("#editFontSize", form).value) || 14,
-        tabSize: Number(qs("#editTabSize", form).value) || 2,
-    };
+    const saveButton = qs("#savePreferencesBtn", form);
+    saveButton?.setAttribute("disabled", "true");
 
-    submitBtn?.classList.add("loading");
-    submitBtn?.setAttribute("disabled", "true");
     try {
-        const result = await firestore.saveEditorPreferences(PAGE_STATE.currentUser.uid, payload);
-        if (!result || !result.success) {
-            notify(result?.error || "Unable to update preferences.", "error");
+        const response = await deps.firestore.saveEditorPreferences(STATE.currentUser.uid, {
+            theme,
+            defaultLanguage,
+            fontSize,
+            tabSize,
+        });
+        if (!response || !response.success) {
+            notify(response?.error || "Unable to save preferences.", "error");
             return;
         }
-        notify("Editor preferences updated.", "success");
-        closeEditPreferencesModal();
-        await refreshPage();
+
+        applyThemePreference(theme);
+        notify("Editor preferences saved.", "success");
+        closeModal(qs("#editPreferencesModal"));
+        await loadProfileData();
     } catch (error) {
-        console.error("[Profile] handleEditPreferencesSubmit error:", error);
-        notify(error?.message || "Unable to update preferences.", "error");
+        console.error("[NovaProfile] handleEditPreferencesSubmit error:", error);
+        notify("Something went wrong while saving preferences.", "error");
     } finally {
-        submitBtn?.classList.remove("loading");
-        submitBtn?.removeAttribute("disabled");
+        saveButton?.removeAttribute("disabled");
     }
 }
 
 /* ==========================================
-   WIRING
+   INTERACTIONS
 ========================================== */
 function attachInteractions() {
-    qs("#editProfileBtn")?.addEventListener("click", openEditProfileModal);
-    qs("#avatarEditBadge")?.addEventListener("click", openEditProfileModal);
+    qs("#editProfileBtn")?.addEventListener("click", () => openEditProfileModal());
+    qs("#avatarEditBadge")?.addEventListener("click", () => openEditProfileModal("#editPhotoURL"));
 
-    ["infoRowFullName", "infoRowUsername", "infoRowLocation", "infoRowRole"].forEach((id) => {
-        qs(`#${id}`)?.addEventListener("click", openEditProfileModal);
+    qs("#infoRowFullName")?.addEventListener("click", () => openEditProfileModal("#editFullName"));
+    qs("#infoRowUsername")?.addEventListener("click", () => openEditProfileModal("#editUsername"));
+    qs("#infoRowLocation")?.addEventListener("click", () => openEditProfileModal("#editLocation"));
+    qs("#infoRowRole")?.addEventListener("click", () => openEditProfileModal("#editRole"));
+
+    qs("#prefRowTheme")?.addEventListener("click", () => openEditPreferencesModal("#editTheme"));
+    qs("#prefRowLanguage")?.addEventListener("click", () => openEditPreferencesModal("#editLanguage"));
+    qs("#prefRowFontSize")?.addEventListener("click", () => openEditPreferencesModal("#editFontSize"));
+    qs("#prefRowTabSize")?.addEventListener("click", () => openEditPreferencesModal("#editTabSize"));
+
+    qs("#roleMiniCard")?.addEventListener("click", () => openEditProfileModal("#editRole"));
+    qs("#workspaceMiniCard")?.addEventListener("click", () => {
+        const trigger = qs("[data-workspace-switcher-trigger]");
+        if (trigger) {
+            trigger.click();
+        } else {
+            window.location.href = "settings.html";
+        }
     });
 
-    ["prefRowTheme", "prefRowLanguage", "prefRowFontSize", "prefRowTabSize"].forEach((id) => {
-        qs(`#${id}`)?.addEventListener("click", openEditPreferencesModal);
-    });
+    const editProfileModal = qs("#editProfileModal");
+    const editPreferencesModal = qs("#editPreferencesModal");
+    attachModalDismiss(editProfileModal);
+    attachModalDismiss(editPreferencesModal);
 
     qs("#editProfileForm")?.addEventListener("submit", handleEditProfileSubmit);
-    attachModalDismiss(getEditProfileModal(), closeEditProfileModal);
-
     qs("#editPreferencesForm")?.addEventListener("submit", handleEditPreferencesSubmit);
-    attachModalDismiss(getEditPreferencesModal(), closeEditPreferencesModal);
 }
 
 /* ==========================================
-   INIT
+   INITIALIZATION
 ========================================== */
 async function init() {
-    // Registered before any await so it can never miss the event that
-    // layout.js dispatches once the sidebar/header/auth state are ready.
-    document.addEventListener("novaeditor:layout-ready", () => {
-        refreshPage().catch((error) => console.error("[Profile] refreshPage error:", error));
+    attachInteractions();
+    await loadDependencies();
+
+    const layoutState =
+        typeof window.NovaLayout?.getState === "function" ? window.NovaLayout.getState() : null;
+
+    if (window.NovaLayout?.isReady?.() && layoutState?.currentUser) {
+        await loadProfileData();
+    } else {
+        document.addEventListener(
+            "novaeditor:layout-ready",
+            async () => {
+                await loadProfileData();
+            },
+            { once: true }
+        );
+    }
+
+    document.addEventListener("novaeditor:workspace-changed", () => {
+        loadProfileData();
     });
 
-    await loadFirestore();
-    attachInteractions();
-
-    if (window.NovaLayout && typeof window.NovaLayout.isReady === "function" && window.NovaLayout.isReady()) {
-        await refreshPage();
-    }
+    document.addEventListener("novaeditor:unauthenticated", () => {
+        STATE.currentUser = null;
+        STATE.userData = null;
+        STATE.currentWorkspace = null;
+        STATE.editorPrefs = null;
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     init().catch((error) => {
-        console.error("[Profile] Unhandled error during init():", error);
+        console.error("[NovaProfile] Unhandled error during init():", error);
     });
 });

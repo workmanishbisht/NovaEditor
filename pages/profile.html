@@ -20,12 +20,12 @@
 <body data-page="profile">
     <div class="app-shell">
 
-        <!-- Sidebar mounts here (existing component, reused as-is) -->
+        <!-- Sidebar mounts here -->
         <div id="sidebarMount"></div>
 
         <div class="app-main">
 
-            <!-- Header mounts here (existing component, reused as-is) -->
+            <!-- Header mounts here  -->
             <div id="headerMount"></div>
 
             <main class="profile-page" id="profileContent">
@@ -36,9 +36,9 @@
                 <section class="pf-hero">
                     <div class="pf-hero-text">
                         <h1>My Profile</h1>
-                        <p>View and manage your account details and preferences</p>
+                        <p>Manage your account details, workspace and preferences</p>
                     </div>
-                    <button type="button" class="btn btn-outline" id="editProfileBtn">
+                    <button type="button" class="btn-outline pf-edit-btn" id="editProfileBtn">
                         <i class="ri-pencil-line"></i>
                         Edit Profile
                     </button>
@@ -48,6 +48,8 @@
                 Profile Summary Card
                 ======================================= -->
                 <section class="pf-summary">
+                    <span class="pf-summary-pattern" aria-hidden="true"></span>
+
                     <div class="pf-summary-left">
                         <div class="pf-avatar-wrap">
                             <img id="profileAvatar" class="pf-avatar" src="../assets/images/avatar/default.png" alt="Profile photo">
@@ -70,20 +72,22 @@
                     </div>
 
                     <div class="pf-summary-right">
-                        <div class="pf-mini-card">
+                        <button type="button" class="pf-mini-card" id="workspaceMiniCard">
                             <span class="pf-mini-icon"><i class="ri-stack-line"></i></span>
-                            <div class="pf-mini-text">
+                            <span class="pf-mini-text">
                                 <small>Workspace</small>
                                 <strong id="profileWorkspaceValue">—</strong>
-                            </div>
-                        </div>
-                        <div class="pf-mini-card">
+                            </span>
+                            <span class="pf-mini-arrow" aria-hidden="true"><i class="ri-arrow-right-line"></i></span>
+                        </button>
+                        <button type="button" class="pf-mini-card" id="roleMiniCard">
                             <span class="pf-mini-icon"><i class="ri-briefcase-4-line"></i></span>
-                            <div class="pf-mini-text">
+                            <span class="pf-mini-text">
                                 <small>Role</small>
                                 <strong id="profileRoleValue">—</strong>
-                            </div>
-                        </div>
+                            </span>
+                            <span class="pf-mini-arrow" aria-hidden="true"><i class="ri-arrow-right-line"></i></span>
+                        </button>
                     </div>
                 </section>
 
@@ -93,7 +97,10 @@
                 <div class="pf-grid-2col">
 
                     <section class="pf-card">
-                        <h3>Personal Information</h3>
+                        <div class="pf-card-head">
+                            <h3><i class="ri-user-3-line"></i> Personal Information</h3>
+                            <a href="settings.html" class="pf-view-all">View all</a>
+                        </div>
                         <div class="pf-rows">
 
                             <button type="button" class="info-row" id="infoRowFullName">
@@ -144,7 +151,10 @@
                     </section>
 
                     <section class="pf-card">
-                        <h3>Workspace Information</h3>
+                        <div class="pf-card-head">
+                            <h3><i class="ri-grid-line"></i> Workspace Information</h3>
+                            <a href="settings.html" class="pf-view-all">View all</a>
+                        </div>
                         <div class="pf-rows">
 
                             <div class="info-row info-row--readonly">
@@ -180,43 +190,46 @@
                 Editor Preferences
                 ======================================= -->
                 <section class="pf-card pf-card-wide">
-                    <h3>Editor Preferences</h3>
-                    <div class="pf-rows pf-rows-2col">
+                    <div class="pf-card-head">
+                        <h3><i class="ri-settings-3-line"></i> Editor Preferences</h3>
+                        <a href="settings.html" class="pf-view-all">View all</a>
+                    </div>
+                    <div class="pf-pref-grid">
 
-                        <button type="button" class="info-row" id="prefRowTheme">
-                            <span class="info-row-icon"><i class="ri-contrast-2-line"></i></span>
-                            <span class="info-row-text">
+                        <button type="button" class="pf-pref-item" id="prefRowTheme">
+                            <span class="pf-pref-icon"><i class="ri-contrast-2-line"></i></span>
+                            <span class="pf-pref-text">
                                 <small>Theme</small>
                                 <strong id="prefTheme">System</strong>
                             </span>
-                            <i class="ri-arrow-right-s-line info-row-chevron"></i>
+                            <i class="ri-arrow-right-s-line pf-pref-chevron"></i>
                         </button>
 
-                        <button type="button" class="info-row" id="prefRowLanguage">
-                            <span class="info-row-icon"><i class="ri-code-s-slash-line"></i></span>
-                            <span class="info-row-text">
+                        <button type="button" class="pf-pref-item" id="prefRowLanguage">
+                            <span class="pf-pref-icon"><i class="ri-code-s-slash-line"></i></span>
+                            <span class="pf-pref-text">
                                 <small>Default Language</small>
                                 <strong id="prefLanguage">JavaScript</strong>
                             </span>
-                            <i class="ri-arrow-right-s-line info-row-chevron"></i>
+                            <i class="ri-arrow-right-s-line pf-pref-chevron"></i>
                         </button>
 
-                        <button type="button" class="info-row" id="prefRowFontSize">
-                            <span class="info-row-icon"><i class="ri-font-size-2"></i></span>
-                            <span class="info-row-text">
+                        <button type="button" class="pf-pref-item" id="prefRowFontSize">
+                            <span class="pf-pref-icon"><i class="ri-font-size-2"></i></span>
+                            <span class="pf-pref-text">
                                 <small>Font Size</small>
                                 <strong id="prefFontSize">14 px</strong>
                             </span>
-                            <i class="ri-arrow-right-s-line info-row-chevron"></i>
+                            <i class="ri-arrow-right-s-line pf-pref-chevron"></i>
                         </button>
 
-                        <button type="button" class="info-row" id="prefRowTabSize">
-                            <span class="info-row-icon"><i class="ri-space"></i></span>
-                            <span class="info-row-text">
+                        <button type="button" class="pf-pref-item" id="prefRowTabSize">
+                            <span class="pf-pref-icon"><i class="ri-space"></i></span>
+                            <span class="pf-pref-text">
                                 <small>Tab Size</small>
                                 <strong id="prefTabSize">2 Spaces</strong>
                             </span>
-                            <i class="ri-arrow-right-s-line info-row-chevron"></i>
+                            <i class="ri-arrow-right-s-line pf-pref-chevron"></i>
                         </button>
 
                     </div>
@@ -348,7 +361,7 @@
         </div>
     </div>
 
-    <!-- script file (existing/shared — not modified) -->
+    <!-- script file -->
     <script type="module" src="../components/toast.js"></script>
     <script type="module" src="../js/layout.js"></script>
     <script type="module" src="../js/profile.js"></script>

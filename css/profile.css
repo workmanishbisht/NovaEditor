@@ -3,19 +3,15 @@
 ========================================== */
 
 .profile-page {
-    max-width: 1320px;
-    margin: 0 auto;
     padding: 32px 36px 64px;
 }
 
 /* ==========================================
-   Buttons (page-local, mirrors dashboard.css
-   conventions — this page does not load
-   dashboard.css so these are defined here too)
+   Buttons
 ========================================== */
 
 .btn-primary,
-.pf-hero .btn-outline {
+.btn-outline {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -68,13 +64,13 @@
     justify-content: space-between;
     gap: 20px;
     flex-wrap: wrap;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
 }
 
 .pf-hero-text h1 {
     margin-bottom: 6px;
     color: var(--text-primary);
-    font-size: 28px;
+    font-size: 27px;
     font-weight: 700;
     letter-spacing: -0.02em;
 }
@@ -85,25 +81,55 @@
     line-height: 1.5;
 }
 
+.pf-edit-btn {
+    background: var(--surface);
+    box-shadow: var(--shadow-xs);
+}
+
+.pf-edit-btn i {
+    font-size: 15px;
+    color: var(--primary);
+}
+
 /* ==========================================
    Profile Summary Card
 ========================================== */
 
 .pf-summary {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 24px;
     flex-wrap: wrap;
-    padding: 28px;
-    margin-bottom: 24px;
-    background: var(--surface);
+    padding: 28px 32px;
+    margin-bottom: 22px;
+    background: var(--surface-secondary);
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-xs);
+    overflow: hidden;
+}
+
+/* Subtle decorative dot-grid, echoes the premium-SaaS feel of the
+   Dashboard cards without adding any real visual weight. */
+.pf-summary-pattern {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 220px;
+    height: 100%;
+    pointer-events: none;
+    background-image: radial-gradient(circle, var(--border) 1.4px, transparent 1.4px);
+    background-size: 16px 16px;
+    -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.35), transparent 85%);
+    mask-image: linear-gradient(to left, rgba(0, 0, 0, 0.35), transparent 85%);
+    opacity: 0.55;
 }
 
 .pf-summary-left {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     gap: 20px;
@@ -121,6 +147,7 @@
     border-radius: 50%;
     object-fit: cover;
     border: 1px solid var(--border);
+    background: var(--surface-secondary);
 }
 
 .pf-avatar-badge {
@@ -142,7 +169,7 @@
 
 .pf-avatar-badge:hover {
     background: var(--primary-hover);
-    transform: scale(1.05);
+    transform: scale(1.06);
 }
 
 .pf-summary-info {
@@ -154,9 +181,12 @@
 
 .pf-summary-info strong {
     color: var(--text-primary);
-    font-size: 19px;
+    font-size: 19.5px;
     font-weight: 700;
     letter-spacing: -0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .pf-summary-username {
@@ -168,10 +198,10 @@
 .pf-summary-meta {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     color: var(--text-muted);
     font-size: 13px;
-    margin-top: 2px;
+    margin-top: 3px;
 }
 
 .pf-summary-meta i {
@@ -180,6 +210,8 @@
 }
 
 .pf-summary-right {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -187,15 +219,27 @@
     flex-wrap: wrap;
 }
 
+/* ==========================================
+   Summary Mini Cards (Workspace / Role)
+========================================== */
+
 .pf-mini-card {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 18px;
-    background: var(--surface-secondary);
-    border: 1px solid var(--border-subtle);
+    gap: 14px;
+    padding: 12px 14px;
+    background: var(--primary-light);
+    border: 1px solid transparent;
     border-radius: var(--radius-lg);
-    min-width: 160px;
+    min-width: 190px;
+    text-align: left;
+    transition: var(--transition);
+}
+
+.pf-mini-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 }
 
 .pf-mini-icon {
@@ -206,9 +250,10 @@
     height: 38px;
     flex-shrink: 0;
     border-radius: var(--radius-md);
-    background: var(--primary-light);
+    background: var(--surface);
     color: var(--primary);
     font-size: 17px;
+    box-shadow: var(--shadow-xs);
 }
 
 .pf-mini-text {
@@ -216,14 +261,15 @@
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    flex: 1;
 }
 
 .pf-mini-text small {
-    color: var(--text-muted);
-    font-size: 11.5px;
-    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
 }
 
 .pf-mini-text strong {
@@ -233,6 +279,25 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.pf-mini-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--primary);
+    color: var(--white-color);
+    font-size: 15px;
+    transition: var(--transition);
+}
+
+.pf-mini-card:hover .pf-mini-arrow {
+    background: var(--primary-hover);
+    transform: translateX(2px);
 }
 
 /* ==========================================
@@ -247,19 +312,54 @@
 }
 
 .pf-card {
-    padding: 24px;
+    padding: 24px 26px;
     background: var(--surface);
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-xs);
     min-width: 0;
 }
 
-.pf-card h3 {
-    margin-bottom: 12px;
+.pf-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.pf-card-head h3 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
     color: var(--text-primary);
     font-size: 15.5px;
     font-weight: 700;
+}
+
+.pf-card-head h3 i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-md);
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 15px;
+}
+
+.pf-view-all {
+    flex-shrink: 0;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.pf-view-all:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
 }
 
 .pf-card-wide {
@@ -269,12 +369,6 @@
 .pf-rows {
     display: flex;
     flex-direction: column;
-}
-
-.pf-rows-2col {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px 16px;
 }
 
 .info-row {
@@ -289,8 +383,7 @@
     transition: var(--transition);
 }
 
-.pf-rows > .info-row:first-child,
-.pf-rows-2col > .info-row:nth-child(-n+2) {
+.pf-rows>.info-row:first-child {
     border-top: none;
 }
 
@@ -311,12 +404,12 @@ button.info-row:hover {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     flex-shrink: 0;
     border-radius: var(--radius-md);
-    background: var(--surface-secondary);
-    color: var(--text-secondary);
+    background: var(--primary-light);
+    color: var(--primary);
     font-size: 16px;
 }
 
@@ -355,6 +448,84 @@ button.info-row:hover .info-row-chevron {
 }
 
 /* ==========================================
+   Editor Preferences Grid
+========================================== */
+
+.pf-pref-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.pf-pref-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    text-align: left;
+    min-width: 0;
+    transition: var(--transition);
+}
+
+.pf-pref-item:hover {
+    border-color: var(--primary);
+    background: var(--surface-secondary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.pf-pref-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: var(--primary);
+    color: var(--white-color);
+    font-size: 16px;
+}
+
+.pf-pref-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.pf-pref-text small {
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.pf-pref-text strong {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pf-pref-chevron {
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 17px;
+    transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.pf-pref-item:hover .pf-pref-chevron {
+    color: var(--primary);
+    transform: translateX(2px);
+}
+
+/* ==========================================
    Modals (mirrors the app's existing
    .nova-modal pattern for consistency)
 ========================================== */
@@ -387,8 +558,9 @@ body.nova-modal-open {
 .nova-modal-dialog {
     position: relative;
     z-index: 1;
-    width: min(480px, calc(100vw - 32px));
-    max-height: min(90vh, 640px);
+    width: min(590px, calc(100vw - 32px));
+    height: min(90vh, 720px);
+    max-height: calc(100vh - 32px);
     display: flex;
     flex-direction: column;
     background: var(--surface);
@@ -405,6 +577,16 @@ body.nova-modal-open {
 .nova-modal.show .nova-modal-dialog {
     opacity: 1;
     transform: translateY(0) scale(1);
+}
+
+/* Form is the flex child that contains body + footer.
+   It must take remaining height and itself be a column flex. */
+.nova-modal-dialog>form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .nova-modal-header {
@@ -429,23 +611,46 @@ body.nova-modal-open {
     justify-content: center;
     width: 32px;
     height: 32px;
+    font-weight: 600;
     border-radius: var(--radius-sm);
     color: var(--text-muted);
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .nova-modal-close:hover {
-    background: var(--surface-secondary);
-    color: var(--text-primary);
+    background: color-mix(in srgb, var(--danger) 12%, transparent);
+    color: var(--danger);
 }
 
 .nova-modal-body {
     padding: var(--space-5);
-    overflow-y: auto;
     flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-hover) transparent;
+}
+
+.nova-modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.nova-modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.nova-modal-body::-webkit-scrollbar-thumb {
+    background: var(--border-hover);
+    border-radius: var(--radius-full);
+}
+
+.nova-modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
 }
 
 .nova-modal-description {
@@ -562,13 +767,24 @@ body.nova-modal-open {
     }
 }
 
+@media (max-width: 1100px) {
+    .pf-pref-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (max-width: 992px) {
     .pf-grid-2col {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    .pf-rows > .info-row:nth-child(1) {
-        border-top: none;
+    .pf-summary-right {
+        width: 100%;
+    }
+
+    .pf-mini-card {
+        flex: 1;
+        min-width: 0;
     }
 }
 
@@ -588,25 +804,29 @@ body.nova-modal-open {
         padding: 22px;
     }
 
-    .pf-summary-right {
-        width: 100%;
+    .pf-summary-pattern {
+        display: none;
     }
 
-    .pf-mini-card {
-        flex: 1;
-        min-width: 0;
+    .pf-card {
+        padding: 20px;
     }
 
-    .pf-rows-2col {
+    .pf-pref-grid {
         grid-template-columns: minmax(0, 1fr);
     }
+}
 
-    .pf-rows-2col > .info-row:nth-child(-n+2) {
-        border-top: 1px solid var(--border-subtle);
+@media (max-width: 600px) {
+    .nova-modal {
+        padding: 12px;
     }
 
-    .pf-rows-2col > .info-row:first-child {
-        border-top: none;
+    .nova-modal-dialog {
+        width: calc(100vw - 24px);
+        max-width: none;
+        height: calc(100vh - 24px);
+        max-height: calc(100vh - 24px);
     }
 }
 
@@ -615,13 +835,79 @@ body.nova-modal-open {
         padding: 20px 16px 40px;
     }
 
+    .pf-summary {
+        padding: 20px;
+    }
+
+    /* Profile identity block: photo + name/username/email/member-since
+       become a single centered column on mobile. */
     .pf-summary-left {
         flex-direction: column;
-        align-items: flex-start;
-        text-align: left;
+        align-items: center;
+        text-align: center;
+        width: 100%;
+        gap: 14px;
+    }
+
+    .pf-avatar-wrap {
+        margin: 0 auto;
+    }
+
+    .pf-summary-info {
+        align-items: center;
+        text-align: center;
+        width: 100%;
+    }
+
+    .pf-summary-info strong {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        max-width: 100%;
+    }
+
+    .pf-summary-meta {
+        justify-content: center;
+        width: 100%;
+    }
+
+    /* Workspace / Role cards: stack full-width below the identity block.
+       Content inside each card stays left-aligned — only the identity
+       block above is centered. */
+    .pf-summary-right {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-top: 6px;
     }
 
     .pf-mini-card {
+        width: 100%;
         min-width: 0;
+        flex: none;
+        box-sizing: border-box;
+        text-align: left;
+    }
+
+    .pf-mini-icon {
+        flex-shrink: 0;
+    }
+
+    .pf-mini-text {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .pf-mini-text strong {
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        text-overflow: clip;
+    }
+
+    .pf-mini-arrow {
+        flex-shrink: 0;
     }
 }
