@@ -29,8 +29,9 @@
 .section-head h3 {
     color: var(--text-primary);
     font-size: 17px;
+    line-height: 44px;
     font-weight: 700;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
 }
 
 .dash-panel h3 {
@@ -119,12 +120,12 @@
     color: var(--white-color);
     border-radius: var(--radius-sm);
     font-weight: 600;
+    padding: 0.6rem 1rem;
     transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
 }
 
 .btn-primary:hover {
     background: var(--primary-hover);
-    transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
 
@@ -186,6 +187,7 @@
 ========================================== */
 
 .dash-continue,
+.dash-continue-empty,
 .dash-panel,
 .quick-action,
 .project-card {
@@ -255,6 +257,12 @@
     line-height: 1.25;
 }
 
+.dash-continue-description {
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+
 .dash-continue-file {
     display: flex;
     align-items: center;
@@ -303,7 +311,11 @@
     margin-top: 6px;
 }
 
-/* ---- Realistic code-editor preview mock ---- */
+/* ---- Dynamic project preview (Continue Coding) ----
+   Renders the SAME preview iframe markup as the Recent
+   Projects thumbnails (.project-card-thumb /
+   .project-card-preview-frame / .project-card-preview-iframe),
+   just sized larger. No static/fake code is shown here. */
 
 .dash-continue-preview {
     display: flex;
@@ -313,112 +325,47 @@
     background: #0b1120;
 }
 
-.code-editor-mock {
-    display: flex;
-    flex-direction: column;
+.continue-preview-thumb.project-card-thumb {
+    position: relative;
     width: 100%;
+    height: auto;
+    min-height: 320px;
     border-radius: 10px;
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    background: #0f172a;
     overflow: hidden;
+    font-size: 34px;
     box-shadow: 0 20px 45px -20px rgba(0, 0, 0, 0.55);
 }
 
-.code-editor-mock-titlebar {
+/* ==========================================
+   Continue Coding — Empty State
+   (shown instead of .dash-continue when the
+   user has no projects yet)
+========================================== */
+
+.dash-continue-empty {
     display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 14px;
-    padding: 10px 14px;
-    background: #131f38;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    padding: 56px 24px;
+    margin-bottom: 34px;
+    text-align: center;
+    border-style: dashed;
+    background: var(--surface-secondary);
 }
 
-.code-editor-mock-dots {
-    display: flex;
-    gap: 6px;
-    flex-shrink: 0;
+.dash-continue-empty h4 {
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 700;
 }
 
-.code-editor-mock-dots span {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-}
-
-.code-editor-mock-dots span:nth-child(1) {
-    background: #ff5f57;
-}
-
-.code-editor-mock-dots span:nth-child(2) {
-    background: #febc2e;
-}
-
-.code-editor-mock-dots span:nth-child(3) {
-    background: #28c840;
-}
-
-.code-editor-mock-filename {
-    color: #94a3b8;
-    font-size: 12px;
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-}
-
-.code-editor-mock-body {
-    display: flex;
-    padding: 16px 0;
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-    font-size: 12.5px;
-    line-height: 1.9;
-}
-
-.code-editor-mock-gutter {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    padding: 0 14px;
-    color: #475569;
-    user-select: none;
-}
-
-.code-editor-mock-lines {
-    display: flex;
-    flex-direction: column;
-    padding-right: 16px;
-    white-space: pre;
-    color: #cbd5e1;
-}
-
-.code-editor-mock-lines .cm-indent {
-    padding-left: 20px;
-}
-
-.cm-tag {
-    color: #f472b6;
-}
-
-.cm-attr {
-    color: #60a5fa;
-}
-
-.cm-string {
-    color: #a3e635;
-}
-
-.cm-comment {
-    color: #64748b;
-    font-style: italic;
-}
-
-.cm-keyword {
-    color: #c084fc;
-}
-
-.cm-func {
-    color: #38bdf8;
-}
-
-.cm-punct {
-    color: #64748b;
+.dash-continue-empty p {
+    max-width: 360px;
+    color: var(--text-muted);
+    font-size: 13.5px;
+    line-height: 1.6;
 }
 
 /* ==========================================
@@ -550,7 +497,8 @@
     position: relative;
 }
 
-/* Thumbnail is positioning context for the 3-dot button */
+/* Thumbnail is positioning context for the 3-dot button
+   and for the dynamic preview iframe. */
 .project-card-thumb {
     position: relative;
     display: flex;
@@ -560,6 +508,7 @@
     background: linear-gradient(135deg, #1e293b, #0f172a);
     color: #64748b;
     font-size: 26px;
+    overflow: hidden;
 }
 
 /* 3-dot menu button — top-right of thumbnail */
@@ -606,6 +555,69 @@
 .project-card-menu-btn.is-open {
     background: rgba(255, 255, 255, 0.18);
     color: #ffffff;
+}
+
+/* ---- Dynamic preview iframe (mounted by dashboard.js) ---- */
+
+.project-card-preview-frame {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    cursor: pointer;
+    object-fit: cover;
+}
+
+/* Sizing/position for .project-card-preview-iframe is set inline by
+   dashboard.js (fixed virtual size + scale transform) so it can be
+   computed per-instance against the actual thumbnail box — see
+   mountPreviewIframe() / scalePreviewIframeToFit(). */
+.project-card-preview-iframe {
+    display: block;
+    cursor: pointer;
+}
+
+.project-card-thumb.has-preview>i.ri-code-s-slash-line {
+    display: none;
+}
+
+/* ---- Loading skeleton shown while a preview is being built ---- */
+
+.project-card-thumb-loading {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+}
+
+.project-card-thumb-skeleton {
+    position: relative;
+    width: 56%;
+    height: 10px;
+    border-radius: var(--radius-full);
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.project-card-thumb-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+    animation: novaThumbShimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes novaThumbShimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
 }
 
 /* ==========================================
@@ -693,9 +705,18 @@
     white-space: nowrap;
 }
 
+.project-card-star {
+    flex-shrink: 0;
+    color: #f59e0b;
+    font-size: 14px;
+}
+
 .project-card-body small {
     color: var(--text-muted);
     font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ==========================================
@@ -721,10 +742,12 @@
     padding: 9px 6px;
     border-radius: var(--radius-md, 10px);
     transition: var(--transition);
+    text-decoration: none;
 }
 
 .simple-list-item:hover {
     background: var(--surface-secondary);
+    cursor: pointer;
 }
 
 .simple-list-icon {
@@ -923,7 +946,7 @@
 
 .overview-stats {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
 }
 
@@ -1421,6 +1444,10 @@ body.nova-modal-open {
         border-bottom: 1px solid var(--border);
     }
 
+    .continue-preview-thumb.project-card-thumb {
+        min-height: 260px;
+    }
+
     .dashboard {
         padding: 28px 24px 56px;
     }
@@ -1445,6 +1472,11 @@ body.nova-modal-open {
         grid-template-columns: 1fr;
     }
 
+    .overview-stats {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
     .dash-hero {
         flex-direction: column;
         align-items: flex-start;
@@ -1465,8 +1497,12 @@ body.nova-modal-open {
         grid-template-columns: 1fr;
     }
 
-    .code-editor-mock-body {
-        font-size: 11.5px;
+    .continue-preview-thumb.project-card-thumb {
+        min-height: 200px;
+    }
+
+    .overview-stats {
+        grid-template-columns: 1fr 1fr;
     }
 
     .nova-modal {
@@ -1491,4 +1527,3 @@ body.nova-modal-open {
         min-width: 0;
     }
 }
-

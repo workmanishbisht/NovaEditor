@@ -3,20 +3,24 @@
 /* ==========================================
    IMPORTS
 ========================================== */
-import { getUserProjects, updateProject } from "../firebase/firestore.js";
+import { getUserProjects, updateProject, getFiles } from "../firebase/firestore.js";
 import { requireAuth } from "../firebase/auth.js";
+// Single source of truth for turning project files into a renderable
+// preview document. The Editor's live preview iframe uses this exact
+// function (see components/preview.js -> renderPreview()); the
+// Dashboard must reuse it rather than re-implement HTML/CSS/JS
+// inlining a second time.
+import { buildPreviewDocument } from "../components/preview.js";
 
 /* ==========================================
    CONFIG
 ========================================== */
 const CONFIG = Object.freeze({
     RECENT_PROJECTS_LIMIT: 8,
+    FAVORITES_LIMIT: 6,
     ACTIVITY_LIMIT: 5,
     STORAGE_LIMIT_GB: 10,
     PREVIEW_CACHE_PREFIX: "novaeditor:thumb:",
-    PREVIEW_SCALE: 0.35,
-    PREVIEW_WIDTH: 800,
-    PREVIEW_HEIGHT: 500,
 });
 
 const LANGUAGE_META = Object.freeze({
@@ -47,13 +51,20 @@ const STATE = {
 ========================================== */
 const DOM = {
     greeting: document.getElementById("dashGreeting"),
+
+    // Continue Coding
     continueSection: document.getElementById("dashContinueSection"),
+    continueEmptyState: document.getElementById("dashContinueEmpty"),
     continueMeta: document.getElementById("continueMeta"),
     continueName: document.getElementById("continueProjectName"),
+    continueDescription: document.getElementById("continueProjectDescription"),
     continueFile: document.getElementById("continueProjectFile"),
     continueTags: document.getElementById("continueProjectTags"),
     continueOpenBtn: document.getElementById("continueOpenBtn"),
+    continuePreviewWrap: document.getElementById("continuePreviewWrap"),
+
     recentProjectsGrid: document.getElementById("recentProjectsGrid"),
+    favoritesList: document.getElementById("favoritesList"),
     recentFilesList: document.getElementById("recentFilesList"),
     pinnedSnippetsList: document.getElementById("pinnedSnippetsList"),
     recentTemplatesList: document.getElementById("recentTemplatesList"),
@@ -63,7 +74,8 @@ const DOM = {
     storageUsedText: document.getElementById("storageUsedText"),
     storageBarFill: document.getElementById("storageBarFill"),
     overviewProjectsCount: document.getElementById("overviewProjectsCount"),
-    overviewAssetsCount: document.getElementById("overviewAssetsCount"),
+    overviewFavoritesCount: document.getElementById("overviewFavoritesCount"),
+    overviewSnippetsCount: document.getElementById("overviewSnippetsCount"),
     searchInput: document.getElementById("globalSearchInput"),
 };
 
@@ -307,9 +319,14 @@ function createProjectMenu(projectId, anchorBtn) {
     menu.setAttribute("role", "menu");
     menu.dataset.projectId = projectId;
 
+    const favoriteLabel = project.starred ? "Remove from Favorites" : "Add to Favorites";
+
     menu.innerHTML = `
         <button type="button" class="project-card-menu-item" data-action="open" role="menuitem">
             Open Project
+        </button>
+        <button type="button" class="project-card-menu-item" data-action="favorite" role="menuitem">
+            ${escapeHtml(favoriteLabel)}
         </button>
         <button type="button" class="project-card-menu-item" data-action="rename" role="menuitem">
             Rename
@@ -363,6 +380,9 @@ function handleProjectAction(action, projectId) {
         case "open":
             openProject(projectId);
             break;
+        case "favorite":
+            toggleFavorite(project);
+            break;
         case "rename":
             renameProject(project);
             break;
@@ -375,6 +395,82 @@ function handleProjectAction(action, projectId) {
         default:
             break;
     }
+}
+
+/* ==========================================
+   FAVORITES
+   ------------------------------------------
+   Reuses the `starred` boolean that already
+   exists on every project document (see
+   createProject() in firestore.js, which sets
+   starred: false on creation). No second
+   favorites collection or local flag is
+   introduced — toggling here is the exact same
+   updateProject() write path used by rename/
+   trash, and it is immediately visible to any
+   other part of the app that reads
+   project.starred.
+========================================== */
+async function toggleFavorite(project) {
+    if (!STATE.uid) {
+        showToast("You must be signed in to update favorites.", "error");
+        return;
+    }
+
+    const nextStarred = !project.starred;
+
+    try {
+        const response = await updateProject(project.id, { starred: nextStarred });
+        if (!response || !response.success) {
+            showToast(response?.error || response?.message || "Unable to update favorites.", "error");
+            return;
+        }
+        project.starred = nextStarred;
+        renderFavorites();
+        renderWorkspaceOverview();
+        showToast(nextStarred ? "Added to Favorites." : "Removed from Favorites.", "success");
+    } catch (err) {
+        console.error("[dashboard] toggleFavorite failed:", err);
+        showToast("Unable to update favorites.", "error");
+    }
+}
+
+function renderFavorites() {
+    if (!DOM.favoritesList) return;
+
+    const favorites = STATE.projects
+        .filter((p) => p.starred === true)
+        .slice(0, CONFIG.FAVORITES_LIMIT);
+
+    if (favorites.length === 0) {
+        DOM.favoritesList.innerHTML = `
+            <p class="panel-empty">
+                No favorites yet.<br />
+                Add projects to Favorites to access them quickly.
+            </p>
+        `;
+        return;
+    }
+
+    DOM.favoritesList.innerHTML = favorites
+        .map((project) => {
+            const meta = languageMeta(project.language);
+            return `
+              <a class="simple-list-item" href="#" data-project-id="${escapeHtml(project.id)}">
+                <span class="simple-list-icon ${meta.className}"><i class="ri-star-fill"></i></span>
+                <span class="simple-list-item-name">${escapeHtml(project.name)}</span>
+                <span class="simple-list-item-meta">${timeAgo(project.lastOpenedAt || project.updatedAt)}</span>
+              </a>
+            `;
+        })
+        .join("");
+
+    DOM.favoritesList.querySelectorAll("[data-project-id]").forEach((item) => {
+        item.addEventListener("click", (event) => {
+            event.preventDefault();
+            openProject(item.dataset.projectId);
+        });
+    });
 }
 
 async function renameProject(project) {
@@ -410,6 +506,7 @@ async function renameProject(project) {
         project.name = newName;
         renderContinueCoding();
         renderRecentProjects();
+        renderFavorites();
         renderActivityFromProjects();
         showToast("Project renamed.", "success");
     } catch (err) {
@@ -501,6 +598,7 @@ async function moveProjectToTrash(project) {
         invalidatePreviewCache(project.id);
         renderContinueCoding();
         renderRecentProjects();
+        renderFavorites();
         renderActivityFromProjects();
         renderWorkspaceOverview();
         showToast("Project moved to Trash.", "success");
@@ -974,7 +1072,19 @@ function attachImportProjectButton() {
 }
 
 /* ==========================================
-   PROJECT PREVIEW THUMBNAILS
+   PROJECT PREVIEW
+   ------------------------------------------
+   IMPORTANT: This section deliberately contains
+   NO html/css/js inlining logic of its own.
+   All document-building goes through
+   buildPreviewDocument() from
+   components/preview.js — the exact same
+   function the Editor's live preview iframe
+   uses. This file only fetches project files
+   from Firestore, hands them to that shared
+   builder, and caches/mounts the resulting
+   HTML. That keeps there being exactly ONE
+   preview engine in the app.
 ========================================== */
 function getPreviewCacheKey(project) {
     const id = project?.id || "";
@@ -1031,63 +1141,17 @@ function invalidatePreviewCache(projectId) {
     }
 }
 
-function normalizeFilesMap(files) {
-    if (!files) return [];
-    if (Array.isArray(files)) {
-        return files
-            .map((f) => {
-                if (!f) return null;
-                if (typeof f === "string") return { name: f, content: f, path: f };
-                return {
-                    name: f.name || f.path || f.filename || "",
-                    path: f.path || f.name || f.filename || "",
-                    content: f.content ?? f.code ?? f.value ?? f.text ?? "",
-                };
-            })
-            .filter(Boolean);
-    }
-    if (typeof files === "object") {
-        return Object.keys(files).map((key) => {
-            const val = files[key];
-            if (typeof val === "string") {
-                return { name: key, path: key, content: val };
-            }
-            return {
-                name: val?.name || key,
-                path: val?.path || key,
-                content: val?.content ?? val?.code ?? val?.value ?? "",
-            };
-        });
-    }
-    return [];
-}
-
-function findFileByNames(fileList, names) {
-    const lowerNames = names.map((n) => n.toLowerCase());
-    return (
-        fileList.find((f) => {
-            const n = String(f.name || f.path || "").toLowerCase();
-            const base = n.split("/").pop();
-            return lowerNames.includes(n) || lowerNames.includes(base);
-        }) || null
-    );
-}
-
-function collectByExt(fileList, exts) {
-    return fileList.filter((f) => {
-        const n = String(f.name || f.path || "").toLowerCase();
-        return exts.some((ext) => n.endsWith(ext));
-    });
-}
-
 /**
- * Prefer existing preview helpers from the Editor if present.
- * Returns a full HTML document string or null.
+ * Fetch a project's files from Firestore and build its preview HTML
+ * using the shared engine in components/preview.js. Returns a full
+ * HTML document string, or null if no renderable preview exists.
  */
 async function loadProjectPreviewDocument(project) {
     if (!project?.id) return null;
 
-    // 1) Stored thumbnail / preview HTML on project record
+    // Cheap shortcut: a stored preview snapshot on the project record
+    // itself (if the app ever starts persisting one) is honored first,
+    // but this is a cache lookup, not a second rendering pipeline.
     if (typeof project.previewHtml === "string" && project.previewHtml.trim()) {
         return project.previewHtml;
     }
@@ -1095,161 +1159,23 @@ async function loadProjectPreviewDocument(project) {
         return project.thumbnailHtml;
     }
 
-    // 2) Existing global APIs used by Editor Preview
-    if (typeof window.buildProjectPreviewHtml === "function") {
-        try {
-            const html = await window.buildProjectPreviewHtml(project.id, project);
-            if (html && typeof html === "string") return html;
-        } catch (err) {
-            console.warn("[dashboard] buildProjectPreviewHtml failed:", err);
+    try {
+        const filesResponse = await getFiles(project.id);
+        if (!filesResponse.success || !Array.isArray(filesResponse.data) || !filesResponse.data.length) {
+            return null;
         }
-    }
-    if (typeof window.getProjectPreviewSrcDoc === "function") {
-        try {
-            const html = await window.getProjectPreviewSrcDoc(project.id, project);
-            if (html && typeof html === "string") return html;
-        } catch (err) {
-            console.warn("[dashboard] getProjectPreviewSrcDoc failed:", err);
-        }
-    }
-    if (typeof window.getProjectFiles === "function") {
-        try {
-            const filesResult = await window.getProjectFiles(STATE.uid, project.id);
-            const files = filesResult?.data || filesResult?.files || filesResult;
-            const doc = composePreviewFromFiles(files, project);
-            if (doc) return doc;
-        } catch (err) {
-            console.warn("[dashboard] getProjectFiles failed:", err);
-        }
-    }
 
-    // 3) Files already embedded on the project object
-    const embedded =
-        project.files ||
-        project.fileMap ||
-        project.sources ||
-        (project.html || project.css || project.js
-            ? {
-                "index.html": project.html || "",
-                "style.css": project.css || project.style || "",
-                "script.js": project.js || project.javascript || "",
-            }
-            : null);
+        const files = filesResponse.data.map((f) => ({
+            path: f.path || f.name,
+            content: f.content || "",
+        }));
 
-    if (embedded) {
-        const doc = composePreviewFromFiles(embedded, project);
-        if (doc) return doc;
-    }
-
-    return null;
-}
-
-function composePreviewFromFiles(filesInput, project) {
-    const files = normalizeFilesMap(filesInput);
-    if (!files.length) {
-        // Flat html/css/js on project
-        const html = project?.html || project?.content || "";
-        if (!html || !String(html).trim()) return null;
-        const css = project?.css || project?.style || "";
-        const js = project?.js || project?.javascript || "";
-        return wrapPreviewDocument(String(html), String(css), String(js));
-    }
-
-    const htmlFile =
-        findFileByNames(files, ["index.html", "index.htm", "main.html", "app.html"]) ||
-        collectByExt(files, [".html", ".htm"])[0];
-
-    if (!htmlFile || !String(htmlFile.content || "").trim()) {
+        const built = buildPreviewDocument({ files, fileContents: {}, activeFile: null });
+        return built.success ? built.html : null;
+    } catch (err) {
+        console.warn("[dashboard] loadProjectPreviewDocument failed for", project.id, err);
         return null;
     }
-
-    let html = String(htmlFile.content);
-    const cssFiles = collectByExt(files, [".css"]);
-    const jsFiles = collectByExt(files, [".js", ".mjs"]);
-
-    // Inline linked stylesheets that match project files
-    html = html.replace(
-        /<link[^>]+href=["']([^"']+)["'][^>]*>/gi,
-        (match, href) => {
-            const base = String(href).split("?")[0].split("/").pop().toLowerCase();
-            const found = cssFiles.find((f) => {
-                const n = String(f.name || f.path || "").toLowerCase();
-                return n === base || n.endsWith("/" + base) || n === String(href).toLowerCase();
-            });
-            if (found) {
-                return `<style>\n${found.content}\n</style>`;
-            }
-            return match;
-        }
-    );
-
-    // Inline local scripts
-    html = html.replace(
-        /<script([^>]*)src=["']([^"']+)["']([^>]*)><\/script>/gi,
-        (match, pre, src, post) => {
-            const base = String(src).split("?")[0].split("/").pop().toLowerCase();
-            const found = jsFiles.find((f) => {
-                const n = String(f.name || f.path || "").toLowerCase();
-                return n === base || n.endsWith("/" + base) || n === String(src).toLowerCase();
-            });
-            if (found) {
-                return `<script${pre}${post}>\n${found.content}\n</script>`;
-            }
-            return match;
-        }
-    );
-
-    // Append any CSS/JS not already referenced
-    const extraCss = cssFiles.map((f) => f.content).filter(Boolean).join("\n");
-    const extraJs = jsFiles.map((f) => f.content).filter(Boolean).join("\n");
-
-    return wrapPreviewDocument(html, extraCss, extraJs, true);
-}
-
-function wrapPreviewDocument(html, css = "", js = "", alreadyInlined = false) {
-    const trimmed = String(html || "").trim();
-    if (!trimmed) return null;
-
-    const hasDoc = /<html[\s>]/i.test(trimmed) || /<!doctype/i.test(trimmed);
-    let doc = trimmed;
-
-    if (!hasDoc) {
-        doc = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<style>
-  html,body{margin:0;padding:0;background:#fff;color:#111;font-family:system-ui,sans-serif;}
-  img,video,canvas,iframe{max-width:100%;}
-</style>
-${css ? `<style>${css}</style>` : ""}
-</head>
-<body>
-${trimmed}
-${js ? `<script>${js}<\/script>` : ""}
-</body>
-</html>`;
-        return doc;
-    }
-
-    // Inject base reset + optional extras into existing document
-    let injected = doc;
-    if (css && !alreadyInlined) {
-        if (/<\/head>/i.test(injected)) {
-            injected = injected.replace(/<\/head>/i, `<style>${css}</style></head>`);
-        } else {
-            injected = `<style>${css}</style>` + injected;
-        }
-    }
-    if (js && !alreadyInlined) {
-        if (/<\/body>/i.test(injected)) {
-            injected = injected.replace(/<\/body>/i, `<script>${js}<\/script></body>`);
-        } else {
-            injected = injected + `<script>${js}<\/script>`;
-        }
-    }
-    return injected;
 }
 
 function setThumbFallback(thumbEl) {
@@ -1274,6 +1200,15 @@ function setThumbLoading(thumbEl) {
     thumbEl.appendChild(loader);
 }
 
+// Fixed "virtual" viewport the project is rendered at, then scaled down
+// to fit whatever thumbnail box it's mounted in. Rendering small forces
+// the page's own layout to reflow oddly and shows native iframe
+// scrollbars where content overflows the tiny box; rendering it at a
+// normal desktop size and scaling the whole iframe down (like a
+// website-thumbnail snapshot) avoids both problems.
+const PREVIEW_VIRTUAL_WIDTH = 1280;
+const PREVIEW_VIRTUAL_HEIGHT = 800;
+
 function mountPreviewIframe(thumbEl, html) {
     if (!thumbEl || !html) {
         setThumbFallback(thumbEl);
@@ -1297,7 +1232,23 @@ function mountPreviewIframe(thumbEl, html) {
     );
     iframe.setAttribute("tabindex", "-1");
     iframe.setAttribute("loading", "lazy");
+    // Suppress the iframe's own native scrollbars — the project's page
+    // is rendered full-size (see below) and scaled down, so scrollbars
+    // would otherwise render at full un-scaled thickness and poke out
+    // past the rounded thumbnail corners.
+    iframe.setAttribute("scrolling", "no");
     iframe.title = "Project preview";
+
+    // Render at a fixed desktop-like size, top-left anchored, then
+    // scale the whole thing down to the thumbnail's actual box.
+    iframe.style.position = "absolute";
+    iframe.style.top = "0";
+    iframe.style.left = "0";
+    iframe.style.width = `${PREVIEW_VIRTUAL_WIDTH}px`;
+    iframe.style.height = `${PREVIEW_VIRTUAL_HEIGHT}px`;
+    iframe.style.border = "0";
+    iframe.style.background = "#ffffff";
+    iframe.style.transformOrigin = "top left";
     // Pointer events off so card click / 3-dot still work
     iframe.style.pointerEvents = "none";
     iframe.srcdoc = html;
@@ -1311,6 +1262,39 @@ function mountPreviewIframe(thumbEl, html) {
         thumbEl.appendChild(frameWrap);
     }
     thumbEl.classList.add("has-preview");
+
+    scalePreviewIframeToFit(frameWrap, iframe);
+}
+
+/**
+ * Scales a virtual-size preview iframe down (or up) so it exactly
+ * covers its wrapper, cropping overflow — the same "cover" behavior
+ * as a CSS background-image thumbnail. Re-applies on resize so it
+ * stays correct across responsive breakpoints (e.g. the projects grid
+ * going from 4 to 1 column).
+ */
+function scalePreviewIframeToFit(frameWrap, iframe) {
+    const apply = () => {
+        if (!frameWrap.isConnected) return;
+        const containerWidth = frameWrap.clientWidth;
+        const containerHeight = frameWrap.clientHeight;
+        if (!containerWidth || !containerHeight) return;
+        const scale = Math.max(
+            containerWidth / PREVIEW_VIRTUAL_WIDTH,
+            containerHeight / PREVIEW_VIRTUAL_HEIGHT
+        );
+        iframe.style.transform = `scale(${scale})`;
+    };
+
+    apply();
+
+    if (typeof ResizeObserver === "function") {
+        const observer = new ResizeObserver(() => apply());
+        observer.observe(frameWrap);
+    } else {
+        // Fallback for older browsers without ResizeObserver support
+        window.addEventListener("resize", apply);
+    }
 }
 
 async function resolvePreviewHtml(project) {
@@ -1395,16 +1379,50 @@ async function hydrateProjectThumbnails(projects) {
     await Promise.all(workers);
 }
 
+/**
+ * Renders the large Continue Coding preview. Reuses the exact same
+ * mount/fallback/loading helpers as the Recent Projects grid thumbs —
+ * this is the same preview surface, just presented larger, not a
+ * second implementation.
+ */
+async function renderContinuePreview(project) {
+    if (!DOM.continuePreviewWrap) return;
+
+    const cacheKey = getPreviewCacheKey(project);
+    const mem = STATE.previewCache.get(project.id);
+    if (mem && mem.key === cacheKey && mem.html) {
+        mountPreviewIframe(DOM.continuePreviewWrap, mem.html);
+        return;
+    }
+    if (mem && mem.key === cacheKey && mem.failed) {
+        setThumbFallback(DOM.continuePreviewWrap);
+        return;
+    }
+
+    setThumbLoading(DOM.continuePreviewWrap);
+    const html = await resolvePreviewHtml(project);
+
+    // Bail out if the "latest" project changed while we were awaiting
+    if (STATE.projects[0]?.id !== project.id) return;
+
+    if (html) {
+        mountPreviewIframe(DOM.continuePreviewWrap, html);
+    } else {
+        setThumbFallback(DOM.continuePreviewWrap);
+    }
+}
+
 /* ==========================================
    PROJECTS
    ------------------------------------------
    Trashed projects (archived === true) are
    excluded from every Dashboard surface —
-   Continue Coding, Recent Projects, Recent
-   Activity, and the overview counts — so a
-   project moved to Trash (from here or from
-   the Projects page) disappears immediately,
-   and a restored project reappears next load.
+   Continue Coding, Recent Projects, Favorites,
+   Recent Activity, and the overview counts —
+   so a project moved to Trash (from here or
+   from the Projects page) disappears
+   immediately, and a restored project
+   reappears next load.
 ========================================== */
 async function loadProjects() {
     if (!STATE.uid) return;
@@ -1421,6 +1439,7 @@ async function loadProjects() {
         .sort((a, b) => toMillis(b.updatedAt) - toMillis(a.updatedAt));
     renderContinueCoding();
     renderRecentProjects();
+    renderFavorites();
     renderActivityFromProjects();
     renderWorkspaceOverview();
 }
@@ -1428,16 +1447,25 @@ async function loadProjects() {
 function renderContinueCoding() {
     if (!DOM.continueSection) return;
     const latest = STATE.projects[0];
+
     if (!latest) {
         DOM.continueSection.hidden = true;
+        if (DOM.continueEmptyState) DOM.continueEmptyState.hidden = false;
         return;
     }
+
+    if (DOM.continueEmptyState) DOM.continueEmptyState.hidden = true;
     DOM.continueSection.hidden = false;
+
     if (DOM.continueMeta) {
         DOM.continueMeta.textContent = `You left off ${timeAgo(latest.updatedAt)}`;
     }
     if (DOM.continueName) {
         DOM.continueName.textContent = latest.name;
+    }
+    if (DOM.continueDescription) {
+        DOM.continueDescription.textContent = latest.description || "";
+        DOM.continueDescription.hidden = !latest.description;
     }
     if (DOM.continueFile) {
         DOM.continueFile.textContent = latest.description || "index.html";
@@ -1453,6 +1481,10 @@ function renderContinueCoding() {
             openProject(latest.id);
         };
     }
+
+    renderContinuePreview(latest).catch((err) => {
+        console.warn("[dashboard] renderContinuePreview error:", err);
+    });
 }
 
 function renderRecentProjects() {
@@ -1460,9 +1492,15 @@ function renderRecentProjects() {
     const projects = STATE.projects.slice(0, CONFIG.RECENT_PROJECTS_LIMIT);
     if (projects.length === 0) {
         DOM.recentProjectsGrid.innerHTML = `
-      <p class="panel-empty">
-        No projects yet. Create your first project to see it here.
-      </p>
+      <div class="dash-empty-state">
+        <span class="dash-empty-state-icon"><i class="ri-folder-add-line"></i></span>
+        <h4>Your projects will appear here.</h4>
+        <p>Create a project and start coding with Nova Editor.</p>
+        <button type="button" class="btn btn-primary" data-new-project>
+          <i class="ri-add-line"></i>
+          Create New Project
+        </button>
+      </div>
     `;
         return;
     }
@@ -1486,7 +1524,9 @@ function renderRecentProjects() {
           <div class="project-card-body">
             <div class="project-card-title-row">
               <strong>${escapeHtml(project.name)}</strong>
+              ${project.starred ? '<i class="ri-star-fill project-card-star" title="Favorite"></i>' : ""}
             </div>
+            ${project.description ? `<small>${escapeHtml(project.description)}</small>` : ""}
             <small>Updated ${timeAgo(project.updatedAt)}</small>
             <div class="tag-row">
               <span class="tag tag-${meta.className}">${meta.label}</span>
@@ -1571,13 +1611,24 @@ function renderActivityFromProjects() {
 
 /* ==========================================
    WORKSPACE OVERVIEW
+   ------------------------------------------
+   Projects and Favorites counts are derived
+   from the same STATE.projects list used
+   everywhere else on the Dashboard. There is
+   currently no snippets data source available
+   to this page, so that count is left as "—"
+   rather than invented.
 ========================================== */
 function renderWorkspaceOverview() {
     if (DOM.overviewProjectsCount) {
         DOM.overviewProjectsCount.textContent = String(STATE.projects.length);
     }
-    if (DOM.overviewAssetsCount) {
-        DOM.overviewAssetsCount.textContent = "—";
+    if (DOM.overviewFavoritesCount) {
+        const favoriteCount = STATE.projects.filter((p) => p.starred === true).length;
+        DOM.overviewFavoritesCount.textContent = String(favoriteCount);
+    }
+    if (DOM.overviewSnippetsCount) {
+        DOM.overviewSnippetsCount.textContent = "—";
     }
     if (DOM.storagePercent) DOM.storagePercent.textContent = "—";
     if (DOM.storageUsedText) DOM.storageUsedText.textContent = `Storage tracking coming soon`;

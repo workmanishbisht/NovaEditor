@@ -53,13 +53,17 @@
 
                 <!-- =======================================
                 Continue Coding
+                Dynamic — populated by dashboard.js from the
+                user's most recently updated project. Hidden
+                (and dashContinueEmpty shown instead) when the
+                user has no projects yet.
                 ======================================= -->
                 <section class="dash-continue" id="dashContinueSection" hidden>
                     <div class="dash-continue-info">
                         <span class="dash-continue-eyebrow"><i class="ri-play-circle-line"></i> Continue Coding</span>
                         <p class="dash-continue-meta" id="continueMeta">You left off recently</p>
                         <h3 id="continueProjectName">-</h3>
-                        <p class="dash-continue-file" id="continueProjectFile">-</p>
+                        <p class="dash-continue-description" id="continueProjectDescription" hidden></p>
                         <div class="tag-row" id="continueProjectTags"></div>
                         <a href="editor.html" class="btn btn-dark" id="continueOpenBtn">
                             Open in Editor
@@ -67,32 +71,27 @@
                         </a>
                     </div>
                     <div class="dash-continue-preview">
-                        <div class="code-editor-mock" aria-hidden="true">
-                            <div class="code-editor-mock-titlebar">
-                                <span class="code-editor-mock-dots">
-                                    <span></span><span></span><span></span>
-                                </span>
-                                <span class="code-editor-mock-filename">index.html</span>
-                            </div>
-                            <div class="code-editor-mock-body">
-                                <div class="code-editor-mock-gutter">
-                                    <span>1</span><span>2</span><span>3</span><span>4</span>
-                                    <span>5</span><span>6</span><span>7</span><span>8</span>
-                                </div>
-                                <div class="code-editor-mock-lines">
-                                    <span><span class="cm-punct">&lt;</span><span class="cm-tag">header</span> <span class="cm-attr">class</span><span class="cm-punct">=</span><span class="cm-string">"app-header"</span><span class="cm-punct">&gt;</span></span>
-                                    <span class="cm-indent"><span class="cm-punct">&lt;</span><span class="cm-tag">div</span> <span class="cm-attr">class</span><span class="cm-punct">=</span><span class="cm-string">"header-search"</span><span class="cm-punct">&gt;</span></span>
-                                    <span class="cm-indent"><span class="cm-comment">&lt;!-- search input --&gt;</span></span>
-                                    <span class="cm-indent"><span class="cm-punct">&lt;/</span><span class="cm-tag">div</span><span class="cm-punct">&gt;</span></span>
-                                    <span><span class="cm-punct">&lt;/</span><span class="cm-tag">header</span><span class="cm-punct">&gt;</span></span>
-                                    <span></span>
-                                    <span><span class="cm-keyword">function</span> <span class="cm-func">initLayout</span><span class="cm-punct">() {</span></span>
-                                    <span class="cm-indent"><span class="cm-keyword">return</span> <span class="cm-string">"ready"</span><span class="cm-punct">;</span></span>
-                                </div>
-                            </div>
+                        <!-- Rendered dynamically by dashboard.js using the SAME
+                             preview engine (components/preview.js) as the
+                             Editor and the Recent Projects thumbnails. No
+                             static/fake code is shown here. -->
+                        <div class="continue-preview-thumb project-card-thumb" id="continuePreviewWrap"
+                            aria-hidden="true">
+                            <i class="ri-code-s-slash-line"></i>
                         </div>
                     </div>
                 </section>
+
+                <!-- Empty state shown when the user has no projects at all -->
+                <div class="dash-continue-empty" id="dashContinueEmpty" hidden>
+                    <span class="dash-empty-state-icon"><i class="ri-rocket-line"></i></span>
+                    <h4>Start building your first project</h4>
+                    <p>Create a project and start coding with Nova Editor.</p>
+                    <button type="button" class="btn btn-primary" data-new-project>
+                        <i class="ri-add-line"></i>
+                        New Project
+                    </button>
+                </div>
 
                 <!-- =======================================
                 Quick Actions
@@ -126,11 +125,11 @@
                             </span>
                         </a>
 
-                        <a href="templates.html" class="quick-action">
-                            <span class="quick-action-icon"><i class="ri-layout-grid-line"></i></span>
+                        <a href="ai-assistant.html" class="quick-action">
+                            <span class="quick-action-icon"><i class="ri-sparkling-2-line"></i></span>
                             <span>
-                                <strong>Explore Templates</strong>
-                                <small>Use pre-built templates</small>
+                                <strong>AI Assistant</strong>
+                                <small>Get coding help</small>
                             </span>
                         </a>
 
@@ -155,7 +154,7 @@
 
                             <!-- Cards are rendered dynamically by dashboard.js.
                                  Each card MUST include the 3-dot button inside .project-card-thumb:
-                                 <button type="button" class="project-card-menu-btn" aria-label="Project actions" title="Project actions">
+                                 <button type="button" class="project-card-menu-btn" aria-label="Project actions">
                                      <i class="ri-more-2-fill"></i>
                                  </button>
                             -->
@@ -205,6 +204,19 @@
                     ======================================= -->
                     <aside class="dash-side-col">
 
+                        <!-- Favorites — reuses the existing `starred` field on
+                             project documents. No new favorites data
+                             structure is introduced. -->
+                        <section class="dash-panel">
+                            <div class="section-head">
+                                <h3>Favorites</h3>
+                                <a href="projects.html?filter=favorites" class="section-link">View all</a>
+                            </div>
+                            <div class="simple-list" id="favoritesList">
+                                <p class="panel-empty">Loading favorites...</p>
+                            </div>
+                        </section>
+
                         <section class="dash-panel">
                             <div class="section-head">
                                 <h3>Recent Activity</h3>
@@ -239,8 +251,12 @@
                                     <strong id="overviewProjectsCount">0</strong>
                                 </div>
                                 <div>
-                                    <span>Assets</span>
-                                    <strong id="overviewAssetsCount">—</strong>
+                                    <span>Favorites</span>
+                                    <strong id="overviewFavoritesCount">0</strong>
+                                </div>
+                                <div>
+                                    <span>Snippets</span>
+                                    <strong id="overviewSnippetsCount">—</strong>
                                 </div>
                             </div>
                         </section>
@@ -291,4 +307,5 @@
     <script type="module" src="../js/dashboard.js"></script>
 
 </body>
+
 </html>
