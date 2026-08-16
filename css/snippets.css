@@ -197,7 +197,7 @@
     background: var(--surface);
 }
 
-.snippets-page .snippets-search > i {
+.snippets-page .snippets-search>i {
     font-size: 17px;
     color: var(--text-muted);
     flex-shrink: 0;
@@ -1087,11 +1087,16 @@ html[data-theme="dark"] .snippets-page .snippets-empty {
         gap: 20px;
     }
 
-    /* Page header — compact, no dead vertical space, actions in a clean row */
+    /* Page header — compact, no dead vertical space */
     .snippets-page .snippets-header {
         flex-direction: column;
         align-items: stretch;
-        gap: 14px;
+        gap: 12px;
+    }
+
+    /* CRITICAL FIX: stop text block from growing and creating huge empty space */
+    .snippets-page .snippets-header-text {
+        flex: 0 0 auto;
     }
 
     .snippets-page .snippets-title {
@@ -1151,7 +1156,7 @@ html[data-theme="dark"] .snippets-page .snippets-empty {
         min-width: 0;
     }
 
-    .snippets-page .filter-section + .filter-section {
+    .snippets-page .filter-section+.filter-section {
         margin-top: var(--space-4);
         padding-top: var(--space-4);
         border-top: 1px solid var(--border-subtle);
