@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant — Nova Editor</title>
+    <!-- RemixIcon -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+    <!-- Css file link -->
+    <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/ai-assistant.css" />
+    <link rel="stylesheet" href="../css/toast.css">
+</head>
+
+<body data-page="ai-assistant">
+
+    <div class="app-shell">
+        <div id="sidebarMount"></div>
+
+        <div class="app-main">
+            <div id="headerMount"></div>
+
+            <main class="coming-soon-main" id="mainContent" aria-labelledby="comingSoonTitle">
+                <div class="coming-soon-container">
+
+                    <!-- Rocket illustration -->
+                    <div class="coming-soon-illustration" aria-hidden="true">
+                        <div class="illustration-glow"></div>
+
+                        <!-- Floating code cards -->
+                        <div class="float-card float-card-left">
+                            <span class="float-card-dots"><i></i><i></i><i></i></span>
+                            <span class="float-card-code">&lt;/&gt;</span>
+                        </div>
+                        <div class="float-card float-card-right">
+                            <span class="float-card-code">{ }</span>
+                        </div>
+
+                        <!-- Rocket -->
+                        <div class="rocket-wrap">
+                            <svg class="rocket-svg" viewBox="0 0 120 140" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <!-- Body -->
+                                <path
+                                    d="M60 8 C48 28 42 52 42 78 L42 98 C42 106 48 112 60 112 C72 112 78 106 78 98 L78 78 C78 52 72 28 60 8Z"
+                                    fill="url(#rocketBody)" />
+                                <!-- Window -->
+                                <circle cx="60" cy="52" r="14" fill="#E0F2FE" />
+                                <circle cx="60" cy="52" r="9" fill="url(#rocketWindow)" />
+                                <!-- Left fin -->
+                                <path d="M42 78 L28 108 L42 100 Z" fill="url(#rocketFin)" />
+                                <!-- Right fin -->
+                                <path d="M78 78 L92 108 L78 100 Z" fill="url(#rocketFin)" />
+                                <!-- Flame -->
+                                <path d="M52 112 Q60 138 68 112 Z" fill="url(#rocketFlame)" class="rocket-flame" />
+                                <defs>
+                                    <linearGradient id="rocketBody" x1="42" y1="8" x2="78" y2="112"
+                                        gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#60A5FA" />
+                                        <stop offset="0.45" stop-color="#3B82F6" />
+                                        <stop offset="1" stop-color="#2563EB" />
+                                    </linearGradient>
+                                    <linearGradient id="rocketWindow" x1="51" y1="43" x2="69" y2="61"
+                                        gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#38BDF8" />
+                                        <stop offset="1" stop-color="#0284C7" />
+                                    </linearGradient>
+                                    <linearGradient id="rocketFin" x1="28" y1="78" x2="92" y2="108"
+                                        gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#93C5FD" />
+                                        <stop offset="1" stop-color="#3B82F6" />
+                                    </linearGradient>
+                                    <linearGradient id="rocketFlame" x1="60" y1="112" x2="60" y2="138"
+                                        gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#FDBA74" />
+                                        <stop offset="0.5" stop-color="#FB923C" />
+                                        <stop offset="1" stop-color="#F97316" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+
+                        <!-- Sparkles -->
+                        <span class="sparkle s1">✦</span>
+                        <span class="sparkle s2">✧</span>
+                        <span class="sparkle s3">✦</span>
+                        <span class="sparkle s4">+</span>
+                        <span class="sparkle s5">✧</span>
+                        <span class="sparkle s6">+</span>
+                    </div>
+
+                    <!-- Heading -->
+                    <h1 id="comingSoonTitle" class="coming-soon-title">
+                        Coming Soon!
+                        <span class="title-sparkle" aria-hidden="true">✦</span>
+                    </h1>
+                    <p class="coming-soon-desc">
+                        We're working hard to bring something amazing.<br>
+                        This feature is on its way.
+                    </p>
+
+                    <!-- Progress dots -->
+                    <div class="coming-soon-progress" role="status" aria-label="Feature in progress">
+                        <span class="progress-dot active"></span>
+                        <span class="progress-dot"></span>
+                        <span class="progress-dot"></span>
+                        <span class="progress-dot"></span>
+                        <span class="progress-dot"></span>
+                    </div>
+
+                    <!-- Notify card -->
+                    <div class="notify-card">
+                        <div class="notify-card-icon">
+                            <i class="ri-notification-3-line" aria-hidden="true"></i>
+                        </div>
+                        <p class="notify-card-text">Stay tuned! We'll notify you once it's live.</p>
+                        <button type="button" class="btn-notify" id="notifyMeBtn">
+                            Notify Me
+                        </button>
+                    </div>
+
+                    <!-- Explore -->
+                    <p class="coming-soon-explore">In the meantime, you can explore other features.</p>
+                    <div class="coming-soon-actions">
+                        <a href="dashboard.html" class="btn-outline-action">
+                            <i class="ri-home-5-line" aria-hidden="true"></i>
+                            Go to Dashboard
+                        </a>
+                        <a href="projects.html" class="btn-primary-action">
+                            <i class="ri-folder-3-line" aria-hidden="true"></i>
+                            View Projects
+                        </a>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="projectModalMount"></div>
+
+    <!-- script file -->
+    <script type="module" src="../components/toast.js"></script>
+    <script type="module" src="../js/layout.js"></script>
+    <script type="module" src="../js/ai-assistant.js"></script>
+</body>
+
+</html>
