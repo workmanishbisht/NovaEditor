@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../assets/images/favicon/favicon.png">
+    <title>Settings — Nova Editor</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+    <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/settings.css" />
+</head>
+
+<body data-page="settings">
+    <div class="app-shell">
+        <div id="sidebarMount"></div>
+
+        <div class="app-main">
+            <div id="headerMount"></div>
+            <main class="settings-page">
+                <div class="container">
+
+                    <!-- ==========================================
+                         Page Heading
+                    ========================================== -->
+                    <div class="settings-page-head">
+                        <h1>Settings</h1>
+                        <p>Managing your account, preferences and workspace settings.</p>
+                    </div>
+
+                    <!-- ==========================================
+                         Settings Layout (Nav + Content)
+                    ========================================== -->
+                    <div class="settings-layout">
+
+                        <!-- LEFT: Settings Navigation -->
+                        <aside class="settings-nav" aria-label="Settings sections">
+                            <nav class="settings-nav-list">
+                                <a href="#" class="settings-nav-item active" data-settings-nav="account"
+                                    aria-current="page">
+                                    <i class="ri-user-3-line"></i>
+                                    <span>Account</span>
+                                </a>
+                                <a href="#" class="settings-nav-item" data-settings-nav="connected-accounts">
+                                    <i class="ri-links-line"></i>
+                                    <span>Connected Accounts</span>
+                                </a>
+                                <a href="#" class="settings-nav-item" data-settings-nav="appearance">
+                                    <i class="ri-palette-line"></i>
+                                    <span>Appearance</span>
+                                </a>
+                                <a href="#" class="settings-nav-item" data-settings-nav="editor-preferences">
+                                    <i class="ri-code-s-slash-line"></i>
+                                    <span>Editor Preferences</span>
+                                </a>
+                                <a href="#" class="settings-nav-item" data-settings-nav="notifications">
+                                    <i class="ri-notification-3-line"></i>
+                                    <span>Notifications</span>
+                                </a>
+                                <a href="#" class="settings-nav-item" data-settings-nav="workspace">
+                                    <i class="ri-stack-line"></i>
+                                    <span>Workspace</span>
+                                </a>
+                                <a href="#" class="settings-nav-item" data-settings-nav="security">
+                                    <i class="ri-shield-keyhole-line"></i>
+                                    <span>Security</span>
+                                </a>
+                                <a href="#" class="settings-nav-item" data-settings-nav="data-privacy">
+                                    <i class="ri-lock-2-line"></i>
+                                    <span>Data &amp; Privacy</span>
+                                </a>
+                                <a href="#" class="settings-nav-item" data-settings-nav="about">
+                                    <i class="ri-information-line"></i>
+                                    <span>About</span>
+                                </a>
+                            </nav>
+                        </aside>
+
+                        <!-- RIGHT: Settings Content -->
+                        <div class="settings-content">
+
+                            <!-- ==========================================
+                                 1. Account
+                            ========================================== -->
+                            <section class="settings-tab-panel" id="account" data-tab-panel aria-labelledby="accountPanelTitle">
+
+                                <div class="settings-panel-head">
+                                    <div>
+                                        <h2 id="accountPanelTitle">Account</h2>
+                                        <p>Manage your profile information and account details.</p>
+                                    </div>
+                                    <button type="button" class="btn btn-primary-solid" id="saveChangesBtn">
+                                        <i class="ri-check-line"></i>
+                                        <span>Save Changes</span>
+                                    </button>
+                                </div>
+
+                                <div class="settings-card">
+                                    <div class="profile-photo-row">
+                                        <div class="profile-photo-wrap">
+                                            <img src="../assets/images/avatar/default.png" alt="Profile photo"
+                                                class="profile-photo" id="profilePhotoImg">
+                                            <button type="button" class="profile-photo-edit" id="profilePhotoEditBtn"
+                                                aria-label="Change photo">
+                                                <i class="ri-camera-line"></i>
+                                            </button>
+                                        </div>
+                                        <div class="profile-photo-meta">
+                                            <button type="button" class="btn btn-outline" id="changePhotoBtn">
+                                                <i class="ri-upload-2-line"></i>
+                                                <span>Change Photo</span>
+                                            </button>
+                                            <small id="profilePhotoHint">JPG, PNG or GIF. Max size 2MB.</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-fields-grid">
+
+                                        <div class="settings-field">
+                                            <label for="fullName">Full Name</label>
+                                            <div class="settings-input">
+                                                <i class="ri-user-line"></i>
+                                                <input type="text" id="fullName" value="">
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-field">
+                                            <label for="username">Username</label>
+                                            <div class="settings-input">
+                                                <i class="ri-at-line"></i>
+                                                <input type="text" id="username" value="">
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-field">
+                                            <label for="emailAddress">Email Address</label>
+                                            <div class="settings-input">
+                                                <i class="ri-mail-line"></i>
+                                                <input type="email" id="emailAddress" value="" readonly>
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-field">
+                                            <label for="location">Location</label>
+                                            <div class="settings-input settings-input-select">
+                                                <i class="ri-map-pin-line"></i>
+                                                <input type="text" id="location" value="">
+                                                <i class="ri-arrow-down-s-line settings-select-chevron"></i>
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-field">
+                                            <label for="role">Role</label>
+                                            <div class="settings-input settings-input-select">
+                                                <i class="ri-briefcase-line"></i>
+                                                <input type="text" id="role" value="">
+                                                <i class="ri-arrow-down-s-line settings-select-chevron"></i>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ==========================================
+                                 2. Connected Accounts
+                            ========================================== -->
+                            <section class="settings-tab-panel" id="connected-accounts" data-tab-panel hidden
+                                aria-labelledby="connectedAccountsTitle">
+                                <div class="settings-panel-head">
+                                    <div>
+                                        <h2 id="connectedAccountsTitle">Connected Accounts</h2>
+                                        <p>Manage your connected accounts and authentication providers.</p>
+                                    </div>
+                                </div>
+
+                                <div class="settings-card">
+                                    <div class="provider-row" id="providerRowGoogle">
+                                        <div class="settings-compact-icon provider-icon-google">
+                                            <i class="ri-google-fill"></i>
+                                        </div>
+                                        <div class="settings-compact-text">
+                                            <h3>Google</h3>
+                                            <p id="googleStatusText">Checking status…</p>
+                                        </div>
+                                        <button type="button" class="btn btn-outline settings-compact-action" id="googleConnectBtn">
+                                            <span>Connect</span>
+                                        </button>
+                                    </div>
+
+                                    <div class="provider-row" id="providerRowGithub">
+                                        <div class="settings-compact-icon provider-icon-github">
+                                            <i class="ri-github-fill"></i>
+                                        </div>
+                                        <div class="settings-compact-text">
+                                            <h3>GitHub</h3>
+                                            <p id="githubStatusText">Checking status…</p>
+                                        </div>
+                                        <button type="button" class="btn btn-outline settings-compact-action" id="githubConnectBtn">
+                                            <span>Connect</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ==========================================
+                                 3. Appearance
+                            ========================================== -->
+                            <section class="settings-tab-panel" id="appearance" data-tab-panel hidden aria-labelledby="appearanceTitle">
+                                <div class="settings-panel-head">
+                                    <div>
+                                        <h2 id="appearanceTitle">Appearance</h2>
+                                        <p>Choose how Nova Editor looks on this device.</p>
+                                    </div>
+                                </div>
+
+                                <div class="settings-card">
+                                    <div class="theme-option-group" role="radiogroup" aria-label="Theme">
+                                        <button type="button" class="theme-option" data-theme-option="light" role="radio">
+                                            <i class="ri-sun-line"></i>
+                                            <span>Light</span>
+                                        </button>
+                                        <button type="button" class="theme-option" data-theme-option="dark" role="radio">
+                                            <i class="ri-moon-line"></i>
+                                            <span>Dark</span>
+                                        </button>
+                                        <button type="button" class="theme-option" data-theme-option="system" role="radio">
+                                            <i class="ri-computer-line"></i>
+                                            <span>System</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ==========================================
+                                 4. Editor Preferences
+                            ========================================== -->
+                            <section class="settings-tab-panel" id="editor-preferences" data-tab-panel hidden
+                                aria-labelledby="editorPreferencesTitle">
+                                <div class="settings-panel-head">
+                                    <div>
+                                        <h2 id="editorPreferencesTitle">Editor Preferences</h2>
+                                        <p>Defaults used when you open the code editor.</p>
+                                    </div>
+                                    <button type="button" class="btn btn-primary-solid" id="saveEditorPrefsBtn">
+                                        <i class="ri-check-line"></i>
+                                        <span>Save Changes</span>
+                                    </button>
+                                </div>
+
+                                <div class="settings-card">
+                                    <div class="settings-fields-grid">
+                                        <div class="settings-field">
+                                            <label for="defaultLanguage">Default Language</label>
+                                            <div class="settings-input settings-input-select">
+                                                <i class="ri-code-line"></i>
+                                                <select id="defaultLanguage">
+                                                    <option value="javascript">JavaScript</option>
+                                                    <option value="typescript">TypeScript</option>
+                                                    <option value="python">Python</option>
+                                                    <option value="html">HTML / CSS</option>
+                                                    <option value="java">Java</option>
+                                                    <option value="cpp">C++</option>
+                                                    <option value="go">Go</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                                <i class="ri-arrow-down-s-line settings-select-chevron"></i>
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-field">
+                                            <label for="fontSize">Font Size</label>
+                                            <div class="settings-input">
+                                                <i class="ri-font-size-2"></i>
+                                                <input type="number" id="fontSize" min="10" max="24" step="1">
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-field">
+                                            <label for="tabSize">Tab Size</label>
+                                            <div class="settings-input settings-input-select">
+                                                <i class="ri-space"></i>
+                                                <select id="tabSize">
+                                                    <option value="2">2 spaces</option>
+                                                    <option value="4">4 spaces</option>
+                                                    <option value="8">8 spaces</option>
+                                                </select>
+                                                <i class="ri-arrow-down-s-line settings-select-chevron"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="settings-toggle-list">
+                                        <label class="settings-toggle-row">
+                                            <span>Word Wrap</span>
+                                            <span class="settings-toggle">
+                                                <input type="checkbox" id="wordWrap">
+                                                <span class="settings-toggle-slider"></span>
+                                            </span>
+                                        </label>
+                                        <label class="settings-toggle-row">
+                                            <span>Auto Save</span>
+                                            <span class="settings-toggle">
+                                                <input type="checkbox" id="autoSave">
+                                                <span class="settings-toggle-slider"></span>
+                                            </span>
+                                        </label>
+                                        <label class="settings-toggle-row">
+                                            <span>Minimap</span>
+                                            <span class="settings-toggle">
+                                                <input type="checkbox" id="minimap">
+                                                <span class="settings-toggle-slider"></span>
+                                            </span>
+                                        </label>
+                                        <label class="settings-toggle-row">
+                                            <span>Line Numbers</span>
+                                            <span class="settings-toggle">
+                                                <input type="checkbox" id="lineNumbers">
+                                                <span class="settings-toggle-slider"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ==========================================
+                                 5. Notifications
+                            ========================================== -->
+                            <section class="settings-tab-panel" id="notifications" data-tab-panel hidden
+                                aria-labelledby="notificationsTitle">
+                                <div class="settings-panel-head">
+                                    <div>
+                                        <h2 id="notificationsTitle">Notifications</h2>
+                                        <p>Choose what Nova Editor should notify you about.</p>
+                                    </div>
+                                    <button type="button" class="btn btn-primary-solid" id="saveNotificationsBtn">
+                                        <i class="ri-check-line"></i>
+                                        <span>Save Changes</span>
+                                    </button>
+                                </div>
+
+                                <div class="settings-card">
+                                    <div class="settings-toggle-list">
+                                        <label class="settings-toggle-row">
+                                            <span>Email notifications</span>
+                                            <span class="settings-toggle">
+                                                <input type="checkbox" id="notifyEmail">
+                                                <span class="settings-toggle-slider"></span>
+                                            </span>
+                                        </label>
+                                        <label class="settings-toggle-row">
+                                            <span>Project activity</span>
+                                            <span class="settings-toggle">
+                                                <input type="checkbox" id="notifyProjectActivity">
+                                                <span class="settings-toggle-slider"></span>
+                                            </span>
+                                        </label>
+                                        <label class="settings-toggle-row">
+                                            <span>Product updates</span>
+                                            <span class="settings-toggle">
+                                                <input type="checkbox" id="notifyProductUpdates">
+                                                <span class="settings-toggle-slider"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ==========================================
+                                 6. Workspace
+                            ========================================== -->
+                            <section class="settings-tab-panel" id="workspace" data-tab-panel hidden aria-labelledby="workspaceTitle">
+                                <div class="settings-panel-head">
+                                    <div>
+                                        <h2 id="workspaceTitle">Workspace</h2>
+                                        <p>Settings for your current workspace.</p>
+                                    </div>
+                                    <button type="button" class="btn btn-primary-solid" id="saveWorkspaceBtn">
+                                        <i class="ri-check-line"></i>
+                                        <span>Save Changes</span>
+                                    </button>
+                                </div>
+
+                                <div class="settings-card">
+                                    <div class="settings-fields-grid">
+                                        <div class="settings-field">
+                                            <label for="workspaceName">Workspace Name</label>
+                                            <div class="settings-input">
+                                                <i class="ri-stack-line"></i>
+                                                <input type="text" id="workspaceName" value="">
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-field">
+                                            <label for="defaultProjectName">Default Project Name</label>
+                                            <div class="settings-input">
+                                                <i class="ri-folder-3-line"></i>
+                                                <input type="text" id="defaultProjectName" value="">
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-field">
+                                            <label for="codingExperience">Coding Experience</label>
+                                            <div class="settings-input settings-input-select">
+                                                <i class="ri-bar-chart-line"></i>
+                                                <select id="codingExperience">
+                                                    <option value="Beginner">Beginner</option>
+                                                    <option value="Intermediate">Intermediate</option>
+                                                    <option value="Advanced">Advanced</option>
+                                                    <option value="Expert">Expert</option>
+                                                </select>
+                                                <i class="ri-arrow-down-s-line settings-select-chevron"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ==========================================
+                                 7. Security
+                            ========================================== -->
+                            <section class="settings-tab-panel" id="security" data-tab-panel hidden aria-labelledby="securityTitle">
+                                <div class="settings-panel-head">
+                                    <div>
+                                        <h2 id="securityTitle">Security</h2>
+                                        <p id="securityDesc">Manage your sessions and security preferences.</p>
+                                    </div>
+                                </div>
+
+                                <div class="settings-card">
+                                    <div class="settings-compact-row">
+                                        <div class="settings-compact-icon">
+                                            <i class="ri-shield-keyhole-line"></i>
+                                        </div>
+                                        <div class="settings-compact-text">
+                                            <h3>Sign out</h3>
+                                            <p>Sign out of Nova Editor on this device.</p>
+                                        </div>
+                                        <button type="button" class="btn btn-outline settings-compact-action" id="securityManageBtn">
+                                            <span>Sign Out</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ==========================================
+                                 8. Data & Privacy (+ Danger Zone)
+                            ========================================== -->
+                            <section class="settings-tab-panel" id="data-privacy" data-tab-panel hidden
+                                aria-labelledby="dataPrivacyTitle">
+                                <div class="settings-panel-head">
+                                    <div>
+                                        <h2 id="dataPrivacyTitle">Data &amp; Privacy</h2>
+                                        <p>Export your data or manage account deletion.</p>
+                                    </div>
+                                </div>
+
+                                <div class="settings-panel-compact">
+                                    <div class="settings-compact-row">
+                                        <div class="settings-compact-icon">
+                                            <i class="ri-download-2-line"></i>
+                                        </div>
+                                        <div class="settings-compact-text">
+                                            <h3>Export Data</h3>
+                                            <p>Download a copy of your profile and preferences.</p>
+                                        </div>
+                                        <button type="button" class="btn btn-outline settings-compact-action" id="exportDataBtn">
+                                            <span>Export</span>
+                                            <i class="ri-arrow-right-s-line"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="settings-panel-danger">
+                                    <div class="settings-compact-row">
+                                        <div class="settings-compact-icon settings-compact-icon-danger">
+                                            <i class="ri-error-warning-line"></i>
+                                        </div>
+                                        <div class="settings-compact-text">
+                                            <h3>Danger Zone</h3>
+                                            <p>Irreversible and destructive actions for your account.</p>
+                                        </div>
+                                        <button type="button" class="btn btn-danger-outline settings-compact-action"
+                                            id="dangerZoneManageBtn">
+                                            <span>Delete Account</span>
+                                            <i class="ri-arrow-right-s-line"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- ==========================================
+                                 9. About
+                            ========================================== -->
+                            <section class="settings-tab-panel" id="about" data-tab-panel hidden aria-labelledby="aboutTitle">
+                                <div class="settings-panel-head">
+                                    <div>
+                                        <h2 id="aboutTitle">About</h2>
+                                        <p>Information about this Nova Editor workspace.</p>
+                                    </div>
+                                </div>
+
+                                <div class="settings-card about-card">
+                                    <div class="about-row">
+                                        <span>Application</span>
+                                        <strong>Nova Editor</strong>
+                                    </div>
+                                    <div class="about-row">
+                                        <span>Version</span>
+                                        <strong>1.0.0</strong>
+                                    </div>
+                                    <div class="about-row">
+                                        <span>Signed in as</span>
+                                        <strong id="aboutSignedInEmail">—</strong>
+                                    </div>
+                                    <div class="about-links">
+                                        <a href="shortcuts.html"><i class="ri-keyboard-line"></i> Keyboard Shortcuts</a>
+                                        <a href="help.html"><i class="ri-question-line"></i> Help &amp; Support</a>
+                                    </div>
+                                </div>
+                            </section>
+
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+        </div>
+    </div>
+
+    <div id="projectModalMount"></div>
+
+    <!-- script file  -->
+    <script type="module" src="../components/toast.js"></script>
+    <script type="module" src="../js/layout.js"></script>
+    <script type="module" src="../js/projects.js"></script>
+    <script type="module" src="../js/settings.js"></script>
+</body>
+
+</html>

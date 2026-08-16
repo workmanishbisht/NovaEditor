@@ -1,0 +1,861 @@
+/* ==========================================
+   NOVA EDITOR — SETTINGS PAGE
+   Isolated styles for settings.html only.
+   Reuses existing CSS variables (variables.css)
+   and layout classes (layout.css). Does not
+   modify sidebar, header, body, or global
+   button/input defaults.
+========================================== */
+
+/* ==========================================
+   Page shell
+========================================== */
+.settings-page {
+    flex: 1;
+    padding: var(--space-8) 0 var(--space-16);
+}
+
+.settings-page-head {
+    margin-bottom: var(--space-8);
+}
+
+.settings-page-head h1 {
+    color: var(--text-primary);
+    font-size: var(--text-3xl);
+    font-weight: var(--font-bold);
+    letter-spacing: -0.01em;
+}
+
+.settings-page-head p {
+    margin-top: 6px;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+}
+
+/* ==========================================
+   Two-column layout
+========================================== */
+.settings-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    align-items: start;
+    gap: var(--space-8);
+}
+
+/* ==========================================
+   Settings navigation (left)
+========================================== */
+.settings-nav {
+    position: sticky;
+    top: calc(72px + var(--space-6));
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    padding: var(--space-3);
+}
+
+.settings-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.settings-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.settings-nav-item i {
+    font-size: 17px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: color 0.18s ease;
+}
+
+.settings-nav-item:hover {
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+}
+
+.settings-nav-item:hover i {
+    color: var(--text-primary);
+}
+
+.settings-nav-item.active {
+    background: var(--primary);
+    color: var(--white-color);
+    font-weight: 600;
+    box-shadow: var(--nav-active-shadow);
+}
+
+.settings-nav-item.active i {
+    color: var(--white-color);
+}
+
+/* ==========================================
+   Settings content (right) / tab panels
+========================================== */
+.settings-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.settings-tab-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    animation: settingsPanelIn 0.16s ease;
+}
+
+.settings-tab-panel[hidden] {
+    display: none !important;
+}
+
+@keyframes settingsPanelIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Shared panel head (title + primary action) */
+.settings-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.settings-panel-head h2 {
+    color: var(--text-primary);
+    font-size: var(--text-xl);
+    font-weight: var(--font-semibold);
+}
+
+.settings-panel-head p {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 13.5px;
+}
+
+/* ==========================================
+   Card container
+========================================== */
+.settings-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    padding: var(--space-6);
+}
+
+/* ==========================================
+   Profile photo
+========================================== */
+.profile-photo-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    padding-bottom: var(--space-6);
+    margin-bottom: var(--space-6);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.profile-photo-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.profile-photo {
+    width: 84px;
+    height: 84px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    transition: opacity 0.18s ease;
+}
+
+.profile-photo.is-uploading {
+    opacity: 0.5;
+}
+
+.profile-photo-edit {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: var(--white-color);
+    font-size: 14px;
+    border: 2px solid var(--surface);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.profile-photo-edit:hover {
+    background: var(--primary-hover);
+}
+
+.profile-photo-edit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.profile-photo-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.profile-photo-meta small {
+    color: var(--text-muted);
+    font-size: 12.5px;
+}
+
+/* ==========================================
+   Profile fields grid
+========================================== */
+.settings-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+}
+
+.settings-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.settings-field label {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.settings-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 44px;
+    padding: 0 14px;
+    background: var(--surface-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.settings-input:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--focus-ring);
+    background: var(--surface);
+}
+
+.settings-input i {
+    font-size: 16px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.settings-input input,
+.settings-input select {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13.5px;
+}
+
+.settings-input input:read-only {
+    cursor: default;
+}
+
+.settings-input-select {
+    cursor: pointer;
+}
+
+.settings-input select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+    padding-right: 4px;
+}
+
+.settings-input select:focus {
+    outline: none;
+}
+
+.settings-select-chevron {
+    font-size: 16px !important;
+    color: var(--text-muted) !important;
+    pointer-events: none;
+}
+
+/* ==========================================
+   Compact settings rows
+   (Connected Accounts / Security / Data & Privacy)
+========================================== */
+.settings-panel-compact {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    padding: var(--space-5) var(--space-6);
+}
+
+.settings-compact-row,
+.provider-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.provider-row+.provider-row {
+    margin-top: var(--space-5);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.settings-compact-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 19px;
+}
+
+.provider-icon-google {
+    background: rgba(234, 67, 53, 0.12);
+    color: #ea4335;
+}
+
+.provider-icon-github {
+    background: var(--surface-secondary);
+    color: var(--text-primary);
+}
+
+.settings-compact-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.settings-compact-text h3 {
+    color: var(--text-primary);
+    font-size: var(--text-md);
+    font-weight: var(--font-semibold);
+}
+
+.settings-compact-text p {
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.settings-compact-action {
+    flex-shrink: 0;
+}
+
+.settings-compact-action i {
+    font-size: 16px;
+}
+
+.settings-compact-action.is-connected {
+    color: var(--success);
+    border-color: var(--success);
+    background: rgba(22, 163, 74, 0.08);
+    cursor: default;
+    opacity: 1;
+}
+
+/* ==========================================
+   Danger zone
+========================================== */
+.settings-panel-danger {
+    background: var(--surface);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    padding: var(--space-5) var(--space-6);
+    margin-top: var(--space-6);
+}
+
+.settings-compact-icon-danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--danger);
+}
+
+.settings-panel-danger .settings-compact-text h3 {
+    color: var(--danger);
+}
+
+/* ==========================================
+   Appearance — theme picker
+========================================== */
+.theme-option-group {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+}
+
+.theme-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 96px;
+    background: var(--surface-secondary);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.theme-option i {
+    font-size: 24px;
+    color: var(--text-muted);
+    transition: color 0.18s ease;
+}
+
+.theme-option:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+}
+
+.theme-option.active {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.theme-option.active i {
+    color: var(--primary);
+}
+
+/* ==========================================
+   Toggle switches
+   (Editor Preferences / Notifications)
+========================================== */
+.settings-toggle-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--space-6);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.settings-toggle-list:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+.settings-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    cursor: pointer;
+}
+
+.settings-toggle-row+.settings-toggle-row {
+    border-top: 1px solid var(--border-subtle);
+}
+
+.settings-toggle-row span:first-child {
+    color: var(--text-primary);
+    font-size: 13.5px;
+    font-weight: 500;
+}
+
+.settings-toggle {
+    position: relative;
+    display: inline-flex;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.settings-toggle input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+}
+
+.settings-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: var(--radius-full);
+    transition: var(--transition);
+}
+
+.settings-toggle-slider::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background: var(--white-color);
+    border-radius: 50%;
+    box-shadow: var(--shadow-xs);
+    transition: var(--transition);
+}
+
+.settings-toggle input:checked+.settings-toggle-slider {
+    background: var(--primary);
+}
+
+.settings-toggle input:checked+.settings-toggle-slider::before {
+    transform: translateX(18px);
+}
+
+.settings-toggle input:focus-visible+.settings-toggle-slider {
+    box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+/* ==========================================
+   About panel
+========================================== */
+.about-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.about-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+}
+
+.about-row+.about-row {
+    border-top: 1px solid var(--border-subtle);
+}
+
+.about-row span {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.about-row strong {
+    color: var(--text-primary);
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.about-links {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.about-links a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 4px;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.about-links a:hover {
+    color: var(--primary);
+}
+
+.about-links a i {
+    font-size: 16px;
+    color: var(--text-muted);
+}
+
+/* ==========================================
+   Buttons (settings-scoped)
+========================================== */
+.settings-page .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: var(--transition);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.settings-page .btn i {
+    font-size: 16px;
+}
+
+.settings-page .btn-primary-solid {
+    background: var(--primary);
+    color: var(--white-color);
+    border: 1px solid transparent;
+}
+
+.settings-page .btn-primary-solid:hover {
+    background: var(--primary-hover);
+    box-shadow: var(--shadow-sm);
+}
+
+.settings-page .btn-outline {
+    background: var(--surface);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.settings-page .btn-outline:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+    background: var(--surface-secondary);
+}
+
+.settings-page .btn-danger-outline {
+    background: var(--surface);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.settings-page .btn-danger-outline:hover {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: var(--danger);
+}
+
+.settings-page .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Saving state */
+.settings-page .btn.is-saving {
+    opacity: 0.75;
+    pointer-events: none;
+}
+
+.settings-page .btn.is-saving i {
+    animation: settingsSpin 0.7s linear infinite;
+}
+
+@keyframes settingsSpin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ==========================================
+   Confirmation Modal
+========================================== */
+.settings-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    z-index: var(--z-modal);
+    transition: opacity 0.18s ease;
+}
+
+.settings-confirm-overlay.open {
+    opacity: 1;
+}
+
+.settings-confirm-modal {
+    width: 100%;
+    max-width: 380px;
+    padding: var(--space-6);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    transform: translateY(8px);
+    transition: transform 0.18s ease;
+}
+
+.settings-confirm-overlay.open .settings-confirm-modal {
+    transform: translateY(0);
+}
+
+.settings-confirm-modal h3 {
+    color: var(--text-primary);
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    margin-bottom: 8px;
+}
+
+.settings-confirm-modal p {
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    line-height: 1.6;
+}
+
+.settings-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: var(--space-6);
+}
+
+/* ==========================================
+   Responsive
+========================================== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+    .settings-layout {
+        grid-template-columns: 200px 1fr;
+        gap: var(--space-5);
+    }
+
+    .settings-nav {
+        padding: var(--space-2);
+    }
+
+    .settings-nav-item span {
+        font-size: 13px;
+    }
+
+    .settings-fields-grid {
+        gap: var(--space-4);
+    }
+
+    .theme-option-group {
+        gap: var(--space-3);
+    }
+}
+
+/* Mobile */
+@media (max-width: 900px) {
+    .settings-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-nav {
+        position: static;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: var(--space-2);
+    }
+
+    .settings-nav-list {
+        flex-direction: row;
+        gap: 4px;
+    }
+
+    .settings-nav-item {
+        flex-shrink: 0;
+    }
+
+    .settings-nav-item span {
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .settings-page {
+        padding: var(--space-6) 0 var(--space-12);
+    }
+
+    .settings-page-head h1 {
+        font-size: var(--text-2xl);
+    }
+
+    .settings-panel-head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .settings-panel-head .btn {
+        width: 100%;
+    }
+
+    .settings-card,
+    .settings-panel-compact,
+    .settings-panel-danger {
+        padding: var(--space-4);
+    }
+
+    .settings-fields-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .theme-option-group {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-photo-row {
+        flex-wrap: wrap;
+    }
+
+    .settings-compact-row,
+    .provider-row {
+        flex-wrap: wrap;
+    }
+
+    .settings-compact-action {
+        width: 100%;
+        margin-left: 58px;
+    }
+
+    .about-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+}
+
+@media (max-width: 480px) {
+    .settings-compact-action {
+        margin-left: 0;
+    }
+}

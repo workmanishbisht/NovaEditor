@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../assets/images/favicon/favicon.png">
+    <title>Help &amp; Support — Nova Editor</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+    <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/help_support.css" />
+</head>
+
+<body data-page="help">
+    <div class="app-shell">
+        <div id="sidebarMount"></div>
+
+        <div class="app-main">
+            <div id="headerMount"></div>
+            <main class="help-page">
+                <div class="container">
+
+                    <!-- ==========================================
+                         Page Heading
+                    ========================================== -->
+                    <div class="help-page-head">
+                        <h1>Help &amp; Support</h1>
+                        <p>Find answers, explore resources, or get help with Nova Editor.</p>
+                    </div>
+
+                    <!-- ==========================================
+                         Main Help Center view
+                    ========================================== -->
+                    <div id="helpCenterView">
+
+                        <!-- Help Search -->
+                        <section class="help-search" aria-labelledby="helpSearchHeading">
+                            <h2 id="helpSearchHeading" class="help-search-title">How can we help?</h2>
+                            <div class="help-search-bar" role="search">
+                                <i class="ri-search-line help-search-icon" aria-hidden="true"></i>
+                                <input type="search" id="helpSearchInput"
+                                    placeholder="Search help articles, guides, and FAQs..."
+                                    aria-label="Search help articles, guides, and FAQs" autocomplete="off" />
+                                <button type="button" class="help-search-clear" id="helpSearchClear" hidden
+                                    aria-label="Clear search">
+                                    <i class="ri-close-line" aria-hidden="true"></i>
+                                </button>
+                                <kbd class="help-search-kbd" aria-hidden="true">⌘K</kbd>
+                            </div>
+                        </section>
+
+                        <!-- Active filter banner -->
+                        <div class="help-filter-banner" id="helpFilterBanner" hidden>
+                            <div class="help-filter-banner-text">
+                                <i class="ri-filter-3-line" aria-hidden="true"></i>
+                                <span>Showing: <strong id="helpFilterLabel"></strong></span>
+                            </div>
+                            <button type="button" class="btn btn-outline help-filter-clear" id="helpFilterClear">
+                                <i class="ri-close-line" aria-hidden="true"></i>
+                                <span>Clear filter</span>
+                            </button>
+                        </div>
+
+                        <!-- Search empty state -->
+                        <div class="help-empty" id="helpEmptyState" hidden>
+                            <div class="help-empty-icon">
+                                <i class="ri-search-line" aria-hidden="true"></i>
+                            </div>
+                            <h3>No results found</h3>
+                            <p>Try a different search term.</p>
+                            <button type="button" class="btn btn-outline" id="helpEmptyClear">
+                                <span>Clear search</span>
+                            </button>
+                        </div>
+
+                        <!-- Quick Help Categories -->
+                        <section class="help-section" id="helpCategoriesSection" aria-labelledby="helpCategoriesTitle">
+                            <div class="help-section-head">
+                                <h2 id="helpCategoriesTitle">Browse by topic</h2>
+                                <p>Quick links to the most common areas of Nova Editor.</p>
+                            </div>
+
+                            <div class="help-category-grid" id="helpCategoryGrid">
+                                <!-- Rendered by help.js -->
+                            </div>
+                        </section>
+
+                        <!-- Popular Articles -->
+                        <section class="help-section" id="helpArticlesSection" aria-labelledby="helpArticlesTitle">
+                            <div class="help-section-head">
+                                <h2 id="helpArticlesTitle">Popular Articles</h2>
+                                <p>Guides and answers people visit most often.</p>
+                            </div>
+
+                            <div class="help-articles" id="helpArticlesList">
+                                <!-- Rendered by help.js -->
+                            </div>
+                        </section>
+
+                        <!-- Getting Started CTA -->
+                        <section class="help-section" id="helpOnboardingSection" aria-labelledby="helpOnboardingTitle">
+                            <div class="help-onboarding-card">
+                                <div class="help-onboarding-content">
+                                    <h2 id="helpOnboardingTitle">New to Nova Editor?</h2>
+                                    <p>Follow our quick guide to create your first project, edit files, and start
+                                        building.</p>
+                                </div>
+                                <div class="help-onboarding-actions">
+                                    <button type="button" class="btn btn-primary-solid" id="helpGetStartedBtn">
+                                        <i class="ri-rocket-line" aria-hidden="true"></i>
+                                        <span>Get Started</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline" id="helpViewGuideBtn">
+                                        <i class="ri-book-open-line" aria-hidden="true"></i>
+                                        <span>View Guide</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- FAQ -->
+                        <section class="help-section" id="helpFaqSection" aria-labelledby="helpFaqTitle">
+                            <div class="help-section-head">
+                                <h2 id="helpFaqTitle">Frequently Asked Questions</h2>
+                                <p>Short answers to common questions about Nova Editor.</p>
+                            </div>
+
+                            <div class="help-faq" id="helpFaqList">
+                                <!-- Rendered by help.js -->
+                            </div>
+                        </section>
+
+                        <!-- Contact Support -->
+                        <section class="help-section" id="helpContactSection" aria-labelledby="helpContactTitle">
+                            <div class="help-section-head">
+                                <h2 id="helpContactTitle">Still need help?</h2>
+                                <p>Our support team is here to help you get the most out of Nova Editor.</p>
+                            </div>
+
+                            <div class="help-support-grid">
+                                <div class="help-support-card">
+                                    <div class="help-support-icon">
+                                        <i class="ri-customer-service-2-line" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="help-support-body">
+                                        <h3>Contact Support</h3>
+                                        <p>Get help from the Nova Editor support team.</p>
+                                    </div>
+                                    <button type="button" class="btn btn-outline help-support-action"
+                                        id="helpContactBtn">
+                                        <span>Contact Support</span>
+                                        <i class="ri-arrow-right-s-line" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+
+                                <div class="help-support-card">
+                                    <div class="help-support-icon">
+                                        <i class="ri-group-line" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="help-support-body">
+                                        <h3>Community</h3>
+                                        <p>Ask questions and learn from other Nova Editor users.</p>
+                                    </div>
+                                    <button type="button" class="btn btn-outline help-support-action"
+                                        id="helpCommunityBtn">
+                                        <span>Visit Community</span>
+                                        <i class="ri-arrow-right-s-line" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- System Status -->
+                        <section class="help-section help-section-status" id="helpStatusSection"
+                            aria-labelledby="helpStatusTitle">
+                            <div class="help-status-card">
+                                <div class="help-status-left">
+                                    <span class="help-status-dot" aria-hidden="true"></span>
+                                    <div>
+                                        <h2 id="helpStatusTitle">Nova Editor Status</h2>
+                                        <p class="help-status-label">All systems operational</p>
+                                    </div>
+                                </div>
+                                <p class="help-status-meta">Last checked just now</p>
+                            </div>
+                        </section>
+
+                    </div>
+
+                    <!-- ==========================================
+                         Inline Article Viewer
+                    ========================================== -->
+                    <div id="helpArticleView" class="help-article-view" hidden>
+                        <button type="button" class="help-article-back" id="helpArticleBack">
+                            <i class="ri-arrow-left-line" aria-hidden="true"></i>
+                            <span>Back to Help Center</span>
+                        </button>
+
+                        <article class="help-article-detail">
+                            <header class="help-article-detail-head">
+                                <p class="help-article-detail-category" id="helpArticleCategory"></p>
+                                <h2 id="helpArticleTitle"></h2>
+                            </header>
+                            <div class="help-article-detail-body" id="helpArticleBody">
+                                <!-- Content rendered by help.js -->
+                            </div>
+                        </article>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         Contact Support Modal
+    ========================================== -->
+    <div class="help-modal-overlay" id="helpContactOverlay" hidden>
+        <div class="help-modal" role="dialog" aria-modal="true" aria-labelledby="helpContactModalTitle"
+            id="helpContactModal">
+            <div class="help-modal-head">
+                <h3 id="helpContactModalTitle">Contact Support</h3>
+                <button type="button" class="help-modal-close" id="helpContactClose" aria-label="Close">
+                    <i class="ri-close-line" aria-hidden="true"></i>
+                </button>
+            </div>
+            <form class="help-modal-body" id="helpContactForm" novalidate>
+                <div class="help-form-field">
+                    <label for="helpContactName">Name</label>
+                    <input type="text" id="helpContactName" name="name" required autocomplete="name"
+                        placeholder="Your name" />
+                </div>
+                <div class="help-form-field">
+                    <label for="helpContactEmail">Email</label>
+                    <input type="email" id="helpContactEmail" name="email" required autocomplete="email"
+                        placeholder="you@example.com" />
+                </div>
+                <div class="help-form-field">
+                    <label for="helpContactSubject">Subject</label>
+                    <input type="text" id="helpContactSubject" name="subject" required
+                        placeholder="Brief summary of your issue" />
+                </div>
+                <div class="help-form-field">
+                    <label for="helpContactMessage">Message</label>
+                    <textarea id="helpContactMessage" name="message" required rows="4"
+                        placeholder="Describe what you need help with…"></textarea>
+                </div>
+                <p class="help-form-error" id="helpContactError" hidden></p>
+                <div class="help-modal-actions">
+                    <button type="button" class="btn btn-outline" id="helpContactCancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary-solid" id="helpContactSubmit">
+                        <span>Send Request</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         Community Modal
+    ========================================== -->
+    <div class="help-modal-overlay" id="helpCommunityOverlay" hidden>
+        <div class="help-modal help-modal-sm" role="dialog" aria-modal="true" aria-labelledby="helpCommunityModalTitle"
+            id="helpCommunityModal">
+            <div class="help-modal-head">
+                <h3 id="helpCommunityModalTitle">Community</h3>
+                <button type="button" class="help-modal-close" id="helpCommunityClose" aria-label="Close">
+                    <i class="ri-close-line" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="help-modal-body">
+                <p class="help-modal-message">Community support will be available soon.</p>
+                <div class="help-modal-actions">
+                    <button type="button" class="btn btn-primary-solid" id="helpCommunityGotIt">
+                        <span>Got it</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="projectModalMount"></div>
+
+    <!-- script file  -->
+    <script type="module" src="../components/toast.js"></script>
+    <script type="module" src="../js/layout.js"></script>
+    <script type="module" src="../js/projects.js"></script>
+    <script type="module" src="../js/help.js"></script>
+
+</body>
+</html>
