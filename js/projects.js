@@ -12,9 +12,11 @@
    - No new auth system (reuses NovaLayout's
      resolved auth state — no second
      onAuthStateChanged listener).
-   - No new Firestore schema — only fields
-     already written by createProject() in
-     firebase/firestore.js are read.
+   - No new Firestore schema beyond the
+     existing `archived` field (already
+     written by createProject()) plus a
+     `deletedAt` timestamp used only to
+     display "Deleted X ago" in Trash.
    - No dummy/static project data at any point.
    - No alert() / confirm() / prompt().
    - Editor module is not touched.
@@ -235,6 +237,11 @@ async function loadProjects() {
 
 /* ==========================================
    FILTER
+   ------------------------------------------
+   `archived` is the existing soft-delete flag
+   already written by createProject() (default
+   false) and reused here as the Trash marker,
+   per the "prefer existing fields" requirement.
 ========================================== */
 function filterProjects() {
     const query = STATE.searchQuery.trim().toLowerCase();
@@ -245,9 +252,6 @@ function filterProjects() {
             list = list.filter((p) => p.archived !== true && p.starred === true);
             break;
         case "trash":
-            // "archived" is the only deletion-style field the existing
-            // schema supports — reused here rather than inventing a
-            // new "deleted" field.
             list = list.filter((p) => p.archived === true);
             break;
         case "shared":
@@ -284,6 +288,14 @@ function filterProjects() {
 ========================================== */
 function sortProjects(list) {
     const sorted = list.slice();
+
+    // Trash always sorts by deletion time (most recently trashed first)
+    // regardless of the Sort control — the Sort control only makes
+    // sense for active projects.
+    if (STATE.activeTab === "trash") {
+        sorted.sort((a, b) => (toDate(b.deletedAt)?.getTime() || 0) - (toDate(a.deletedAt)?.getTime() || 0));
+        return sorted;
+    }
 
     // "Recent" tab always sorts by real updatedAt regardless of the
     // Sort control, per spec. Every other tab honors STATE.sort.
@@ -512,11 +524,30 @@ function renderProjectCard(project) {
     const tech = getTechInfo(project);
     const isStarred = project.starred === true;
     const isArchived = project.archived === true;
-    const updatedLabel = formatRelativeTime(project.updatedAt) || "—";
 
     const card = document.createElement("article");
     card.className = "proj-card";
     card.dataset.projectId = project.id;
+    if (isArchived) card.classList.add("proj-card--trashed");
+
+    const footerHtml = isArchived
+        ? `
+            <div class="proj-card-trash-row" style="display:flex;flex-direction:column;gap:8px;width:100%;">
+                <span class="proj-card-updated">Deleted ${escapeHtml(formatRelativeTime(project.deletedAt) || "just now")}</span>
+                <div class="proj-card-trash-btns" style="display:flex;gap:8px;">
+                    <button type="button" class="btn btn-outline" data-restore-btn style="height:32px;padding:0 12px;font-size:12px;flex:1;justify-content:center;">
+                        <i class="ri-inbox-unarchive-line"></i> Restore
+                    </button>
+                    <button type="button" class="btn btn-outline" data-delete-permanently-btn style="height:32px;padding:0 12px;font-size:12px;flex:1;justify-content:center;color:#dc2626;border-color:#dc262633;">
+                        <i class="ri-delete-bin-line"></i> Delete
+                    </button>
+                </div>
+            </div>
+        `
+        : `
+            <span class="proj-card-avatar">${escapeHtml(getUserInitial())}</span>
+            <span class="proj-card-updated">Updated ${escapeHtml(formatRelativeTime(project.updatedAt) || "—")}</span>
+        `;
 
     card.innerHTML = `
         <div class="proj-card-thumb">
@@ -548,17 +579,24 @@ function renderProjectCard(project) {
             </div>
             <p class="proj-card-desc">${escapeHtml(project.description || "No description yet.")}</p>
             <div class="proj-card-footer">
-                <span class="proj-card-avatar">${escapeHtml(getUserInitial())}</span>
-                <span class="proj-card-updated">Updated ${escapeHtml(updatedLabel)}</span>
+                ${footerHtml}
             </div>
         </div>
     `;
 
-    // Open in editor on card click (but not when clicking star/menu)
+    // Open in editor on card click (but not when clicking star/menu/trash actions).
+    // Trashed projects can't be opened directly — restore first.
     card.addEventListener("click", (event) => {
-        if (event.target.closest("[data-star-toggle]") || event.target.closest("[data-menu-trigger]") || event.target.closest(".proj-card-menu")) {
+        if (
+            event.target.closest("[data-star-toggle]") ||
+            event.target.closest("[data-menu-trigger]") ||
+            event.target.closest(".proj-card-menu") ||
+            event.target.closest("[data-restore-btn]") ||
+            event.target.closest("[data-delete-permanently-btn]")
+        ) {
             return;
         }
+        if (isArchived) return;
         window.location.href = `${ROUTES.EDITOR}?project=${encodeURIComponent(project.id)}`;
     });
 
@@ -570,6 +608,16 @@ function renderProjectCard(project) {
     qs("[data-menu-trigger]", card)?.addEventListener("click", (event) => {
         event.stopPropagation();
         toggleProjectMenu(project, card, isArchived);
+    });
+
+    qs("[data-restore-btn]", card)?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        restoreProject(project);
+    });
+
+    qs("[data-delete-permanently-btn]", card)?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        deleteProjectPermanently(project);
     });
 
     return card;
@@ -601,42 +649,189 @@ async function toggleStar(project) {
 }
 
 /* ==========================================
-   ACTIONS — ARCHIVE / RESTORE / DELETE
+   CUSTOM CONFIRMATION MODAL
+   ------------------------------------------
+   No confirmation modal existed anywhere in
+   the provided architecture, so this builds
+   one using the SAME `.nova-modal` markup
+   pattern dashboard.js already uses for its
+   Import Project modal (see ensureImportModal
+   in dashboard.js) — reusing that convention
+   rather than inventing a new one. Never uses
+   alert()/confirm()/prompt().
 ========================================== */
-async function setProjectArchived(project, archived) {
+function showConfirmModal(title, message, options = {}) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement("div");
+        overlay.className = "nova-modal";
+        overlay.setAttribute("role", "dialog");
+        overlay.setAttribute("aria-modal", "true");
+        overlay.setAttribute("aria-labelledby", "projTrashConfirmTitle");
+
+        overlay.innerHTML = `
+            <div class="nova-modal-backdrop" data-confirm-cancel></div>
+            <div class="nova-modal-dialog" role="document">
+                <div class="nova-modal-header">
+                    <h2 id="projTrashConfirmTitle" class="nova-modal-title">${escapeHtml(title)}</h2>
+                    <button type="button" class="nova-modal-close" data-confirm-cancel aria-label="Close">
+                        <i class="ri-close-line"></i>
+                    </button>
+                </div>
+                <div class="nova-modal-body">
+                    <p class="nova-modal-description">${escapeHtml(message)}</p>
+                </div>
+                <div class="nova-modal-footer">
+                    <button type="button" class="btn btn-outline" data-confirm-cancel>Cancel</button>
+                    <button type="button" class="btn btn-primary" data-confirm-ok style="${options.danger ? "background:#dc2626;" : ""}">
+                        ${escapeHtml(options.confirmLabel || "Confirm")}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        document.body.classList.add("nova-modal-open");
+
+        const dialog = qs(".nova-modal-dialog", overlay);
+        dialog?.addEventListener("click", (event) => event.stopPropagation());
+
+        function onKeydown(event) {
+            if (event.key === "Escape") cleanup(false);
+        }
+
+        function cleanup(result) {
+            overlay.remove();
+            document.body.classList.remove("nova-modal-open");
+            document.removeEventListener("keydown", onKeydown);
+            resolve(result);
+        }
+
+        document.addEventListener("keydown", onKeydown);
+
+        qsa("[data-confirm-cancel]", overlay).forEach((el) => {
+            el.addEventListener("click", (event) => {
+                event.preventDefault();
+                cleanup(false);
+            });
+        });
+
+        qs("[data-confirm-ok]", overlay)?.addEventListener("click", (event) => {
+            event.preventDefault();
+            cleanup(true);
+        });
+
+        qs("[data-confirm-ok]", overlay)?.focus();
+    });
+}
+
+/* ==========================================
+   ACTIONS — MOVE TO TRASH / RESTORE / DELETE
+   ------------------------------------------
+   Soft delete reuses the existing `archived`
+   field. `deletedAt` is added only to power
+   the "Deleted X ago" label and is cleared on
+   restore. The original document (and its ID)
+   is never touched otherwise — no duplication,
+   no data loss.
+========================================== */
+async function moveProjectToTrash(project) {
+    const confirmed = await showConfirmModal(
+        "Move to Trash?",
+        `"${project.name || "This project"}" will be moved to Trash. You can restore it later from the Trash tab.`,
+        { confirmLabel: "Move to Trash", danger: true }
+    );
+    if (!confirmed) return;
+
     if (typeof deps.firestore.updateProject !== "function") {
-        notify("This action is currently unavailable.", "error");
+        notify("Unable to move project to Trash.", "error");
         return;
     }
 
-    const response = await deps.firestore.updateProject(project.id, { archived });
+    try {
+        const response = await deps.firestore.updateProject(project.id, {
+            archived: true,
+            deletedAt: new Date(),
+        });
 
-    if (!response || !response.success) {
-        notify(response?.error || "Unable to update project.", "error");
+        if (!response || !response.success) {
+            notify("Unable to move project to Trash.", "error");
+            return;
+        }
+
+        project.archived = true;
+        project.deletedAt = new Date();
+        notify("Project moved to Trash.", "success");
+        applyFiltersAndRender();
+        document.dispatchEvent(
+            new CustomEvent("novaeditor:project-trashed", { detail: { projectId: project.id } })
+        );
+    } catch (error) {
+        console.error("[Projects] moveProjectToTrash failed:", error);
+        notify("Unable to move project to Trash.", "error");
+    }
+}
+
+async function restoreProject(project) {
+    if (typeof deps.firestore.updateProject !== "function") {
+        notify("Unable to restore project.", "error");
         return;
     }
 
-    project.archived = archived;
-    notify(archived ? "Project moved to trash." : "Project restored.", "success");
-    applyFiltersAndRender();
+    try {
+        const response = await deps.firestore.updateProject(project.id, {
+            archived: false,
+            deletedAt: null,
+        });
+
+        if (!response || !response.success) {
+            notify("Unable to restore project.", "error");
+            return;
+        }
+
+        project.archived = false;
+        project.deletedAt = null;
+        notify("Project restored successfully.", "success");
+        applyFiltersAndRender();
+        document.dispatchEvent(
+            new CustomEvent("novaeditor:project-restored", { detail: { projectId: project.id } })
+        );
+    } catch (error) {
+        console.error("[Projects] restoreProject failed:", error);
+        notify("Unable to restore project.", "error");
+    }
 }
 
 async function deleteProjectPermanently(project) {
+    const confirmed = await showConfirmModal(
+        "Delete Permanently?",
+        `"${project.name || "This project"}" will be permanently deleted. This cannot be undone.`,
+        { confirmLabel: "Delete Permanently", danger: true }
+    );
+    if (!confirmed) return;
+
     if (typeof deps.firestore.deleteProject !== "function") {
-        notify("Delete is currently unavailable.", "error");
+        notify("Unable to permanently delete project.", "error");
         return;
     }
 
-    const response = await deps.firestore.deleteProject(project.id);
+    try {
+        const response = await deps.firestore.deleteProject(project.id);
 
-    if (!response || !response.success) {
-        notify(response?.error || "Unable to delete project.", "error");
-        return;
+        if (!response || !response.success) {
+            notify("Unable to permanently delete project.", "error");
+            return;
+        }
+
+        STATE.allProjects = STATE.allProjects.filter((p) => p.id !== project.id);
+        notify("Project permanently deleted.", "success");
+        applyFiltersAndRender();
+        document.dispatchEvent(
+            new CustomEvent("novaeditor:project-permanently-deleted", { detail: { projectId: project.id } })
+        );
+    } catch (error) {
+        console.error("[Projects] deleteProjectPermanently failed:", error);
+        notify("Unable to permanently delete project.", "error");
     }
-
-    STATE.allProjects = STATE.allProjects.filter((p) => p.id !== project.id);
-    notify("Project permanently deleted.", "success");
-    applyFiltersAndRender();
 }
 
 /* ==========================================
@@ -647,6 +842,10 @@ async function deleteProjectPermanently(project) {
    menu is built here with only the inline
    positioning needed to be usable. No
    alert/confirm/prompt is used anywhere.
+   Restore / Delete Permanently now live as
+   dedicated buttons on trashed cards (see
+   renderProjectCard), so the menu only exposes
+   Open / Star / Move to Trash.
 ========================================== */
 function closeProjectMenu() {
     const existing = qs(".proj-card-menu");
@@ -681,28 +880,44 @@ function toggleProjectMenu(project, card, isArchived) {
         "gap:2px",
     ].join(";");
 
-    const items = [
-        {
+    const items = [];
+
+    if (!isArchived) {
+        items.push({
             label: "Open",
             icon: "ri-external-link-line",
             action: () => {
                 window.location.href = `${ROUTES.EDITOR}?project=${encodeURIComponent(project.id)}`;
             },
-        },
-        {
+        });
+        items.push({
             label: project.starred ? "Unstar" : "Star",
             icon: project.starred ? "ri-star-fill" : "ri-star-line",
             action: () => toggleStar(project),
-        },
-    ];
-
-    if (isArchived) {
-        items.push(
-            { label: "Restore", icon: "ri-inbox-unarchive-line", action: () => setProjectArchived(project, false) },
-            { label: "Delete permanently", icon: "ri-delete-bin-line", danger: true, action: () => deleteProjectPermanently(project) }
-        );
+        });
+        items.push({
+            label: "Move to Trash",
+            icon: "ri-delete-bin-line",
+            danger: true,
+            action: () => moveProjectToTrash(project),
+        });
     } else {
-        items.push({ label: "Move to trash", icon: "ri-delete-bin-line", danger: true, action: () => setProjectArchived(project, true) });
+        items.push({
+            label: project.starred ? "Unstar" : "Star",
+            icon: project.starred ? "ri-star-fill" : "ri-star-line",
+            action: () => toggleStar(project),
+        });
+        items.push({
+            label: "Restore",
+            icon: "ri-inbox-unarchive-line",
+            action: () => restoreProject(project),
+        });
+        items.push({
+            label: "Delete Permanently",
+            icon: "ri-delete-bin-line",
+            danger: true,
+            action: () => deleteProjectPermanently(project),
+        });
     }
 
     items.forEach((item) => {

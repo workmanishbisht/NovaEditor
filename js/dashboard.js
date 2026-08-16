@@ -129,6 +129,80 @@ function getOpenProjectErrorMessage(errOrResponse) {
 }
 
 /* ==========================================
+   CUSTOM CONFIRMATION MODAL
+   ------------------------------------------
+   Reuses the SAME `.nova-modal` markup pattern
+   already used a few lines below by
+   ensureImportModal() — this is not a new
+   modal system, just a second instance of the
+   one already present in this file. Never
+   falls back to window.confirm().
+========================================== */
+function showConfirmDialog(title, message, options = {}) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement("div");
+        overlay.className = "nova-modal";
+        overlay.setAttribute("role", "dialog");
+        overlay.setAttribute("aria-modal", "true");
+        overlay.setAttribute("aria-labelledby", "dashConfirmModalTitle");
+
+        overlay.innerHTML = `
+            <div class="nova-modal-backdrop" data-confirm-cancel></div>
+            <div class="nova-modal-dialog" role="document">
+                <div class="nova-modal-header">
+                    <h2 id="dashConfirmModalTitle" class="nova-modal-title">${escapeHtml(title)}</h2>
+                    <button type="button" class="nova-modal-close" data-confirm-cancel aria-label="Close">
+                        <i class="ri-close-line"></i>
+                    </button>
+                </div>
+                <div class="nova-modal-body">
+                    <p class="nova-modal-description">${escapeHtml(message)}</p>
+                </div>
+                <div class="nova-modal-footer">
+                    <button type="button" class="btn btn-outline" data-confirm-cancel>Cancel</button>
+                    <button type="button" class="btn btn-primary" data-confirm-ok style="${options.danger ? "background:#dc2626;" : ""}">
+                        ${escapeHtml(options.confirmLabel || "Confirm")}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        document.body.classList.add("nova-modal-open");
+
+        const dialog = overlay.querySelector(".nova-modal-dialog");
+        dialog?.addEventListener("click", (event) => event.stopPropagation());
+
+        function onKeydown(event) {
+            if (event.key === "Escape") cleanup(false);
+        }
+
+        function cleanup(result) {
+            overlay.remove();
+            document.body.classList.remove("nova-modal-open");
+            document.removeEventListener("keydown", onKeydown);
+            resolve(result);
+        }
+
+        document.addEventListener("keydown", onKeydown);
+
+        overlay.querySelectorAll("[data-confirm-cancel]").forEach((el) => {
+            el.addEventListener("click", (event) => {
+                event.preventDefault();
+                cleanup(false);
+            });
+        });
+
+        overlay.querySelector("[data-confirm-ok]")?.addEventListener("click", (event) => {
+            event.preventDefault();
+            cleanup(true);
+        });
+
+        overlay.querySelector("[data-confirm-ok]")?.focus();
+    });
+}
+
+/* ==========================================
    CURRENT PROJECT (localStorage)
 ========================================== */
 function getCurrentProject() {
@@ -173,7 +247,10 @@ async function openProject(projectId) {
         return;
     }
     try {
-        const response = await updateProject(STATE.uid, id, {
+        // NOTE: updateProject(projectId, projectData) — firestore.js does not
+        // take a uid argument. The previous 3-arg call here was a bug that
+        // silently wrote to the wrong document; fixed as part of this change.
+        const response = await updateProject(id, {
             lastOpenedAt: new Date(),
         });
         if (!response || !response.success) {
@@ -320,7 +397,8 @@ async function renameProject(project) {
     }
 
     try {
-        const response = await updateProject(STATE.uid, project.id, {
+        // Fixed: updateProject(projectId, projectData) — no uid argument.
+        const response = await updateProject(project.id, {
             name: newName,
             updatedAt: new Date(),
         });
@@ -382,76 +460,57 @@ async function duplicateProject(project) {
     showToast("Duplicating project…", "info");
 }
 
+/* ==========================================
+   MOVE TO TRASH
+   ------------------------------------------
+   Uses the SAME `archived` / `deletedAt` fields
+   as projects.js (Trash tab), so a project
+   trashed from the Dashboard shows up correctly
+   in the Projects → Trash tab and vice versa.
+   Always shows the custom confirmation modal —
+   never window.confirm().
+========================================== */
 async function moveProjectToTrash(project) {
     if (!STATE.uid) {
         showToast("You must be signed in.", "error");
         return;
     }
 
-    let confirmed = false;
-    if (typeof window.showConfirm === "function") {
-        confirmed = await window.showConfirm(
-            `Move "${project.name}" to Trash?`,
-            "This will remove the project from your workspace."
-        );
-    } else {
-        confirmed = window.confirm(`Move "${project.name}" to Trash?`);
-    }
-
+    const confirmed = await showConfirmDialog(
+        "Move to Trash?",
+        `"${project.name || "This project"}" will be moved to Trash. You can restore it later from the Trash tab in Projects.`,
+        { confirmLabel: "Move to Trash", danger: true }
+    );
     if (!confirmed) return;
 
-    if (typeof window.moveProjectToTrash === "function") {
-        try {
-            const result = await window.moveProjectToTrash(project.id);
-            if (result && result.success !== false) {
-                STATE.projects = STATE.projects.filter((p) => p.id !== project.id);
-                if (getCurrentProject() === project.id) {
-                    clearCurrentProject();
-                }
-                invalidatePreviewCache(project.id);
-                renderContinueCoding();
-                renderRecentProjects();
-                renderActivityFromProjects();
-                renderWorkspaceOverview();
-                showToast("Project moved to Trash.", "success");
-                return;
-            }
-            showToast(result?.error || result?.message || "Failed to move project to Trash.", "error");
-            return;
-        } catch (err) {
-            console.error("[dashboard] moveProjectToTrash helper failed:", err);
-        }
-    }
-
     try {
-        const response = await updateProject(STATE.uid, project.id, {
-            trashed: true,
-            trashedAt: new Date(),
-            updatedAt: new Date(),
+        const response = await updateProject(project.id, {
+            archived: true,
+            deletedAt: new Date(),
         });
-        if (response && response.success) {
-            STATE.projects = STATE.projects.filter((p) => p.id !== project.id);
-            if (getCurrentProject() === project.id) {
-                clearCurrentProject();
-            }
-            invalidatePreviewCache(project.id);
-            renderContinueCoding();
-            renderRecentProjects();
-            renderActivityFromProjects();
-            renderWorkspaceOverview();
-            showToast("Project moved to Trash.", "success");
+
+        if (!response || !response.success) {
+            showToast("Unable to move project to Trash.", "error");
             return;
         }
-    } catch (err) {
-        console.error("[dashboard] soft-delete via updateProject failed:", err);
-    }
 
-    document.dispatchEvent(
-        new CustomEvent("novaeditor:trash-project", {
-            detail: { projectId: project.id },
-        })
-    );
-    showToast("Request to move project to Trash sent.", "info");
+        STATE.projects = STATE.projects.filter((p) => p.id !== project.id);
+        if (getCurrentProject() === project.id) {
+            clearCurrentProject();
+        }
+        invalidatePreviewCache(project.id);
+        renderContinueCoding();
+        renderRecentProjects();
+        renderActivityFromProjects();
+        renderWorkspaceOverview();
+        showToast("Project moved to Trash.", "success");
+        document.dispatchEvent(
+            new CustomEvent("novaeditor:project-trashed", { detail: { projectId: project.id } })
+        );
+    } catch (err) {
+        console.error("[dashboard] moveProjectToTrash failed:", err);
+        showToast("Unable to move project to Trash.", "error");
+    }
 }
 
 function attachProjectMenuGlobalListeners() {
@@ -471,6 +530,21 @@ function attachProjectMenuGlobalListeners() {
             closeImportModal();
         }
     });
+}
+
+/* ==========================================
+   CROSS-PAGE / SAME-PAGE TRASH SYNC
+   ------------------------------------------
+   If Trash actions happen elsewhere on the same
+   page load (e.g. a future Trash panel on the
+   dashboard, or another script), just refresh
+   from Firestore instead of hand-rolling a
+   second projects list.
+========================================== */
+function attachTrashSyncListeners() {
+    document.addEventListener("novaeditor:project-trashed", () => loadProjects());
+    document.addEventListener("novaeditor:project-restored", () => loadProjects());
+    document.addEventListener("novaeditor:project-permanently-deleted", () => loadProjects());
 }
 
 /* ==========================================
@@ -1323,6 +1397,14 @@ async function hydrateProjectThumbnails(projects) {
 
 /* ==========================================
    PROJECTS
+   ------------------------------------------
+   Trashed projects (archived === true) are
+   excluded from every Dashboard surface —
+   Continue Coding, Recent Projects, Recent
+   Activity, and the overview counts — so a
+   project moved to Trash (from here or from
+   the Projects page) disappears immediately,
+   and a restored project reappears next load.
 ========================================== */
 async function loadProjects() {
     if (!STATE.uid) return;
@@ -1334,6 +1416,7 @@ async function loadProjects() {
         return;
     }
     STATE.projects = (response.data || [])
+        .filter((p) => p.archived !== true)
         .slice()
         .sort((a, b) => toMillis(b.updatedAt) - toMillis(a.updatedAt));
     renderContinueCoding();
@@ -1606,6 +1689,7 @@ function init(detail) {
     attachSearch();
     attachProjectCreatedListener();
     attachProjectMenuGlobalListeners();
+    attachTrashSyncListeners();
     attachImportProjectButton();
     loadProjects();
     loadPlaceholderSections();

@@ -956,6 +956,11 @@ export async function getProject(projectId) {
 
 /* ==========================================
    UPDATE PROJECT
+   ------------------------------------------
+   Also used to move a project to Trash
+   (archived: true, deletedAt: <timestamp>)
+   and to restore it (archived: false,
+   deletedAt: null) — see projects.js.
 ========================================== */
 
 export async function updateProject(projectId, projectData) {
@@ -966,14 +971,173 @@ export async function updateProject(projectId, projectData) {
 }
 
 /* ==========================================
+   DELETE PROJECT COMPLETELY (permanent)
+   ------------------------------------------
+   Firestore does NOT automatically delete
+   subcollections when a parent document is
+   deleted. This performs a full, verified
+   cascade delete:
+
+     1. Delete every doc in projects/{id}/files
+     2. Delete every doc in projects/{id}/folders
+     3. Delete the projects/{id} document itself
+
+   Each stage must fully succeed before moving
+   to the next. Any failure stops the operation
+   and returns a meaningful error — nothing is
+   silently swallowed, and success is only
+   reported once all deletions are confirmed.
+========================================== */
+
+const BATCH_DELETE_CHUNK_SIZE = 450;
+
+async function batchDeleteRefs(refs, label = "") {
+  for (let i = 0; i < refs.length; i += BATCH_DELETE_CHUNK_SIZE) {
+    const chunk = refs.slice(i, i + BATCH_DELETE_CHUNK_SIZE);
+    if (chunk.length === 0) continue;
+
+    const batch = writeBatch(db);
+    chunk.forEach((ref) => batch.delete(ref));
+
+    // TEMP DEBUG LOG — remove once permanent delete is confirmed working
+    console.error("[Firestore][DEBUG] batch commit starting", {
+      label,
+      chunkIndex: Math.floor(i / BATCH_DELETE_CHUNK_SIZE),
+      chunkSize: chunk.length,
+    });
+
+    await batch.commit();
+
+    // TEMP DEBUG LOG — remove once permanent delete is confirmed working
+    console.error("[Firestore][DEBUG] batch commit success", {
+      label,
+      chunkIndex: Math.floor(i / BATCH_DELETE_CHUNK_SIZE),
+      chunkSize: chunk.length,
+    });
+  }
+}
+
+export async function deleteProjectCompletely(projectId) {
+  return run(async () => {
+    const projectError = validateId(projectId, "Project ID");
+    if (projectError) return projectError;
+
+    console.error("[Firestore] deleteProjectCompletely() started", { projectId });
+
+    // TEMP DEBUG LOG — remove once permanent delete is confirmed working
+    console.error("[Firestore][DEBUG] projectId", { projectId });
+
+    // 1. Gather every file and folder document under this project.
+    let filesSnap;
+    let foldersSnap;
+    try {
+      [filesSnap, foldersSnap] = await Promise.all([
+        getDocs(filesCollection(projectId)),
+        getDocs(foldersCollection(projectId)),
+      ]);
+    } catch (error) {
+      console.error("[Firestore] deleteProjectCompletely: failed reading subcollections", {
+        projectId,
+        errorCode: error?.code,
+        errorMessage: error?.message,
+      });
+      throw new Error(
+        `Failed to read project files/folders before deletion: ${error.message}`
+      );
+    }
+
+    // TEMP DEBUG LOG — remove once permanent delete is confirmed working
+    console.error("[Firestore][DEBUG] filesSnap.size", { projectId, size: filesSnap.size });
+    // TEMP DEBUG LOG — remove once permanent delete is confirmed working
+    console.error("[Firestore][DEBUG] foldersSnap.size", { projectId, size: foldersSnap.size });
+
+    const fileIds = [];
+    filesSnap.forEach((document) => fileIds.push(document.id));
+
+    const folderIds = [];
+    foldersSnap.forEach((document) => folderIds.push(document.id));
+
+    // TEMP DEBUG LOG — remove once permanent delete is confirmed working
+    console.error("[Firestore][DEBUG] file IDs", { projectId, fileIds });
+    // TEMP DEBUG LOG — remove once permanent delete is confirmed working
+    console.error("[Firestore][DEBUG] folder IDs", { projectId, folderIds });
+
+    console.error("[Firestore] deleteProjectCompletely: discovered docs", {
+      projectId,
+      fileCount: fileIds.length,
+      folderCount: folderIds.length,
+    });
+
+    // 2. Delete every file document. Stop and report on any failure.
+    try {
+      await batchDeleteRefs(fileIds.map((id) => fileRef(projectId, id)), "files");
+    } catch (error) {
+      console.error("[Firestore] deleteProjectCompletely: file deletion failed", {
+        projectId,
+        errorCode: error?.code,
+        errorMessage: error?.message,
+      });
+      throw new Error(`Failed to delete project files: ${error.message}`);
+    }
+
+    // 3. Delete every folder document. Stop and report on any failure.
+    try {
+      await batchDeleteRefs(folderIds.map((id) => folderRef(projectId, id)), "folders");
+    } catch (error) {
+      console.error("[Firestore] deleteProjectCompletely: folder deletion failed", {
+        projectId,
+        errorCode: error?.code,
+        errorMessage: error?.message,
+      });
+      throw new Error(`Failed to delete project folders: ${error.message}`);
+    }
+
+    // 4. Only now delete the parent project document.
+    try {
+      await deleteDoc(projectRef(projectId));
+    } catch (error) {
+      console.error("[Firestore] deleteProjectCompletely: project document deletion failed", {
+        projectId,
+        errorCode: error?.code,
+        errorMessage: error?.message,
+      });
+      throw new Error(`Failed to delete project document: ${error.message}`);
+    }
+
+    // TEMP DEBUG LOG — remove once permanent delete is confirmed working
+    console.error("[Firestore][DEBUG] project delete success", { projectId });
+
+    console.error("[Firestore] deleteProjectCompletely() succeeded", {
+      projectId,
+      deletedFiles: fileIds.length,
+      deletedFolders: folderIds.length,
+    });
+
+    return createResponse(true, {
+      data: {
+        projectId,
+        deletedFiles: fileIds.length,
+        deletedFolders: folderIds.length,
+      },
+    });
+  });
+}
+
+/* ==========================================
    DELETE PROJECT
+   ------------------------------------------
+   This is the function already wired up by
+   projects.js for "Delete Permanently". It now
+   performs the full cascade delete (files +
+   folders + project document) instead of only
+   removing the parent document, so nothing is
+   left behind as an orphaned subcollection.
+   Kept as its own export (rather than renamed)
+   to preserve the existing API/imports.
 ========================================== */
 
 export async function deleteProject(projectId) {
-  return run(async () => {
-    await deleteDoc(projectRef(projectId));
-    return createResponse(true);
-  });
+  return deleteProjectCompletely(projectId);
 }
 
 /* ==========================================
@@ -1665,6 +1829,7 @@ export async function getUnreadNotificationCount(uid) {
       where("recipientUid", "==", uid),
       where("read", "==", false)
     );
+
     const snapshot = await getDocs(q);
     return snapshot.size;
   } catch (error) {
