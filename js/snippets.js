@@ -6,7 +6,7 @@
 
 import { showToast } from "../components/toast.js";
 import { db } from "../firebase/firebase-config.js";
-import { getCurrentWorkspaceId } from "../firebase/firestore.js";
+import { getCurrentWorkspaceId, getUser } from "../firebase/firestore.js";
 import { getCurrentUser, onAuthStateChange } from "../firebase/auth.js";
 
 import {
@@ -32,6 +32,29 @@ const VALID_CATEGORIES = ["html", "css", "javascript", "react", "nodejs", "utili
 const VALID_TABS = ["all", "mine", "favorites", "shared"];
 const SEARCH_DEBOUNCE_MS = 220;
 
+const CATEGORY_ICONS = {
+    html: "ri-html5-line",
+    css: "ri-css3-line",
+    javascript: "ri-javascript-line",
+    react: "ri-reactjs-line",
+    nodejs: "ri-node-tree",
+    utility: "ri-tools-line",
+};
+
+const CATEGORY_LABELS = {
+    html: "HTML",
+    css: "CSS",
+    javascript: "JavaScript",
+    react: "React",
+    nodejs: "Node.js",
+    utility: "Utility",
+};
+
+const AVATAR_PALETTE = [
+    "#2563eb", "#7c3aed", "#0891b2", "#059669",
+    "#d97706", "#dc2626", "#db2777", "#4f46e5",
+];
+
 /* ==========================================
    STATE
 ========================================== */
@@ -50,6 +73,7 @@ const STATE = {
     sort: "updated",
     view: "grid",
     editingSnippetId: null, // set while the modal is editing an existing snippet
+    authorCache: new Map(), // uid -> { name, photoURL }
 };
 
 /* ==========================================
@@ -68,11 +92,12 @@ function els() {
         page: qs("#snippetsPage"),
         searchInput: qs("#snippetsSearchInput"),
         tabs: qsa(".snippets-tab[data-filter-tab]"),
-        categoryItems: qsa('[data-filter-group="category"] .filter-item[data-category]'),
-        tagChips: qsa('[data-filter-group="tag"] .tag-chip[data-tag]'),
-        collectionItems: qsa('[data-filter-group="collection"] .filter-item[data-collection]'),
         grid: qs("#snippetsGrid"),
         resultCount: qs("#snippetsResultCount"),
+        clearFiltersBtn: qs("#snippetsClearFilters"),
+        categoryList: qs("#snippetsCategoryList"),
+        tagList: qs("#snippetsTagList"),
+        collectionList: qs("#snippetsCollectionList"),
         sortSelect: qs("#snippetsSort"),
         viewGridBtn: qs("#viewGridBtn"),
         viewListBtn: qs("#viewListBtn"),
@@ -153,6 +178,118 @@ function langBadgeLabel(snippet) {
     if (snippet.language) return String(snippet.language).toUpperCase();
     return String(snippet.category || "TEXT").toUpperCase();
 }
+
+function categoryIcon(cat) {
+    return CATEGORY_ICONS[cat] || "ri-price-tag-3-line";
+}
+
+function categoryLabel(cat) {
+    return CATEGORY_LABELS[cat] || (cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : "Unknown");
+}
+
+/* ==========================================
+   AVATAR / AUTHOR HELPERS
+========================================== */
+function getInitials(name) {
+    const clean = String(name || "").trim();
+    if (!clean) return "U";
+    const parts = clean.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase() || "U";
+    return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+}
+
+function colorForSeed(seed) {
+    const str = String(seed || "U");
+    let hash = 0;
+    for (let i = 0; i < str.length; i += 1) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % AVATAR_PALETTE.length;
+    return AVATAR_PALETTE[index];
+}
+
+function getAuthorInfo(snippet) {
+    const uid = snippet.ownerUid;
+    const currentUid = STATE.currentUser?.uid;
+
+    if (uid && uid === currentUid) {
+        return {
+            uid,
+            name: STATE.currentUser?.displayName || STATE.currentUser?.email || "You",
+            photoURL: STATE.currentUser?.photoURL || null,
+            isOwner: true,
+        };
+    }
+
+    const cached = uid ? STATE.authorCache.get(uid) : null;
+    return {
+        uid,
+        name: cached?.name || "Workspace member",
+        photoURL: cached?.photoURL || null,
+        isOwner: false,
+    };
+}
+
+function renderAvatar(author) {
+    const initials = getInitials(author.name);
+    const color = colorForSeed(author.uid || author.name || "U");
+
+    if (author.photoURL) {
+        return `<img src="${escapeHtml(author.photoURL)}" alt="" class="snippet-avatar" data-fallback-initials="${escapeHtml(initials)}" data-fallback-color="${escapeHtml(color)}">`;
+    }
+
+    return `<div class="snippet-avatar avatar-initials" style="background:${color}" aria-hidden="true">${escapeHtml(initials)}</div>`;
+}
+
+async function hydrateAuthorCache(snippets) {
+    const currentUid = STATE.currentUser?.uid;
+    const uniqueOwnerIds = [...new Set(
+        (snippets || [])
+            .map((s) => s.ownerUid)
+            .filter((uid) => uid && uid !== currentUid && !STATE.authorCache.has(uid))
+    )];
+
+    if (uniqueOwnerIds.length === 0) return;
+
+    const results = await Promise.all(uniqueOwnerIds.map(async (ownerUid) => {
+        try {
+            const res = await getUser(ownerUid);
+            if (res.success && res.exists && res.data) {
+                const data = res.data;
+                return [ownerUid, {
+                    name: data.displayName || data.name || data.username || "Workspace member",
+                    photoURL: data.photoURL || data.photoUrl || data.avatarUrl || null,
+                }];
+            }
+        } catch (error) {
+            console.warn("[Snippets] Failed to load author profile:", ownerUid, error);
+        }
+        return [ownerUid, { name: "Workspace member", photoURL: null }];
+    }));
+
+    results.forEach(([ownerUid, info]) => STATE.authorCache.set(ownerUid, info));
+}
+
+/* Broken avatar images fall back to an initials badge instead of a broken-image icon.
+   Bound once at module load — img "error" events don't bubble, so this listener
+   must use the capture phase on the document. */
+function handleAvatarImgError(event) {
+    const target = event.target;
+    if (!(target instanceof HTMLImageElement)) return;
+    if (!target.classList.contains("snippet-avatar")) return;
+
+    const initials = target.dataset.fallbackInitials || "U";
+    const color = target.dataset.fallbackColor || "#2563eb";
+
+    const replacement = document.createElement("div");
+    replacement.className = "snippet-avatar avatar-initials";
+    replacement.style.background = color;
+    replacement.textContent = initials;
+    replacement.setAttribute("aria-hidden", "true");
+
+    target.replaceWith(replacement);
+}
+document.addEventListener("error", handleAvatarImgError, true);
 
 /* ==========================================
    FIRESTORE — SNIPPETS DATA LAYER
@@ -257,6 +394,7 @@ async function loadSnippets({ silent = false } = {}) {
 
     try {
         STATE.snippets = await fetchAccessibleSnippets(STATE.currentUser.uid, STATE.currentWorkspaceId);
+        await hydrateAuthorCache(STATE.snippets);
         STATE.loaded = true;
     } catch (error) {
         console.error("[Snippets] Failed to load snippets:", error);
@@ -310,6 +448,13 @@ function getSearchFiltered() {
     return getTabFiltered().filter((s) => matchesSearch(s, term));
 }
 
+/* Base dataset used to compute which filter values are worth showing —
+   tab + search applied, but NOT the active category/tag/collection
+   selection itself (so the sidebar always reflects what's selectable). */
+function getFilterBaseList() {
+    return getSearchFiltered();
+}
+
 function getVisibleSnippets() {
     let list = getSearchFiltered();
 
@@ -339,13 +484,19 @@ function sortSnippets(list, sortValue) {
     }
 }
 
-function getCategoryCounts() {
-    const base = getSearchFiltered();
-    const counts = { all: base.length };
-    VALID_CATEGORIES.forEach((cat) => {
-        counts[cat] = base.filter((s) => s.category === cat).length;
+function computeFilterOptions() {
+    const base = getFilterBaseList();
+    const categoryCounts = new Map();
+    const tagCounts = new Map();
+    const collectionCounts = new Map();
+
+    base.forEach((s) => {
+        if (s.category) categoryCounts.set(s.category, (categoryCounts.get(s.category) || 0) + 1);
+        (s.tags || []).forEach((t) => tagCounts.set(t, (tagCounts.get(t) || 0) + 1));
+        if (s.collection) collectionCounts.set(s.collection, (collectionCounts.get(s.collection) || 0) + 1);
     });
-    return counts;
+
+    return { categoryCounts, tagCounts, collectionCounts, total: base.length };
 }
 
 /* ==========================================
@@ -357,7 +508,7 @@ function renderCard(snippet) {
     const uid = STATE.currentUser?.uid;
     const isFavorited = (snippet.favoritedBy || []).includes(uid);
     const isOwner = snippet.ownerUid === uid;
-    const authorName = isOwner ? "You" : "Workspace member";
+    const author = getAuthorInfo(snippet);
     const tags = (snippet.tags || []).join(",");
 
     return `
@@ -389,9 +540,9 @@ function renderCard(snippet) {
 
             <div class="snippet-card-footer">
                 <div class="snippet-author">
-                    <img src="../assets/images/avatar/default.png" alt="" class="snippet-avatar">
+                    ${renderAvatar(author)}
                     <div class="snippet-author-info">
-                        <span class="snippet-author-name">${escapeHtml(authorName)}</span>
+                        <span class="snippet-author-name">${escapeHtml(isOwner ? "You" : author.name)}</span>
                         <span class="snippet-updated">${escapeHtml(formatRelativeTime(snippet.updatedAt))}</span>
                     </div>
                 </div>
@@ -399,8 +550,8 @@ function renderCard(snippet) {
                     <button type="button" class="snippet-action-btn" data-copy-snippet title="Copy code" aria-label="Copy snippet">
                         <i class="ri-file-copy-line"></i>
                     </button>
-                    <button type="button" class="snippet-action-btn" data-edit-snippet title="Edit" aria-label="Edit snippet">
-                        <i class="ri-pencil-line"></i>
+                    <button type="button" class="snippet-action-btn" data-edit-snippet title="${isOwner ? "Edit" : "View"}" aria-label="${isOwner ? "Edit snippet" : "View snippet"}">
+                        <i class="${isOwner ? "ri-pencil-line" : "ri-eye-line"}"></i>
                     </button>
                     <button type="button" class="snippet-action-btn snippet-more-btn" data-snippet-menu title="More actions" aria-label="More actions" aria-haspopup="true">
                         <i class="ri-more-2-fill"></i>
@@ -412,11 +563,13 @@ function renderCard(snippet) {
 }
 
 function render() {
-    const { grid, resultCount, emptyState, categoryItems } = els();
+    const { grid, resultCount, emptyState } = els();
     if (!grid) return;
 
     if (!STATE.loaded) {
         grid.innerHTML = `<p class="panel-empty">Loading snippets...</p>`;
+        renderFilters();
+        renderClearFiltersState();
         return;
     }
 
@@ -436,43 +589,93 @@ function render() {
         grid.innerHTML = visible.map(renderCard).join("");
     }
 
-    // Category counts
-    const counts = getCategoryCounts();
-    categoryItems.forEach((item) => {
-        const cat = item.dataset.category;
-        const countEl = qs(".filter-count", item);
-        if (countEl && counts[cat] !== undefined) {
-            countEl.textContent = String(counts[cat]);
-        }
-    });
+    renderFilters();
+    renderClearFiltersState();
 }
 
 /* ==========================================
-   TAB / FILTER UI SYNC
+   SIDEBAR FILTERS (Categories / Tags / Collections)
+========================================== */
+function renderFilters() {
+    const { categoryList, tagList, collectionList } = els();
+    if (!categoryList && !tagList && !collectionList) return;
+
+    const { categoryCounts, tagCounts, collectionCounts, total } = computeFilterOptions();
+
+    if (categoryList) {
+        const items = [`
+            <li>
+                <button type="button" class="filter-item${STATE.category === "all" ? " is-active" : ""}" data-category="all">
+                    <i class="ri-apps-2-line"></i>
+                    <span class="filter-item-label">All Categories</span>
+                    <span class="filter-count">${total}</span>
+                </button>
+            </li>
+        `];
+
+        VALID_CATEGORIES.forEach((cat) => {
+            const count = categoryCounts.get(cat) || 0;
+            if (count === 0) return;
+            items.push(`
+                <li>
+                    <button type="button" class="filter-item${STATE.category === cat ? " is-active" : ""}" data-category="${cat}">
+                        <i class="${categoryIcon(cat)}"></i>
+                        <span class="filter-item-label">${escapeHtml(categoryLabel(cat))}</span>
+                        <span class="filter-count">${count}</span>
+                    </button>
+                </li>
+            `);
+        });
+
+        categoryList.innerHTML = items.join("");
+    }
+
+    if (tagList) {
+        const tagEntries = Array.from(tagCounts.entries()).sort((a, b) => b[1] - a[1]);
+        if (tagEntries.length === 0) {
+            tagList.innerHTML = `<p class="filter-empty">No tags yet</p>`;
+        } else {
+            tagList.innerHTML = tagEntries.map(([tag, count]) => `
+                <button type="button" class="tag-chip${STATE.tags.has(tag) ? " is-active" : ""}" data-tag="${escapeHtml(tag)}">
+                    ${escapeHtml(tag)}<span class="tag-chip-count">${count}</span>
+                </button>
+            `).join("");
+        }
+    }
+
+    if (collectionList) {
+        const collectionEntries = Array.from(collectionCounts.entries()).sort((a, b) => b[1] - a[1]);
+        if (collectionEntries.length === 0) {
+            collectionList.innerHTML = `<p class="filter-empty">No collections yet</p>`;
+        } else {
+            collectionList.innerHTML = collectionEntries.map(([col, count]) => `
+                <li>
+                    <button type="button" class="filter-item${STATE.collectionFilter === col ? " is-active" : ""}" data-collection="${escapeHtml(col)}">
+                        <i class="ri-folder-3-line"></i>
+                        <span class="filter-item-label">${escapeHtml(col)}</span>
+                        <span class="filter-count">${count}</span>
+                    </button>
+                </li>
+            `);
+        }
+    }
+}
+
+function renderClearFiltersState() {
+    const { clearFiltersBtn } = els();
+    if (!clearFiltersBtn) return;
+    const hasActiveFilter = STATE.category !== "all" || STATE.tags.size > 0 || !!STATE.collectionFilter;
+    clearFiltersBtn.classList.toggle("hidden", !hasActiveFilter);
+}
+
+/* ==========================================
+   TAB UI SYNC
 ========================================== */
 function syncTabsUI() {
     els().tabs.forEach((tab) => {
         const isActive = tab.dataset.filterTab === STATE.activeTab;
         tab.classList.toggle("is-active", isActive);
         tab.setAttribute("aria-selected", isActive ? "true" : "false");
-    });
-}
-
-function syncCategoryUI() {
-    els().categoryItems.forEach((item) => {
-        item.classList.toggle("is-active", item.dataset.category === STATE.category);
-    });
-}
-
-function syncTagUI() {
-    els().tagChips.forEach((chip) => {
-        chip.classList.toggle("is-active", STATE.tags.has(chip.dataset.tag));
-    });
-}
-
-function syncCollectionUI() {
-    els().collectionItems.forEach((item) => {
-        item.classList.toggle("is-active", item.dataset.collection === STATE.collectionFilter);
     });
 }
 
@@ -511,32 +714,38 @@ function handleTabClick(event) {
     render();
 }
 
-function handleCategoryClick(event) {
-    const item = event.currentTarget;
-    const value = item.dataset.category;
-    if (value === STATE.category) return;
-    STATE.category = value;
-    syncCategoryUI();
+function handleFilterListClick(event) {
+    const categoryBtn = event.target.closest("[data-category]");
+    if (!categoryBtn) return;
+    const value = categoryBtn.dataset.category;
+    STATE.category = STATE.category === value ? "all" : value;
     render();
 }
 
-function handleTagClick(event) {
-    const chip = event.currentTarget;
-    const value = chip.dataset.tag;
+function handleTagListClick(event) {
+    const tagBtn = event.target.closest("[data-tag]");
+    if (!tagBtn) return;
+    const value = tagBtn.dataset.tag;
     if (STATE.tags.has(value)) {
         STATE.tags.delete(value);
     } else {
         STATE.tags.add(value);
     }
-    syncTagUI();
     render();
 }
 
-function handleCollectionClick(event) {
-    const item = event.currentTarget;
-    const value = item.dataset.collection;
+function handleCollectionListClick(event) {
+    const collectionBtn = event.target.closest("[data-collection]");
+    if (!collectionBtn) return;
+    const value = collectionBtn.dataset.collection;
     STATE.collectionFilter = STATE.collectionFilter === value ? null : value;
-    syncCollectionUI();
+    render();
+}
+
+function handleClearFilters() {
+    STATE.category = "all";
+    STATE.tags.clear();
+    STATE.collectionFilter = null;
     render();
 }
 
@@ -573,7 +782,11 @@ async function handleGridClick(event) {
         return;
     }
     if (event.target.closest("[data-edit-snippet]")) {
-        openSnippetModal(snippet);
+        if (snippet.ownerUid === STATE.currentUser?.uid) {
+            openSnippetModal(snippet);
+        } else {
+            openViewModal(snippet);
+        }
         return;
     }
     const menuBtn = event.target.closest("[data-snippet-menu]");
@@ -597,6 +810,7 @@ async function toggleFavorite(snippet) {
 
     try {
         await setFavoriteState(snippet.id, uid, nextFavorited);
+        showToast(nextFavorited ? "Added to Favorites." : "Removed from Favorites.", "success");
     } catch (error) {
         console.error("[Snippets] Favorite toggle failed:", error);
         // revert on failure
@@ -614,10 +828,39 @@ async function copySnippetCode(snippet) {
             throw new Error("Clipboard API unavailable");
         }
         await navigator.clipboard.writeText(snippet.code || "");
-        showToast("Snippet copied to clipboard.", "success");
+        showToast("Code copied to clipboard.", "success");
     } catch (error) {
         console.error("[Snippets] Copy failed:", error);
         showToast("Couldn't copy snippet. Please copy it manually.", "error");
+    }
+}
+
+async function duplicateSnippet(snippet) {
+    const uid = STATE.currentUser?.uid;
+    if (!uid) {
+        showToast("You must be signed in to duplicate a snippet.", "error");
+        return;
+    }
+
+    try {
+        const created = await createSnippetDoc({
+            title: `${snippet.title || "Untitled snippet"} Copy`,
+            description: snippet.description,
+            code: snippet.code,
+            language: snippet.language,
+            category: snippet.category,
+            tags: snippet.tags,
+            collection: snippet.collection,
+            visibility: snippet.visibility,
+            ownerUid: uid,
+            workspaceId: STATE.currentWorkspaceId,
+        });
+        STATE.snippets.push(created);
+        render();
+        showToast("Snippet duplicated successfully.", "success");
+    } catch (error) {
+        console.error("[Snippets] Duplicate failed:", error);
+        showToast("Couldn't duplicate snippet. Please try again.", "error");
     }
 }
 
@@ -627,14 +870,12 @@ async function deleteSnippet(snippet) {
         showToast("You can only delete snippets you own.", "warning");
         return;
     }
-    const confirmed = window.confirm(`Delete "${snippet.title || "this snippet"}"? This can't be undone.`);
-    if (!confirmed) return;
 
     try {
         await deleteSnippetDoc(snippet.id);
         STATE.snippets = STATE.snippets.filter((s) => s.id !== snippet.id);
         render();
-        showToast("Snippet deleted.", "success");
+        showToast("Snippet deleted successfully.", "success");
     } catch (error) {
         console.error("[Snippets] Delete failed:", error);
         showToast("Couldn't delete snippet. Please try again.", "error");
@@ -643,6 +884,8 @@ async function deleteSnippet(snippet) {
 
 /* ==========================================
    ACTION MENU (built at runtime — see header note)
+   Dynamically generated per snippet based on
+   ownership + favorite state.
 ========================================== */
 let activeMenuEl = null;
 
@@ -651,37 +894,85 @@ function closeActionMenu() {
         activeMenuEl.remove();
         activeMenuEl = null;
     }
+    document.removeEventListener("keydown", onEscCloseMenu);
+}
+
+function positionMenu(menu, anchorBtn) {
+    const rect = anchorBtn.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    const viewportWidth = document.documentElement.clientWidth;
+    const viewportHeight = document.documentElement.clientHeight;
+
+    let left = rect.right + window.scrollX - menuRect.width;
+    let top = rect.bottom + window.scrollY + 6;
+
+    // Clamp horizontally so the menu never overflows the viewport
+    const minLeft = window.scrollX + 8;
+    const maxLeft = window.scrollX + viewportWidth - menuRect.width - 8;
+    if (left < minLeft) left = minLeft;
+    if (left > maxLeft) left = Math.max(minLeft, maxLeft);
+
+    // If there isn't room below, flip the menu above the button instead
+    if (rect.bottom + menuRect.height + 12 > viewportHeight) {
+        const flippedTop = rect.top + window.scrollY - menuRect.height - 6;
+        if (flippedTop > window.scrollY) {
+            top = flippedTop;
+        }
+    }
+
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
 }
 
 function openActionMenu(anchorBtn, snippet) {
     closeActionMenu();
+    ensureRuntimeStyles();
+
     const uid = STATE.currentUser?.uid;
     const isOwner = snippet.ownerUid === uid;
     const isFavorited = (snippet.favoritedBy || []).includes(uid);
 
+    const items = [];
+    if (isOwner) {
+        items.push({ action: "edit", icon: "ri-pencil-line", label: "Edit" });
+    } else {
+        items.push({ action: "view", icon: "ri-eye-line", label: "View" });
+    }
+    items.push({ action: "duplicate", icon: "ri-file-copy-2-line", label: "Duplicate" });
+    items.push({
+        action: "favorite",
+        icon: isFavorited ? "ri-star-fill" : "ri-star-line",
+        label: isFavorited ? "Remove from Favorites" : "Add to Favorites",
+    });
+    items.push({ action: "copy", icon: "ri-clipboard-line", label: "Copy Code" });
+    if (isOwner) {
+        items.push({ action: "delete", icon: "ri-delete-bin-line", label: "Delete", danger: true });
+    }
+
     const menu = document.createElement("div");
     menu.className = "snippet-inline-menu";
-    menu.innerHTML = `
-        <button type="button" data-action="edit"><i class="ri-pencil-line"></i> Edit</button>
-        <button type="button" data-action="copy"><i class="ri-file-copy-line"></i> Copy</button>
-        <button type="button" data-action="favorite"><i class="${isFavorited ? "ri-star-fill" : "ri-star-line"}"></i> ${isFavorited ? "Unfavorite" : "Favorite"}</button>
-        ${isOwner ? `<button type="button" data-action="delete" class="is-danger"><i class="ri-delete-bin-line"></i> Delete</button>` : ""}
-    `;
-    document.body.appendChild(menu);
+    menu.setAttribute("role", "menu");
+    menu.innerHTML = items.map((item) => `
+        <button type="button" role="menuitem" data-action="${item.action}"${item.danger ? ' class="is-danger"' : ""}>
+            <i class="${item.icon}"></i> ${escapeHtml(item.label)}
+        </button>
+    `).join("");
 
-    const rect = anchorBtn.getBoundingClientRect();
-    menu.style.top = `${rect.bottom + window.scrollY + 6}px`;
-    menu.style.left = `${Math.max(8, rect.right + window.scrollX - menu.offsetWidth)}px`;
+    document.body.appendChild(menu);
+    positionMenu(menu, anchorBtn);
 
     menu.addEventListener("click", async (event) => {
         const actionBtn = event.target.closest("[data-action]");
         if (!actionBtn) return;
         const action = actionBtn.dataset.action;
         closeActionMenu();
+
         if (action === "edit") openSnippetModal(snippet);
+        else if (action === "view") openViewModal(snippet);
+        else if (action === "duplicate") await duplicateSnippet(snippet);
         else if (action === "copy") await copySnippetCode(snippet);
         else if (action === "favorite") await toggleFavorite(snippet);
-        else if (action === "delete") await deleteSnippet(snippet);
+        else if (action === "delete") openDeleteConfirm(snippet);
     });
 
     activeMenuEl = menu;
@@ -700,15 +991,15 @@ function onDocClickCloseMenu(event) {
 function onEscCloseMenu(event) {
     if (event.key === "Escape") {
         closeActionMenu();
-        document.removeEventListener("keydown", onEscCloseMenu);
     }
 }
 
 /* ==========================================
-   SNIPPET EDITOR MODAL (built at runtime — see header note)
+   RUNTIME STYLES
+   (menu / modals are appended to <body>, outside
+   .snippets-page, so their CSS lives here rather
+   than in the scoped snippets.css file)
 ========================================== */
-let modalEl = null;
-
 function ensureRuntimeStyles() {
     if (qs("#snippetsRuntimeStyles")) return;
     const style = document.createElement("style");
@@ -717,7 +1008,8 @@ function ensureRuntimeStyles() {
         .snippet-inline-menu {
             position: absolute;
             z-index: 1050;
-            min-width: 170px;
+            min-width: 190px;
+            max-width: calc(100vw - 16px);
             background: var(--surface, #fff);
             border: 1px solid var(--border, #e2e8f0);
             border-radius: var(--radius-md, 12px);
@@ -732,7 +1024,7 @@ function ensureRuntimeStyles() {
             align-items: center;
             gap: 8px;
             width: 100%;
-            padding: 8px 10px;
+            padding: 9px 10px;
             border: none;
             background: transparent;
             border-radius: var(--radius-sm, 6px);
@@ -746,6 +1038,10 @@ function ensureRuntimeStyles() {
             color: var(--text-primary, #0f172a);
         }
         .snippet-inline-menu button.is-danger {
+            color: var(--danger, #ef4444);
+        }
+        .snippet-inline-menu button.is-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
             color: var(--danger, #ef4444);
         }
         .snippet-editor-overlay {
@@ -832,9 +1128,231 @@ function ensureRuntimeStyles() {
             border: 1px solid var(--primary, #2563eb);
             color: #fff;
         }
+
+        /* Delete confirmation modal */
+        .snippet-confirm-modal {
+            width: 100%;
+            max-width: 420px;
+            background: var(--surface, #fff);
+            border-radius: var(--radius-lg, 16px);
+            box-shadow: var(--shadow-xl, 0 30px 60px rgba(15,23,42,0.16));
+            padding: 24px;
+        }
+        .snippet-confirm-modal h2 {
+            margin: 0 0 10px;
+            font-size: 17px;
+            color: var(--text-primary, #0f172a);
+        }
+        .snippet-confirm-desc {
+            margin: 0;
+            font-size: 13.5px;
+            line-height: 1.6;
+            color: var(--text-secondary, #475569);
+        }
+        .snippet-editor-delete-confirm {
+            height: 40px;
+            padding: 0 18px;
+            border-radius: var(--radius-sm, 6px);
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--danger, #ef4444);
+            border: 1px solid var(--danger, #ef4444);
+            color: #fff;
+        }
+        .snippet-editor-delete-confirm:hover {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+        .snippet-editor-delete-confirm:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        /* Read-only view modal */
+        .snippet-view-modal h2 {
+            margin-bottom: 6px;
+        }
+        .snippet-view-desc {
+            margin: 0 0 16px;
+            font-size: 13.5px;
+            color: var(--text-secondary, #475569);
+            line-height: 1.5;
+        }
+        .snippet-view-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .snippet-view-field {
+            margin-bottom: 16px;
+        }
+        .snippet-view-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--text-muted, #94a3b8);
+        }
+        .snippet-view-empty {
+            font-size: 12.5px;
+            color: var(--text-muted, #94a3b8);
+        }
+        .snippet-view-code {
+            margin: 0;
+            max-height: 260px;
+        }
+        .snippet-view-code code {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .snippet-view-author {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle, #e2e8f0);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary, #0f172a);
+        }
+
+        @media (max-width: 480px) {
+            .snippet-editor-modal,
+            .snippet-confirm-modal {
+                padding: 18px;
+            }
+        }
     `;
     document.head.appendChild(style);
 }
+
+/* ==========================================
+   DELETE CONFIRMATION MODAL
+========================================== */
+let confirmModalEl = null;
+
+function closeConfirmModal() {
+    if (confirmModalEl) {
+        confirmModalEl.remove();
+        confirmModalEl = null;
+    }
+    document.removeEventListener("keydown", onEscCloseConfirm);
+}
+function onEscCloseConfirm(event) {
+    if (event.key === "Escape") closeConfirmModal();
+}
+
+function openDeleteConfirm(snippet) {
+    ensureRuntimeStyles();
+    closeConfirmModal();
+    closeActionMenu();
+
+    const overlay = document.createElement("div");
+    overlay.className = "snippet-editor-overlay";
+    overlay.innerHTML = `
+        <div class="snippet-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="snippetConfirmTitle">
+            <h2 id="snippetConfirmTitle">Delete snippet?</h2>
+            <p class="snippet-confirm-desc">Are you sure you want to delete "${escapeHtml(snippet.title || "this snippet")}"? This action cannot be undone.</p>
+            <div class="snippet-editor-actions">
+                <button type="button" class="snippet-editor-cancel" data-confirm-cancel>Cancel</button>
+                <button type="button" class="snippet-editor-delete-confirm" data-confirm-delete>Delete</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    confirmModalEl = overlay;
+
+    overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) closeConfirmModal();
+    });
+    qs("[data-confirm-cancel]", overlay).addEventListener("click", closeConfirmModal);
+    qs("[data-confirm-delete]", overlay).addEventListener("click", async (event) => {
+        const btn = event.currentTarget;
+        btn.disabled = true;
+        await deleteSnippet(snippet);
+        closeConfirmModal();
+    });
+
+    document.addEventListener("keydown", onEscCloseConfirm);
+}
+
+/* ==========================================
+   READ-ONLY VIEW MODAL (for snippets you don't own)
+========================================== */
+let viewModalEl = null;
+
+function closeViewModal() {
+    if (viewModalEl) {
+        viewModalEl.remove();
+        viewModalEl = null;
+    }
+    document.removeEventListener("keydown", onEscCloseView);
+}
+function onEscCloseView(event) {
+    if (event.key === "Escape") closeViewModal();
+}
+
+function openViewModal(snippet) {
+    ensureRuntimeStyles();
+    closeViewModal();
+    closeActionMenu();
+
+    const author = getAuthorInfo(snippet);
+    const tagsHtml = (snippet.tags || []).length
+        ? (snippet.tags || []).map((t) => `<span class="tag-chip">${escapeHtml(t)}</span>`).join("")
+        : `<span class="snippet-view-empty">No tags</span>`;
+
+    const overlay = document.createElement("div");
+    overlay.className = "snippet-editor-overlay";
+    overlay.innerHTML = `
+        <div class="snippet-editor-modal snippet-view-modal" role="dialog" aria-modal="true" aria-label="View snippet">
+            <h2>${escapeHtml(snippet.title || "Untitled snippet")}</h2>
+            <p class="snippet-view-desc">${escapeHtml(snippet.description || "No description provided.")}</p>
+            <div class="snippet-view-meta">
+                <span class="tech-badge ${techBadgeClass(snippet.category)}">${escapeHtml((snippet.category || "utility").toUpperCase())}</span>
+                <span class="lang-badge">${escapeHtml(langBadgeLabel(snippet))}</span>
+                ${snippet.collection ? `<span class="lang-badge">${escapeHtml(snippet.collection)}</span>` : ""}
+            </div>
+            <div class="snippet-view-field">
+                <label>Tags</label>
+                <div class="filter-tags">${tagsHtml}</div>
+            </div>
+            <div class="snippet-view-field">
+                <label>Code</label>
+                <div class="snippet-code-preview snippet-view-code"><pre><code>${escapeHtml(snippet.code || "")}</code></pre></div>
+            </div>
+            <div class="snippet-view-author">
+                ${renderAvatar(author)}
+                <span>${escapeHtml(author.name)}</span>
+            </div>
+            <div class="snippet-editor-actions">
+                <button type="button" class="snippet-editor-cancel" data-view-close>Close</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    viewModalEl = overlay;
+
+    overlay.addEventListener("click", (event) => {
+        if (event.target === overlay) closeViewModal();
+    });
+    qs("[data-view-close]", overlay).addEventListener("click", closeViewModal);
+
+    document.addEventListener("keydown", onEscCloseView);
+}
+
+/* ==========================================
+   SNIPPET EDITOR MODAL (built at runtime — see header note)
+   Shared by Create and Edit — only the payload
+   target (new doc vs existing doc) changes.
+========================================== */
+let modalEl = null;
 
 function closeSnippetModal() {
     if (modalEl) {
@@ -961,10 +1479,18 @@ async function handleSnippetFormSubmit(event, existingSnippet) {
     submitBtn?.setAttribute("disabled", "true");
 
     try {
+        // Editing must only be permitted for the snippet's own owner —
+        // the pencil icon / "Edit" menu item are already hidden for
+        // other users' snippets, but this is a last-line safeguard.
+        if (existingSnippet && existingSnippet.ownerUid !== uid) {
+            showToast("You can only edit snippets you own.", "warning");
+            return;
+        }
+
         if (existingSnippet) {
             const updated = await updateSnippetDoc(existingSnippet.id, payload);
             Object.assign(existingSnippet, updated, payload);
-            showToast("Snippet updated.", "success");
+            showToast("Snippet updated successfully.", "success");
         } else {
             const created = await createSnippetDoc({
                 ...payload,
@@ -972,7 +1498,7 @@ async function handleSnippetFormSubmit(event, existingSnippet) {
                 workspaceId: STATE.currentWorkspaceId,
             });
             STATE.snippets.push(created);
-            showToast("Snippet created.", "success");
+            showToast("Snippet created successfully.", "success");
         }
         closeSnippetModal();
         render();
@@ -1077,7 +1603,11 @@ function handleGlobalKeydown(event) {
    duplicate listeners if init() ever re-runs)
 ========================================== */
 function bindEventsOnce() {
-    const { searchInput, tabs, categoryItems, tagChips, collectionItems, grid, sortSelect, viewGridBtn, viewListBtn, importBtn, newSnippetBtn, page } = els();
+    const {
+        searchInput, tabs, grid, sortSelect, viewGridBtn, viewListBtn,
+        importBtn, newSnippetBtn, page,
+        categoryList, tagList, collectionList, clearFiltersBtn,
+    } = els();
 
     if (searchInput && searchInput.dataset.bound !== "true") {
         searchInput.addEventListener("input", debounce(handleSearchInput, SEARCH_DEBOUNCE_MS));
@@ -1090,23 +1620,24 @@ function bindEventsOnce() {
         tab.dataset.bound = "true";
     });
 
-    categoryItems.forEach((item) => {
-        if (item.dataset.bound === "true") return;
-        item.addEventListener("click", handleCategoryClick);
-        item.dataset.bound = "true";
-    });
-
-    tagChips.forEach((chip) => {
-        if (chip.dataset.bound === "true") return;
-        chip.addEventListener("click", handleTagClick);
-        chip.dataset.bound = "true";
-    });
-
-    collectionItems.forEach((item) => {
-        if (item.dataset.bound === "true") return;
-        item.addEventListener("click", handleCollectionClick);
-        item.dataset.bound = "true";
-    });
+    // Filter lists are re-rendered on every render(), so we bind a single
+    // delegated listener to each container instead of per-item listeners.
+    if (categoryList && categoryList.dataset.delegateBound !== "true") {
+        categoryList.addEventListener("click", handleFilterListClick);
+        categoryList.dataset.delegateBound = "true";
+    }
+    if (tagList && tagList.dataset.delegateBound !== "true") {
+        tagList.addEventListener("click", handleTagListClick);
+        tagList.dataset.delegateBound = "true";
+    }
+    if (collectionList && collectionList.dataset.delegateBound !== "true") {
+        collectionList.addEventListener("click", handleCollectionListClick);
+        collectionList.dataset.delegateBound = "true";
+    }
+    if (clearFiltersBtn && clearFiltersBtn.dataset.bound !== "true") {
+        clearFiltersBtn.addEventListener("click", handleClearFilters);
+        clearFiltersBtn.dataset.bound = "true";
+    }
 
     if (sortSelect && sortSelect.dataset.bound !== "true") {
         sortSelect.addEventListener("change", handleSortChange);
@@ -1221,9 +1752,6 @@ async function init() {
     restoreViewPreference();
     syncViewUI();
     syncTabsUI();
-    syncCategoryUI();
-    syncTagUI();
-    syncCollectionUI();
     bindEventsOnce();
     attachContextListeners();
 

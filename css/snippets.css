@@ -1,14 +1,5 @@
 /* ==========================================
    Nova Editor — Snippets Module
-   Premium SaaS UI · theme-aware · self-contained buttons
-
-   NOTE ON SCOPING
-   ----------------
-   Every rule in this file is namespaced under `.snippets-page`
-   (the module's own <main> root). The shared Header and Sidebar
-   live in #headerMount / #sidebarMount, siblings of `.snippets-page`,
-   so nothing in here can leak onto them or override their styling —
-   this file only ever paints inside the Snippets module itself.
 ========================================== */
 
 /* ---------- Page shell ---------- */
@@ -424,6 +415,15 @@
     background: var(--border-subtle);
 }
 
+/* Empty filter states — shown when no categories/tags/collections exist yet */
+.snippets-page .filter-empty {
+    margin: 0;
+    padding: 6px 2px;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    font-style: italic;
+}
+
 /* Tags */
 .snippets-page .filter-tags {
     display: flex;
@@ -434,6 +434,7 @@
 .snippets-page .tag-chip {
     display: inline-flex;
     align-items: center;
+    gap: 6px;
     padding: 5px 12px;
     background: var(--surface-secondary);
     border: 1px solid transparent;
@@ -460,6 +461,24 @@
     color: var(--primary);
 }
 
+.snippets-page .tag-chip-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    padding: 0 4px;
+    background: rgba(15, 23, 42, 0.08);
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: var(--font-semibold);
+    line-height: 16px;
+}
+
+.snippets-page .tag-chip.is-active .tag-chip-count {
+    background: rgba(37, 99, 235, 0.18);
+    color: var(--primary);
+}
+
 /* ---------- Right content ---------- */
 .snippets-page .snippets-content {
     min-width: 0;
@@ -476,6 +495,14 @@
     flex-wrap: wrap;
 }
 
+.snippets-page .snippets-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
 .snippets-page .snippets-result-count {
     margin: 0;
     color: var(--text-secondary);
@@ -485,6 +512,39 @@
 .snippets-page .snippets-result-count strong {
     color: var(--text-primary);
     font-weight: var(--font-semibold);
+}
+
+/* "Clear filters" affordance — appears once a category/tag/collection is active */
+.snippets-page .snippets-clear-filters {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px 4px 8px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-full);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: var(--font-medium);
+    cursor: pointer;
+    transition:
+        border-color 0.15s ease,
+        color 0.15s ease,
+        background-color 0.15s ease;
+}
+
+.snippets-page .snippets-clear-filters i {
+    font-size: 14px;
+}
+
+.snippets-page .snippets-clear-filters:hover {
+    border-color: var(--danger, #ef4444);
+    color: var(--danger, #ef4444);
+    background: rgba(239, 68, 68, 0.06);
+}
+
+.snippets-page .snippets-clear-filters.hidden {
+    display: none;
 }
 
 .snippets-page .snippets-sort select {
@@ -768,6 +828,18 @@
     flex-shrink: 0;
 }
 
+/* Fallback avatar shown when there is no photo, or the photo failed to load */
+.snippets-page .snippet-avatar.avatar-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 11px;
+    font-weight: var(--font-bold);
+    letter-spacing: 0.02em;
+    user-select: none;
+}
+
 .snippets-page .snippet-author-info {
     display: flex;
     flex-direction: column;
@@ -916,6 +988,14 @@ html[data-theme="dark"] .snippets-page .snippets-tab:hover:not(.is-active) {
 
 html[data-theme="dark"] .snippets-page .filter-item.is-active .filter-count {
     background: rgba(37, 99, 235, 0.28);
+}
+
+html[data-theme="dark"] .snippets-page .tag-chip-count {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .snippets-page .snippets-clear-filters:hover {
+    background: rgba(239, 68, 68, 0.12);
 }
 
 html[data-theme="dark"] .snippets-page .snippets-btn-outline {
@@ -1099,6 +1179,11 @@ html[data-theme="dark"] .snippets-page .snippets-empty {
         justify-content: space-between;
     }
 
+    .snippets-page .snippets-toolbar-left {
+        width: 100%;
+        justify-content: space-between;
+    }
+
     .snippets-page .snippets-sort select {
         min-width: 0;
     }
@@ -1120,6 +1205,12 @@ html[data-theme="dark"] .snippets-page .snippets-empty {
     .snippets-page .snippets-grid.is-list .snippet-card-footer {
         flex-direction: row;
         flex-wrap: wrap;
+    }
+
+    /* 3-dot menu targets stay comfortable on touch */
+    .snippets-page .snippet-action-btn {
+        width: 36px;
+        height: 36px;
     }
 }
 

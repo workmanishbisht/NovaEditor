@@ -128,9 +128,16 @@
                     <!-- Content -->
                     <section class="snippets-content" aria-label="Snippet list">
                         <div class="snippets-toolbar">
-                            <p class="snippets-result-count" id="snippetsResultCount">
-                                Showing <strong>0</strong> snippets
-                            </p>
+                            <div class="snippets-toolbar-left">
+                                <p class="snippets-result-count" id="snippetsResultCount">
+                                    Showing <strong>0</strong> snippets
+                                </p>
+                                <button type="button" class="snippets-clear-filters hidden" id="snippetsClearFilters"
+                                    data-clear-filters>
+                                    <i class="ri-close-circle-line"></i>
+                                    <span>Clear filters</span>
+                                </button>
+                            </div>
                             <div class="snippets-sort">
                                 <label for="snippetsSort" class="visually-hidden">Sort by</label>
                                 <select id="snippetsSort" data-snippets-sort>
