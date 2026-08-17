@@ -885,11 +885,14 @@ function attachSecurityEvents() {
     DOM.securityManageBtn.addEventListener("click", () => {
         openConfirmModal({
             title: "Sign out",
-            message: "You'll be signed out of Nova Editor on this device and returned to the sign-in page.",
+            message:
+                "You'll be signed out of Nova Editor on this device and returned to the sign in page.",
             confirmLabel: "Sign Out",
             danger: false,
+
             onConfirm: async () => {
                 const result = await logout();
+
                 if (result.success) {
                     notify("Signed out successfully.", "success");
                     redirectToLanding();
@@ -898,6 +901,62 @@ function attachSecurityEvents() {
                 }
             },
         });
+
+        // Style Sign Out button
+        setTimeout(() => {
+            const buttons = document.querySelectorAll("button");
+
+            buttons.forEach((button) => {
+                if (button.textContent.trim() === "Sign Out") {
+                    button.style.setProperty("color", "#dc2626", "important");
+                    button.style.setProperty(
+                        "background-color",
+                        "#fef2f2",
+                        "important"
+                    );
+                    button.style.setProperty(
+                        "border",
+                        "1px solid #fecaca",
+                        "important"
+                    );
+
+                    // Button spacing
+                    button.style.setProperty("padding", "9px 16px", "important");
+                    button.style.setProperty("border-radius", "6px", "important");
+                    button.style.setProperty("font-size", "15px", "important");
+                    button.style.setProperty("font-weight", "500", "important");
+                    button.style.setProperty("cursor", "pointer", "important");
+                    button.style.setProperty("margin-left", "8px", "important");
+
+                    // Hover
+                    button.addEventListener("mouseenter", () => {
+                        button.style.setProperty(
+                            "background-color",
+                            "#fee2e2",
+                            "important"
+                        );
+                        button.style.setProperty(
+                            "color",
+                            "#b91c1c",
+                            "important"
+                        );
+                    });
+
+                    button.addEventListener("mouseleave", () => {
+                        button.style.setProperty(
+                            "background-color",
+                            "#fef2f2",
+                            "important"
+                        );
+                        button.style.setProperty(
+                            "color",
+                            "#dc2626",
+                            "important"
+                        );
+                    });
+                }
+            });
+        }, 50);
     });
 }
 
