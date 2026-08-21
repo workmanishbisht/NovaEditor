@@ -199,14 +199,19 @@
 
 /* ==========================================
    Continue Coding
+   ------------------------------------------
+   Balanced 50/50 split between the project
+   info panel and the live preview panel.
 ========================================== */
 
 .dash-continue {
     display: grid;
-    grid-template-columns: 340px 1fr;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
     gap: 0;
     margin-bottom: 34px;
     overflow: hidden;
+    border-radius: 22px;
     transition: box-shadow 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
 }
 
@@ -214,8 +219,9 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 7px;
-    padding: 30px 28px;
+    gap: 8px;
+    min-width: 0;
+    padding: 32px 32px 28px;
     border-right: 1px solid var(--border-subtle);
 }
 
@@ -224,7 +230,7 @@
     align-items: center;
     gap: 7px;
     padding: 5px 12px 5px 10px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     border-radius: var(--radius-full);
     border: 1px solid transparent;
     background: var(--primary-light);
@@ -251,16 +257,27 @@
 .dash-continue-info h3 {
     margin-top: 2px;
     color: var(--text-primary);
-    font-size: 21px;
+    font-size: 24px;
     font-weight: 700;
     letter-spacing: -0.015em;
     line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .dash-continue-description {
+    max-width: 46ch;
     color: var(--text-secondary);
     font-size: 13.5px;
-    line-height: 1.5;
+    line-height: 1.6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
 }
 
 .dash-continue-file {
@@ -276,7 +293,7 @@
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
-    margin: 6px 0 10px;
+    margin: 8px 0 4px;
 }
 
 .tag {
@@ -307,8 +324,18 @@
     color: var(--text-secondary);
 }
 
+/* Pushes the CTA button to the bottom of the left panel while
+   keeping the panel's own height driven by the content, not the
+   button — spacer grows only if there's leftover vertical room. */
+.dash-continue-info::after {
+    content: "";
+    flex: 1 1 auto;
+    min-height: 12px;
+}
+
 .dash-continue-info .btn-dark {
     margin-top: 6px;
+    align-self: flex-start;
 }
 
 /* ---- Dynamic project preview (Continue Coding) ----
@@ -320,17 +347,19 @@
 .dash-continue-preview {
     display: flex;
     align-items: stretch;
-    justify-content: center;
-    padding: 20px;
+    justify-content: stretch;
+    min-width: 0;
+    padding: 16px;
     background: #0b1120;
 }
 
 .continue-preview-thumb.project-card-thumb {
     position: relative;
     width: 100%;
-    height: auto;
-    min-height: 320px;
-    border-radius: 10px;
+    height: 100%;
+    aspect-ratio: 16 / 10;
+    min-height: 280px;
+    border-radius: 14px;
     overflow: hidden;
     font-size: 34px;
     box-shadow: 0 20px 45px -20px rgba(0, 0, 0, 0.55);
@@ -1435,21 +1464,43 @@ body.nova-modal-open {
         grid-template-columns: 1fr;
     }
 
+    .dash-continue-info {
+        padding: 26px 24px 24px;
+    }
+
+    .continue-preview-thumb.project-card-thumb {
+        min-height: 240px;
+    }
+
+    .dashboard {
+        padding: 28px 24px 56px;
+    }
+}
+
+/* Below this width there isn't enough room for a true 50/50 split
+   without cramping the text column — keep the grid balanced but stack
+   the two halves instead of forcing a squeeze. */
+@media (max-width: 860px) {
     .dash-continue {
         grid-template-columns: 1fr;
     }
 
     .dash-continue-info {
         border-right: none;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .dash-continue-info::after {
+        display: none;
+    }
+
+    .dash-continue-preview {
+        padding: 0 16px 16px;
     }
 
     .continue-preview-thumb.project-card-thumb {
-        min-height: 260px;
-    }
-
-    .dashboard {
-        padding: 28px 24px 56px;
+        aspect-ratio: 16 / 9;
+        min-height: 220px;
     }
 }
 
@@ -1497,8 +1548,12 @@ body.nova-modal-open {
         grid-template-columns: 1fr;
     }
 
+    .dash-continue-info {
+        padding: 22px 18px 20px;
+    }
+
     .continue-preview-thumb.project-card-thumb {
-        min-height: 200px;
+        min-height: 180px;
     }
 
     .overview-stats {
