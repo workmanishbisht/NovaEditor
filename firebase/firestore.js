@@ -19,6 +19,7 @@ import {
   orderBy,
   writeBatch,
   runTransaction,
+  onSnapshot,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -110,6 +111,10 @@ function aiPreferenceRef(uid) {
 
 function notificationsCollection() {
   return collection(db, COLLECTIONS.NOTIFICATIONS);
+}
+
+function notificationRef(notificationId) {
+  return doc(db, COLLECTIONS.NOTIFICATIONS, notificationId);
 }
 
 /* ==========================================
@@ -1820,6 +1825,246 @@ export async function copyFolder(projectId, folderId, newName) {
 
 /* ==========================================
    NOTIFICATIONS
+   ------------------------------------------
+   Schema (collection: "notifications"):
+     {
+       recipientUid,   // matches the field name
+                       // already used by the
+                       // existing
+                       // getUnreadNotificationCount()
+                       // below — kept consistent
+                       // rather than introducing
+                       // a second field name
+                       // ("userId") for the same
+                       // concept.
+       category,       // "projects" | "system" | "account" | "ai"
+       type,           // e.g. "project-created", "project-trash",
+                       // "project-restored", "project-deleted",
+                       // "settings-updated", "auth-signin"
+       title,
+       message,
+       read,           // boolean
+       projectId,      // optional
+       projectName,    // optional
+       action,         // optional (reserved for future deep-linking)
+       createdAt,
+     }
+
+   Queries intentionally avoid combining a
+   `where("recipientUid", "==", uid)` filter
+   with a Firestore-side `orderBy("createdAt")`
+   — that combination requires a composite
+   index to be created in the Firebase console
+   before it will run. Sorting is instead done
+   client-side (cheap at per-user notification
+   volumes), so this works out of the box on
+   the existing Firestore setup with no extra
+   configuration required.
+========================================== */
+
+function sortNotificationsDesc(list) {
+  return list.slice().sort((a, b) => {
+    const aTime = a.createdAt?.toMillis
+      ? a.createdAt.toMillis()
+      : (a.createdAt?.seconds || 0) * 1000;
+    const bTime = b.createdAt?.toMillis
+      ? b.createdAt.toMillis()
+      : (b.createdAt?.seconds || 0) * 1000;
+    return bTime - aTime;
+  });
+}
+
+/* ==========================================
+   CREATE NOTIFICATION
+========================================== */
+
+export async function createNotification(uid, notificationData) {
+  return run(async () => {
+    const uidError = validateId(uid, "User ID");
+    if (uidError) return uidError;
+
+    if (!notificationData || typeof notificationData !== "object") {
+      return createResponse(false, { error: "Notification data is required." });
+    }
+
+    const payload = {
+      recipientUid: uid,
+      category: notificationData.category || "system",
+      type: notificationData.type || "generic",
+      title: notificationData.title || "",
+      message: notificationData.message || "",
+      read: false,
+      projectId: notificationData.projectId || null,
+      projectName: notificationData.projectName || null,
+      action: notificationData.action || null,
+      createdAt: serverTimestamp(),
+    };
+
+    const reference = await addDoc(notificationsCollection(), payload);
+
+    return createResponse(true, {
+      data: { id: reference.id, ...payload },
+    });
+  });
+}
+
+/* ==========================================
+   GET USER NOTIFICATIONS (one-time fetch)
+========================================== */
+
+export async function getUserNotifications(uid) {
+  return run(async () => {
+    const uidError = validateId(uid, "User ID");
+    if (uidError) return uidError;
+
+    const q = query(notificationsCollection(), where("recipientUid", "==", uid));
+    const snapshot = await getDocs(q);
+    const notifications = [];
+
+    snapshot.forEach((document) => {
+      notifications.push({ id: document.id, ...document.data() });
+    });
+
+    return createResponse(true, { data: sortNotificationsDesc(notifications) });
+  });
+}
+
+/* ==========================================
+   SUBSCRIBE TO USER NOTIFICATIONS (realtime)
+   ------------------------------------------
+   Returns the Firestore unsubscribe function.
+   Callers (notifications.js) are responsible
+   for invoking it when the page/module using
+   it is torn down.
+========================================== */
+
+export function subscribeToUserNotifications(uid, onChange, onError) {
+  if (!uid) {
+    if (typeof onError === "function") {
+      onError(new Error("User ID is required."));
+    }
+    return () => {};
+  }
+
+  const q = query(notificationsCollection(), where("recipientUid", "==", uid));
+
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const notifications = [];
+      snapshot.forEach((document) => {
+        notifications.push({ id: document.id, ...document.data() });
+      });
+
+      if (typeof onChange === "function") {
+        onChange(sortNotificationsDesc(notifications));
+      }
+    },
+    (error) => {
+      console.error("[firestore] subscribeToUserNotifications error:", error);
+      if (typeof onError === "function") {
+        onError(error);
+      }
+    }
+  );
+
+  return unsubscribe;
+}
+
+/* ==========================================
+   MARK NOTIFICATION READ
+========================================== */
+
+export async function markNotificationRead(notificationId, read = true) {
+  return run(async () => {
+    const idError = validateId(notificationId, "Notification ID");
+    if (idError) return idError;
+
+    await updateDoc(notificationRef(notificationId), { read: !!read });
+    return createResponse(true);
+  });
+}
+
+/* ==========================================
+   MARK ALL NOTIFICATIONS READ
+========================================== */
+
+export async function markAllNotificationsRead(uid) {
+  return run(async () => {
+    const uidError = validateId(uid, "User ID");
+    if (uidError) return uidError;
+
+    const q = query(
+      notificationsCollection(),
+      where("recipientUid", "==", uid),
+      where("read", "==", false)
+    );
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return createResponse(true, { data: { updated: 0 } });
+    }
+
+    const refs = [];
+    snapshot.forEach((document) => refs.push(document.ref));
+
+    for (let i = 0; i < refs.length; i += BATCH_DELETE_CHUNK_SIZE) {
+      const chunk = refs.slice(i, i + BATCH_DELETE_CHUNK_SIZE);
+      const batch = writeBatch(db);
+      chunk.forEach((ref) => batch.update(ref, { read: true }));
+      await batch.commit();
+    }
+
+    return createResponse(true, { data: { updated: refs.length } });
+  });
+}
+
+/* ==========================================
+   DELETE NOTIFICATION
+========================================== */
+
+export async function deleteNotification(notificationId) {
+  return run(async () => {
+    const idError = validateId(notificationId, "Notification ID");
+    if (idError) return idError;
+
+    await deleteDoc(notificationRef(notificationId));
+    return createResponse(true);
+  });
+}
+
+/* ==========================================
+   CLEAR ALL NOTIFICATIONS
+========================================== */
+
+export async function clearAllNotifications(uid) {
+  return run(async () => {
+    const uidError = validateId(uid, "User ID");
+    if (uidError) return uidError;
+
+    const q = query(notificationsCollection(), where("recipientUid", "==", uid));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return createResponse(true, { data: { deleted: 0 } });
+    }
+
+    const refs = [];
+    snapshot.forEach((document) => refs.push(document.ref));
+
+    for (let i = 0; i < refs.length; i += BATCH_DELETE_CHUNK_SIZE) {
+      const chunk = refs.slice(i, i + BATCH_DELETE_CHUNK_SIZE);
+      const batch = writeBatch(db);
+      chunk.forEach((ref) => batch.delete(ref));
+      await batch.commit();
+    }
+
+    return createResponse(true, { data: { deleted: refs.length } });
+  });
+}
+
+/* ==========================================
+   UNREAD COUNT
 ========================================== */
 
 export async function getUnreadNotificationCount(uid) {
