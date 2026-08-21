@@ -1,1 +1,248 @@
 
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../assets/images/favicon/favicon.png">
+    <title>Notifications - Nova Editor</title>
+
+    <!-- RemixIcon -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+    <!-- Css file link -->
+    <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/notifications.css" />
+    <link rel="stylesheet" href="../css/toast.css">
+</head>
+
+<body data-page="notifications">
+    <div class="app-shell">
+
+        <!-- Sidebar mounts here (existing component, reused as-is) -->
+        <div id="sidebarMount"></div>
+
+        <div class="app-main">
+
+            <!-- Header mounts here (existing component, reused as-is) -->
+            <div id="headerMount"></div>
+
+            <main class="notif-page" id="notificationsContent">
+
+                <!-- =======================================
+                Page Header
+                ======================================= -->
+                <section class="notif-hero">
+                    <div class="notif-hero-text">
+                        <h1>Notifications</h1>
+                        <p>Stay up to date with your projects, workspace and account.</p>
+                    </div>
+                    <div class="notif-hero-actions">
+                        <button type="button" class="btn btn-outline" id="markAllReadBtn" data-mark-all-read>
+                            <i class="ri-checkbox-multiple-line"></i>
+                            Mark all as read
+                        </button>
+                        <button type="button" class="btn btn-danger-outline" id="clearAllBtn" data-clear-all>
+                            <i class="ri-delete-bin-line"></i>
+                            Clear all
+                        </button>
+                    </div>
+                </section>
+
+                <!-- =======================================
+                Filter Bar
+                ======================================= -->
+                <div class="notif-toolbar">
+                    <div class="notif-tabs-scroll">
+                        <div class="notif-tabs" role="tablist" aria-label="Notification filters" id="notificationsTabs">
+                            <button type="button" class="notif-tab is-active" role="tab" aria-selected="true">
+                                All
+                            </button>
+                            <button type="button" class="notif-tab" role="tab" aria-selected="false">
+                                Unread
+                            </button>
+                            <button type="button" class="notif-tab" role="tab" aria-selected="false">
+                                Projects
+                            </button>
+                            <button type="button" class="notif-tab" role="tab" aria-selected="false">
+                                System
+                            </button>
+                            <button type="button" class="notif-tab" role="tab" aria-selected="false">
+                                Account
+                            </button>
+                            <button type="button" class="notif-tab" role="tab" aria-selected="false">
+                                AI
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- =======================================
+                Notification List
+                Dynamic items are injected here by notifications.js (later)
+                ======================================= -->
+                <section class="notif-list" id="notificationsList" aria-label="Notifications">
+
+                    <!-- UNREAD -->
+                    <article class="notification-item is-unread" tabindex="0">
+                        <span class="notif-icon notif-icon-project" aria-hidden="true">
+                            <i class="ri-folder-line"></i>
+                        </span>
+                        <div class="notif-body">
+                            <div class="notif-body-top">
+                                <h3 class="notif-title">Project created</h3>
+                                <span class="notif-time">Just now</span>
+                            </div>
+                            <p class="notif-message">TaskFlow was created successfully.</p>
+                        </div>
+                        <div class="notif-side">
+                            <span class="unread-dot" aria-label="Unread notification"></span>
+                        </div>
+                    </article>
+
+                    <!-- UNREAD -->
+                    <article class="notification-item is-unread" tabindex="0">
+                        <span class="notif-icon notif-icon-trash" aria-hidden="true">
+                            <i class="ri-delete-bin-line"></i>
+                        </span>
+                        <div class="notif-body">
+                            <div class="notif-body-top">
+                                <h3 class="notif-title">Project moved to Trash</h3>
+                                <span class="notif-time">2 hours ago</span>
+                            </div>
+                            <p class="notif-message">Portfolio was moved to Trash.</p>
+                        </div>
+                        <div class="notif-side">
+                            <span class="unread-dot" aria-label="Unread notification"></span>
+                        </div>
+                    </article>
+
+                    <!-- READ -->
+                    <article class="notification-item is-read" tabindex="0">
+                        <span class="notif-icon notif-icon-system" aria-hidden="true">
+                            <i class="ri-information-line"></i>
+                        </span>
+                        <div class="notif-body">
+                            <div class="notif-body-top">
+                                <h3 class="notif-title">Workspace updated</h3>
+                                <span class="notif-time">Yesterday</span>
+                            </div>
+                            <p class="notif-message">Your workspace settings were updated successfully.</p>
+                        </div>
+                        <div class="notif-side">
+                            <button type="button" class="notif-action-btn" aria-label="More options">
+                                <i class="ri-more-2-fill"></i>
+                            </button>
+                        </div>
+                    </article>
+
+                    <!-- READ -->
+                    <article class="notification-item is-read" tabindex="0">
+                        <span class="notif-icon notif-icon-account" aria-hidden="true">
+                            <i class="ri-user-line"></i>
+                        </span>
+                        <div class="notif-body">
+                            <div class="notif-body-top">
+                                <h3 class="notif-title">New sign-in</h3>
+                                <span class="notif-time">Yesterday</span>
+                            </div>
+                            <p class="notif-message">You signed in with Google.</p>
+                        </div>
+                        <div class="notif-side">
+                            <button type="button" class="notif-action-btn" aria-label="More options">
+                                <i class="ri-more-2-fill"></i>
+                            </button>
+                        </div>
+                    </article>
+
+                    <!-- READ -->
+                    <article class="notification-item is-read" tabindex="0">
+                        <span class="notif-icon notif-icon-ai" aria-hidden="true">
+                            <i class="ri-sparkling-line"></i>
+                        </span>
+                        <div class="notif-body">
+                            <div class="notif-body-top">
+                                <h3 class="notif-title">AI response ready</h3>
+                                <span class="notif-time">2 days ago</span>
+                            </div>
+                            <p class="notif-message">Your AI Assistant response is ready.</p>
+                        </div>
+                        <div class="notif-side">
+                            <button type="button" class="notif-action-btn" aria-label="More options">
+                                <i class="ri-more-2-fill"></i>
+                            </button>
+                        </div>
+                    </article>
+
+                </section>
+
+                <!-- =======================================
+                Loading State
+                Shown by JS while notifications are being fetched
+                ======================================= -->
+                <section class="notif-skeleton-list" id="notificationsSkeleton" hidden aria-hidden="true">
+                    <div class="notif-skeleton-item">
+                        <span class="skeleton-block skeleton-icon"></span>
+                        <div class="skeleton-lines">
+                            <span class="skeleton-block skeleton-line skeleton-line-title"></span>
+                            <span class="skeleton-block skeleton-line skeleton-line-message"></span>
+                        </div>
+                    </div>
+                    <div class="notif-skeleton-item">
+                        <span class="skeleton-block skeleton-icon"></span>
+                        <div class="skeleton-lines">
+                            <span class="skeleton-block skeleton-line skeleton-line-title"></span>
+                            <span class="skeleton-block skeleton-line skeleton-line-message"></span>
+                        </div>
+                    </div>
+                    <div class="notif-skeleton-item">
+                        <span class="skeleton-block skeleton-icon"></span>
+                        <div class="skeleton-lines">
+                            <span class="skeleton-block skeleton-line skeleton-line-title"></span>
+                            <span class="skeleton-block skeleton-line skeleton-line-message"></span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- =======================================
+                Empty State
+                Shown by JS when there are no notifications
+                ======================================= -->
+                <section class="notif-empty-state" id="notificationsEmptyState" hidden>
+                    <div class="notif-empty-icon">
+                        <i class="ri-notification-3-line"></i>
+                    </div>
+                    <h3>You're all caught up</h3>
+                    <p>No new notifications right now.</p>
+                </section>
+
+                <!-- =======================================
+                Error State
+                Shown by JS when notifications fail to load
+                ======================================= -->
+                <section class="notif-error-state" id="notificationsErrorState" hidden>
+                    <div class="notif-error-icon">
+                        <i class="ri-error-warning-line"></i>
+                    </div>
+                    <h3>Unable to load notifications</h3>
+                    <p>Something went wrong while loading your notifications.</p>
+                    <button type="button" class="btn btn-outline" id="notificationsRetryBtn" data-retry>
+                        <i class="ri-refresh-line"></i>
+                        Retry
+                    </button>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <div id="projectModalMount"></div>
+
+    <!-- script file  -->
+    <script type="module" src="../components/toast.js"></script>
+    <script type="module" src="../js/layout.js"></script>
+
+</body>
+</html>
