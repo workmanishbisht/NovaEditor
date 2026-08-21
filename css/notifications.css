@@ -1,4 +1,3 @@
-
 /* ==========================================
    Notifications Page Container
 ========================================== */
@@ -12,12 +11,14 @@
    Buttons
 ========================================== */
 
-.notif-hero-actions .btn {
+.notif-hero-actions .btn,
+.notif-error-state .btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     height: 44px;
-    padding: 0 20px;
+    padding: 0 22px;
     border-radius: var(--radius-sm);
     font-size: 13.5px;
     font-weight: 600;
@@ -25,7 +26,8 @@
     transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 }
 
-.notif-hero-actions .btn i {
+.notif-hero-actions .btn i,
+.notif-error-state .btn i {
     font-size: 16px;
 }
 
@@ -513,7 +515,9 @@
 }
 
 .notif-error-state .btn {
-    margin-top: 4px;
+    margin-top: 6px;
+    padding: 0 26px;
+    min-width: 140px;
 }
 
 /* ==========================================
@@ -523,7 +527,6 @@
 /* Tablet — reduce spacing and card width */
 @media (max-width: 1100px) {
     .notif-page {
-        max-width: 100%;
         padding: 28px 24px 56px;
     }
 }
@@ -536,16 +539,42 @@
     .notif-hero {
         flex-direction: column;
         align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .notif-hero-text h1 {
+        font-size: 25px;
     }
 
     .notif-hero-actions {
         width: 100%;
         flex-wrap: wrap;
     }
+
+    .notif-hero-actions .btn {
+        flex: 1 1 auto;
+    }
+
+    .notification-item {
+        padding: 15px 16px;
+    }
 }
 
 /* Mobile */
 @media (max-width: 768px) {
+    .notif-page {
+        padding: 22px 18px 44px;
+    }
+
+    .notif-hero-text h1 {
+        font-size: 23px;
+    }
+
+    .notif-hero-text p {
+        font-size: 13.5px;
+    }
+
     .notif-hero-actions {
         flex-direction: column;
         gap: 10px;
@@ -557,9 +586,25 @@
         justify-content: center;
     }
 
+    .notif-toolbar {
+        margin-bottom: 20px;
+        padding-bottom: 14px;
+    }
+
+    .notif-tab {
+        height: 36px;
+        padding: 0 14px;
+        font-size: 13px;
+    }
+
+    .notif-list {
+        gap: 8px;
+    }
+
     .notification-item {
         gap: 12px;
         padding: 13px 14px;
+        border-radius: var(--radius-md);
     }
 
     .notif-icon {
@@ -571,7 +616,7 @@
     .notif-body-top {
         flex-direction: column;
         align-items: flex-start;
-        gap: 2px;
+        gap: 3px;
     }
 
     .notif-title {
@@ -586,15 +631,67 @@
         font-size: 11.5px;
     }
 
+    .notif-side {
+        align-self: flex-start;
+    }
+
     .notif-empty-state,
     .notif-error-state {
-        padding: 56px 18px;
+        padding: 48px 18px;
+        border-radius: var(--radius-lg);
+    }
+
+    .notif-empty-icon,
+    .notif-error-icon {
+        width: 52px;
+        height: 52px;
+        font-size: 22px;
+    }
+
+    .notif-error-state .btn {
+        width: 100%;
+    }
+
+    .notif-skeleton-item {
+        gap: 12px;
+        padding: 13px 14px;
+    }
+
+    .skeleton-icon {
+        width: 36px;
+        height: 36px;
     }
 }
 
+/* Small phones */
 @media (max-width: 480px) {
     .notif-page {
-        padding: 20px 14px 40px;
+        padding: 18px 14px 36px;
+    }
+
+    .notif-hero-text h1 {
+        font-size: 21px;
+    }
+
+    .notif-hero-text p {
+        max-width: none;
+    }
+
+    .notif-hero-actions .btn,
+    .notif-error-state .btn {
+        height: 42px;
+        padding: 0 16px;
+        font-size: 13px;
+    }
+
+    .notif-tabs {
+        gap: 5px;
+    }
+
+    .notif-tab {
+        height: 34px;
+        padding: 0 12px;
+        font-size: 12.5px;
     }
 
     .notification-item {
@@ -610,7 +707,77 @@
         border-radius: var(--radius-sm);
     }
 
+    .notif-body {
+        gap: 3px;
+    }
+
+    .notif-title {
+        font-size: 13px;
+    }
+
+    .notif-message {
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
     .notif-side {
         padding-top: 0;
+    }
+
+    .unread-dot {
+        width: 8px;
+        height: 8px;
+    }
+
+    .notif-action-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 15px;
+    }
+
+    .notif-empty-state,
+    .notif-error-state {
+        padding: 40px 16px;
+        gap: 12px;
+    }
+
+    .notif-empty-state h3,
+    .notif-error-state h3 {
+        font-size: 15.5px;
+    }
+
+    .notif-empty-state p,
+    .notif-error-state p {
+        font-size: 13px;
+    }
+}
+
+/* Extra-small phones — tighten everything a little further so nothing
+   crowds or overflows on narrow screens (e.g. small Android devices) */
+@media (max-width: 360px) {
+    .notif-page {
+        padding: 16px 12px 32px;
+    }
+
+    .notif-hero-text h1 {
+        font-size: 19px;
+    }
+
+    .notification-item {
+        padding: 10px;
+    }
+
+    .notif-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+    }
+
+    .notif-title {
+        font-size: 12.5px;
+    }
+
+    .notif-message {
+        font-size: 11.5px;
     }
 }
